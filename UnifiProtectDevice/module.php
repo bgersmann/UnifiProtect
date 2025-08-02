@@ -207,7 +207,10 @@ declare(strict_types=1);
 			}			
 		}
 
-		public function GetConfigurationForm(){
+		public function GetConfigurationForm(){			
+			if ($this->HasActiveParent()) {
+				$this->Send("getCameras",'');
+			}	
 			$arrayStatus = array();
 			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => 'Instanz ist aktiv' );
 
