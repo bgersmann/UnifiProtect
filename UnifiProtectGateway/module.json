@@ -2,7 +2,7 @@
     "id": "{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}",
     "name": "UnifiProtectGateway",
     "type": 1,
-    "vendor": "UniFi",
+    "vendor": "Unifi",
     "aliases": [],
     "parentRequirements": [],
     "childRequirements": [
