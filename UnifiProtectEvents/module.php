@@ -69,6 +69,10 @@ declare(strict_types=1);
 			if ( $type === 'motion' && !$this->ReadPropertyBoolean('motionEvents')) {
 				return; // Motion Detection Events sind deaktiviert
 			}
+			if ($type !== 'smartDetectZone' && $type !== 'motion') {
+				IPS_LogMessage('UnifiProtectEvents', "Unbekannter Event-Typ: $type");
+				return; // Unbekannter Event-Typ
+			}
 			$idCam=$this->getInstanceIDForGuid( $camID, '{F78D1159-D735-D23A-0A97-69F07962BB89}' );
 			if ($idCam > 0) {
 				// Wenn eine Kamera-ID vorhanden ist, sende das Event an die Kamera-Instanz
