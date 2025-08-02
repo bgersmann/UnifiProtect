@@ -254,7 +254,7 @@ declare(strict_types=1);
 			}
 		}
 
-		public function createStream(string $cameraID, $streamType) {
+		public function createStream(string $cameraID, string $streamType):array {
 			// Falls $streamType ein JSON-String ist, dekodieren
 			if (is_string($streamType) && $this->isJson($streamType)) {
 				$decoded = json_decode($streamType, true);
