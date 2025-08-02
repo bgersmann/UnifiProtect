@@ -189,6 +189,9 @@ declare(strict_types=1);
 						if (isset($cameraData['modelKey'])) {
 							$this->SetValue('Model',$cameraData['modelKey']);
 						}
+						if (isset($cameraData['id']) && $this->ReadPropertyBoolean("IDAnzeigen")) {
+							$this->SetValue('ID',$cameraData['id']);
+						}
 						if (isset($cameraData['isMicEnabled'])) {
 							$this->SetValue('micEnabled',$cameraData['isMicEnabled']);
 						} else {
