@@ -1,0 +1,12 @@
+{
+    "id": "{22BA2EB1-4723-A762-A50C-16F332293AB0}",
+    "name": "UnifiProtect",
+    "author": "BGersmann",
+    "url": "https://github.com/bgersmann/UnifiProtect",
+    "compatibility": {
+        "version": "7.1"
+    },
+    "version": "1.0",
+    "build": 0,
+    "date": 0
+}

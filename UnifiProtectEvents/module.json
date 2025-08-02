@@ -1,0 +1,16 @@
+{
+    "id": "{E6BA8315-2D63-3E0D-D8F6-EB21AC1BB5F2}",
+    "name": "UnifiProtectEvents",
+    "type": 3,
+    "vendor": "UniFi",
+    "aliases": [],
+    "parentRequirements": [
+        "{79827379-F36E-4ADA-8A95-5F8D1DC92FA9}"
+    ],
+    "childRequirements": [],
+    "implemented": [
+        "{018EF6B5-AB94-40C6-AA53-46943E824ACF}"
+    ],
+    "prefix": "UNIFIPEV",
+    "url": "https://github.com/bgersmann/UnifiProtect"
+}
