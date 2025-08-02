@@ -14,6 +14,7 @@ declare(strict_types=1);
 			$this->RegisterPropertyString( 'APIKey', '' );
 			$this->RegisterPropertyBoolean( 'smartEvents', false );
 			$this->RegisterPropertyBoolean( 'motionEvents', false );
+			$this->RegisterPropertyBoolean( 'sensorMotionEvents', false );
 
 
 			$this->RequireParent('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
@@ -39,7 +40,7 @@ declare(strict_types=1);
 		public function ReceiveData($JSONString)
 		{
 			$data = json_decode($JSONString);
-			IPS_LogMessage('Device RECV', utf8_decode($data->Buffer));
+			#IPS_LogMessage('Device RECV', utf8_decode($data->Buffer));
 			if (isset($data->Buffer)) {
 				$this->HandleEvent($data->Buffer);
 			} else {
@@ -69,7 +70,10 @@ declare(strict_types=1);
 			if ( $type === 'motion' && !$this->ReadPropertyBoolean('motionEvents')) {
 				return; // Motion Detection Events sind deaktiviert
 			}
-			if ($type !== 'smartDetectZone' && $type !== 'motion') {
+			if ( $type === 'sensorMotion' && !$this->ReadPropertyBoolean('sensorMotionEvents')) {
+				return; // Sensor Motion Detection Events sind deaktiviert
+			}
+			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion') {
 				IPS_LogMessage('UnifiProtectEvents', "Unbekannter Event-Typ: $type");
 				return; // Unbekannter Event-Typ
 			}
@@ -84,15 +88,23 @@ declare(strict_types=1);
 					$camName='Unbekannt';
 					$this->SendDebug('HandleEvent', "Sende Event an Kamera $camName (ID: $idCam)", 0);   
 				}
-			} 			
+			} else {
+				// Wenn keine Kamera-ID vorhanden ist, setze einen generischen Namen
+				$camName = 'Unbekannt';
+				$this->SendDebug('HandleEvent', "Keine Kamera-ID gefunden, setze generischen Namen: $camName", 0);
+			}
+			if ($camName=='Unbekannt'&& $type == 'sensorMotion') {
+				//Sensor noch nicht integriert
+				$camName='Sensor-'.$camID;
+			}
 			$varIdent = 'EventActive_' . $type . '_' . $camID;
 			$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. 'active' , 0, '', 0, 1 );
 			$this->SendDebug('HandleEvent', 'Var Name: ' . $camName . '-' . $type .' '. 'active' . " (ID: $idCam)", 0);
-			if ($type === 'smartDetectZone') {
-				$eventTypes = $event['item']['smartDetectTypes'] ?? [];
-			} else {
-				IPS_LogMessage('UnifiProtectEvents', "Unbekannter Event-Typ: $type");
-			}
+			// if ($type === 'smartDetectZone') {
+			// 	$eventTypes = $event['item']['smartDetectTypes'] ?? [];
+			// } else {
+			// 	IPS_LogMessage('UnifiProtectEvents', "Unbekannter Event-Typ: $type");
+			// }
 			// Setze die Variable für den Event-Typ
 			$active = !isset($event['item']['end']);
 			$this->SetValue($varIdent,$active);
@@ -156,7 +168,7 @@ declare(strict_types=1);
 
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartEvents', 'width' => '220px','caption' => $this->Translate('Smart Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'motionEvents', 'width' => '220px','caption' => $this->Translate('Motion Detections') );
-
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorMotionEvents', 'width' => '240px','caption' => $this->Translate('Sensor Motion Detections') );
 			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 
 		

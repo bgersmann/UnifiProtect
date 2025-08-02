@@ -39,7 +39,7 @@ declare(strict_types=1);
 		public function ForwardData($JSONString)
 		{
 			$data = json_decode( $JSONString );
-			IPS_LogMessage('UnifiPGW', $JSONString);
+			#Message('UnifiPGW', $JSONString);
 			$APIKey = $this->ReadPropertyString( 'APIKey' );
 			if (empty($APIKey))
 			{
