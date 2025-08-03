@@ -52,8 +52,8 @@ declare(strict_types=1);
 
 			if (isset($data->Api)) {
 				switch ($data->Api) {
-					case "getCameras":
-						$array = $this->getCameras();
+					case "getDevices":
+						$array = $this->getDevices($data->Param1);
 						$this->send($data->InstanceID,$data->Api,json_encode($array));
 						break;
 					case "getStreams":
@@ -68,13 +68,21 @@ declare(strict_types=1);
 						$stream = $this->createStream(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
 						$this->send($data->InstanceID,$data->Api,json_encode($stream));
 						break;
-					case "getCameraData":
-						$cameraData = $this->getCameraData(IPS_GetProperty( $data->InstanceID, 'ID' ));
-						$this->send($data->InstanceID,$data->Api,json_encode($cameraData));
+					case "getDeviceData":
+						$deviceData = $this->getDeviceData(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
+						$this->send($data->InstanceID,$data->Api,json_encode($deviceData));
 						break;
-					case "patchSetting":
-						$setting = $this->patchSetting(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
+					case "patchSettingCamera":
+						$setting = $this->patchSettingCamera(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
 						$this->send($data->InstanceID,$data->Api,json_encode($setting));
+						break;
+					case "patchSettingSensor":
+						$setting = $this->patchSettingSensor(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
+						$this->send($data->InstanceID,$data->Api,json_encode($setting));
+						break;
+					case "getDevicesConfig":
+						$config = $this->getDevicesConfig();
+						$this->send($data->InstanceID,$data->Api,json_encode($config));
 						break;
 				}
 			}
@@ -229,8 +237,52 @@ declare(strict_types=1);
 		}
 
 
+
+		public function getDevices(string $deviceType):array{
+			if (empty($deviceType)) {
+				$this->SendDebug("UnifiPGW", "Device type is empty, returning empty array.", 0);
+				return [];
+			}
+			if ($deviceType === 'Camera') {
+				$JSONData = $this->getCameras();
+			} elseif ($deviceType === 'UP-Sense') {
+				$JSONData = $this->getSensors();
+			} else {
+				$this->SendDebug("UnifiPGW", "Unknown device type: " . $deviceType, 0);
+				return [];
+			}
+			$this->SendDebug("UnifiPGW", "Devices: " . json_encode($JSONData), 0);
+			return $JSONData;
+		}
+
+
 		public function getCameras():array {			
 			$JSONData = $this->getApiData( '/cameras' );
+			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
+				if (isset($JSONData)) {
+					$devices = $JSONData;
+					usort( $devices, function ( $a, $b ) {
+						return strcmp($a['name'], $b['name']);
+					});
+
+					foreach ( $devices as $device ) {
+						$value[] = [
+							'caption'=>$device[ 'name' ],
+							'value'=> $device[ 'id' ]
+						];
+					}
+				} else {
+					$value[] = [
+						'caption'=>'default',
+						'value'=> 'default'
+					];
+				}
+				return $value;
+			}
+		}
+
+		public function getSensors():array {
+			$JSONData = $this->getApiData( '/sensors' );
 			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
 				if (isset($JSONData)) {
 					$devices = $JSONData;
@@ -325,13 +377,28 @@ declare(strict_types=1);
 			return $JSONData;
 		}
 
-		public function patchSetting(string $cameraID, string $setting):array {
+		public function patchSettingCamera(string $cameraID, string $setting):array {
 			$JSONData = $this->patchApiData( '/cameras/' . $cameraID, $setting);
 			return $JSONData;
 		}
 
-		public function getCameraData(string $cameraID):array {
-			$JSONData = $this->getApiData( '/cameras/' . $cameraID );
+		public function patchSettingSensor(string $sensorID, string $setting):array {
+			$JSONData = $this->patchApiData( '/sensors/' . $sensorID, $setting);
+			return $JSONData;
+		}
+		public function getDeviceData(string $deviceID,string $deviceType):array {
+			if (empty($deviceID)) {
+				$this->SendDebug("UnifiPGW", "Device ID is empty, returning empty array.", 0);
+				return [];
+			}
+			if ($deviceType === 'Camera') {
+				$JSONData = $this->getApiData( '/cameras/' . $deviceID );
+			} elseif ($deviceType === 'UP-Sense') {
+				$JSONData = $this->getApiData( '/sensors/' . $deviceID );
+			} else {
+				$this->SendDebug("UnifiPGW", "Unknown device type: " . $deviceType, 0);
+				return [];
+			}			
 			return $JSONData;
 		}
 
@@ -397,5 +464,76 @@ declare(strict_types=1);
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
 
     	}
+
+		public function getDevicesConfig():array {
+        	$cameras = $this->getApiData( '/cameras/' );
+			$this->SendDebug("UnifiPGW", "getDevicesConfig: " . json_encode($cameras), 0);
+			if ( is_array( $cameras ) && isset( $cameras ) )
+			{
+				$this->SendDebug("UnifiPGW", json_encode($cameras), 0);
+				usort( $cameras, function ( $a, $b ) {
+					return $a[ 'name' ]>$b[ 'name' ];
+					});
+				foreach ( $cameras as $camera ) {                         
+					$addValue = array(
+						'Name'	=>$camera[ 'name' ],
+						'Type'	=>$camera[ 'modelKey' ],
+						'State' =>$camera['state'],
+						'ID'		=>isset( $camera[ 'id' ] ) ? $camera[ 'id' ] : 'missing' ,                    
+						'instanceID'	=>$this->getInstanceIDForGuid( isset( $camera[ 'id' ] ) ? $camera[ 'id' ] : '', '{F78D1159-D735-D23A-0A97-69F07962BB89}' )
+					);
+					if (isset($camera['id']) && !empty($camera['id'])) {
+						$addValue['create'] = array(
+							'moduleID'      => '{F78D1159-D735-D23A-0A97-69F07962BB89}',
+							'configuration' => [
+								'ID'	=> isset( $camera[ 'id' ] ) ? $camera[ 'id' ] : '',
+								'DeviceType' => 'Camera'
+							],
+							'name' => $camera[ 'name' ]
+						);
+					}
+					$value[] = $addValue;
+				}
+			}
+            $sensors = $this->getApiData( '/sensors/' );
+            if ( is_array( $sensors ) && isset( $sensors ) ) {
+                usort( $sensors, function ( $a, $b ) {
+                return $a[ 'name' ]>$b[ 'name' ];
+                });
+                foreach ( $sensors as $sensor )
+                {
+                   $addValue = array(
+                        'Name'	=>$sensor[ 'name' ],
+                        'Type'	=>$sensor[ 'modelKey' ],
+						'State' =>$sensor['state'],
+                        'ID'		=>isset( $sensor[ 'id' ] ) ? $sensor[ 'id' ] : 'missing' ,                        
+                        'instanceID'	=>$this->getInstanceIDForGuid( $sensor[ 'id' ], '{F78D1159-D735-D23A-0A97-69F07962BB89}' )
+                        );
+                        if (isset($sensor['id']) && !empty($sensor['id'])) {
+                            $addValue['create'] = array(
+                            'moduleID'      => '{F78D1159-D735-D23A-0A97-69F07962BB89}',
+                            'configuration' => [
+                                'ID'	=> isset( $sensor[ 'id' ] ) ? $sensor[ 'id' ] : '',
+								'DeviceType' => 'UP-Sense'
+                            ],
+                            'name' => $sensor[ 'name' ]
+                            );
+                        }
+                    $value[] = $addValue;
+                    }
+                }
+			$this->SendDebug("UnifiPGW", "getDevicesConfig: " . json_encode($value), 0);
+            return $value;
+    	}
+	   private function getInstanceIDForGuid( $id, $guid )
+		{
+			$instanceIDs = IPS_GetInstanceListByModuleID( $guid );
+			foreach ( $instanceIDs as $instanceID ) {
+				if ( IPS_GetProperty( $instanceID, 'ID' ) == $id ) {
+					return $instanceID;
+				}
+			}
+			return 0;
+		}
 
 	}
