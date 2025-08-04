@@ -19,7 +19,7 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'Humidity', false );
 			$this->RegisterPropertyBoolean( 'Illuminance', false );
 			$this->RegisterPropertyBoolean( 'Motion', false );			
-
+			$this->RegisterTimer( 'Collect Data', 0, "UNIFIPDV_getData(\$_IPS['TARGET']);" );
 			
 		}
 
@@ -34,14 +34,10 @@ declare(strict_types=1);
 			//Never delete this line!
 			parent::ApplyChanges();
 			$vpos = 100;
-			#$this->MaintainVariable( 'applicationVersion', $this->Translate( 'Application Version' ), 3, '', $vpos++, $this->ReadPropertyBoolean("applicationVersion") );
 			$this->MaintainVariable( 'Name', $this->Translate( 'Name' ), 3, '', $vpos++, 1 );
 			$this->MaintainVariable( 'ID', $this->Translate( 'ID' ), 3, '', $vpos++, $this->ReadPropertyBoolean("IDAnzeigen") );
 			$this->MaintainVariable( 'Model', $this->Translate( 'Model' ), 3, '', $vpos++, 1 );
 			
-			// $this->MaintainVariable( 'Stream_Low', $this->Translate( 'Stream Low' ), 3, '', $vpos++, ($this->ReadPropertyBoolean("StreamLow") && $this->ReadPropertyString('DeviceType') == 'Camera') );
-			// $this->MaintainVariable( 'Stream_Medium', $this->Translate( 'Stream Medium' ), 3, '', $vpos++, ($this->ReadPropertyBoolean("StreamMedium") && $this->ReadPropertyString('DeviceType') == 'Camera') );
-			// $this->MaintainVariable( 'Stream_High', $this->Translate( 'Stream High' ), 3, '', $vpos++, ($this->ReadPropertyBoolean("StreamHigh") && $this->ReadPropertyString('DeviceType') == 'Camera') );
 			$this->MaintainVariable( 'micEnabled', $this->Translate( 'Is Microphone enabled' ), 0, '', $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			$this->MaintainVariable( 'micVolume', $this->Translate( 'Microphone Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>1,'STEP_SIZE'=>1,'USAGE_TYPE'=> 2, 'SUFFIX'=> ' %' , 'ICON'=> 'volume-high'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
@@ -90,7 +86,20 @@ declare(strict_types=1);
 				$arraySettings['motionSettings'] = ['isEnabled'=> $this->ReadPropertyBoolean('Motion')];
 				$this->SendDebug("UnifiPDevice", "Settings: " . json_encode($arraySettings), 0);
 				$this->Send('patchSettingSensor', json_encode($arraySettings));
+			}			
+			$TimerMS = $this->ReadPropertyInteger( 'Timer' ) * 1000;
+			$this->SetTimerInterval( 'Collect Data', $TimerMS );
+			if ( 0 == $TimerMS )
+			{
+				// instance inactive
+				$this->SetStatus( 104 );
+			} else {
+				// instance active
+				$this->SetStatus( 102 );
+				$this->Send('getDeviceData',$this->ReadPropertyString('DeviceType'));
 			}
+
+
 		}
 
 
@@ -241,12 +250,18 @@ declare(strict_types=1);
 			}			
 		}
 
+		public function getData():string {
+			$this->Send("getDeviceData",$this->ReadPropertyString('DeviceType'));
+			return "";
+		}
+
 		public function GetConfigurationForm(){			
 			if ($this->HasActiveParent()) {
 				$this->Send("getDevices",$this->ReadPropertyString('DeviceType'));
 			}	
 			$arrayStatus = array();
 			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => 'Instanz ist aktiv' );
+			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => 'Instanz ist inaktiv' );
 
 			$arrayElements = array();
 			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('UniFi Protect Device')); 
@@ -288,7 +303,7 @@ declare(strict_types=1);
 				$arrayOptions[] = array( 'type' => 'Button', 'label' => 'Streams auslesen','width' => '220px', 'onClick' => 'UNIFIPDV_Send($id,"getStreams","");' );
 				$arrayOptions[] = array( 'type' => 'Button', 'label' => 'Snapshot holen', 'width' => '220px','onClick' => 'UNIFIPDV_Send($id,"getSnapshot","");' );
 			}
-			$arrayOptions[] = array( 'type' => 'Button', 'label' => 'Daten holen', 'width' => '220px','onClick' => 'UNIFIPDV_Send($id,"getDeviceData","'.$this->ReadPropertyString('DeviceType').'");' );			
+			$arrayOptions[] = array( 'type' => 'Button', 'label' => 'Daten holen', 'width' => '220px','onClick' => 'UNIFIPDV_getData($id);' );			
 			$arrayActions[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions	 );
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
 	    }
