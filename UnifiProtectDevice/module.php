@@ -147,12 +147,12 @@ declare(strict_types=1);
 										IPS_SetIdent($MedienID, 'Stream_High');
 										IPS_SetMediaFile($MedienID, $urlStream, true);
 									}
-								}
-							} else {
-								$MedienID = @IPS_GetObjectIDByIdent('Stream_High', $this->InstanceID);
-								if ($MedienID > 0) {
+								} else {
+									$MedienID = @IPS_GetObjectIDByIdent('Stream_High', $this->InstanceID);
+									if ($MedienID > 0) {
 										IPS_SetMediaFile($MedienID, $urlStream, true);
 										IPS_DeleteMedia ($MedienID,true);
+									}							
 								}
 							}
 							if (isset($streams['medium'])) {
@@ -172,14 +172,14 @@ declare(strict_types=1);
 										IPS_SetIdent($MedienID, 'Stream_Medium');
 										IPS_SetMediaFile($MedienID, $urlStream, true);
 									}
+								} else {
+									$MedienID = @IPS_GetObjectIDByIdent('Stream_Medium', $this->InstanceID);
+									if ($MedienID > 0) {
+											IPS_SetMediaFile($MedienID, $urlStream, true);
+											IPS_DeleteMedia ($MedienID,true);
+									}
 								}
-							} else {
-								$MedienID = @IPS_GetObjectIDByIdent('Stream_Medium', $this->InstanceID);
-								if ($MedienID > 0) {
-										IPS_SetMediaFile($MedienID, $urlStream, true);
-										IPS_DeleteMedia ($MedienID,true);
-								}
-							}
+							} 
 							if (isset($streams['low'])) {
 								$urlStream = $streams['low'];
 								if (isset($urlStream) && !empty($urlStream)) {
@@ -197,12 +197,12 @@ declare(strict_types=1);
 										IPS_SetIdent($MedienID, 'Stream_Low');
 										IPS_SetMediaFile($MedienID, $urlStream, true);
 									}
-								}
-							}else {
-								$MedienID = @IPS_GetObjectIDByIdent('Stream_Low', $this->InstanceID);
-								if ($MedienID > 0) {
-										IPS_SetMediaFile($MedienID, $urlStream, true);
-										IPS_DeleteMedia ($MedienID,true);
+								} else {
+									$MedienID = @IPS_GetObjectIDByIdent('Stream_Low', $this->InstanceID);
+									if ($MedienID > 0) {
+											IPS_SetMediaFile($MedienID, $urlStream, true);
+											IPS_DeleteMedia ($MedienID,true);
+									}
 								}
 							}
 						}
