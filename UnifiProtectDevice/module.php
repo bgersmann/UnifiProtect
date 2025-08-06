@@ -34,11 +34,11 @@ declare(strict_types=1);
 			//Never delete this line!
 			parent::ApplyChanges();
 			$vpos = 100;
-			$this->MaintainVariable( 'Name', $this->Translate( 'Name' ), 3, '', $vpos++, 1 );
-			$this->MaintainVariable( 'ID', $this->Translate( 'ID' ), 3, '', $vpos++, $this->ReadPropertyBoolean("IDAnzeigen") );
-			$this->MaintainVariable( 'Model', $this->Translate( 'Model' ), 3, '', $vpos++, 1 );
+			$this->MaintainVariable( 'Name', $this->Translate( 'Name' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, 1 );
+			$this->MaintainVariable( 'ID', $this->Translate( 'ID' ), 3,[ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, $this->ReadPropertyBoolean("IDAnzeigen") );
+			$this->MaintainVariable( 'Model', $this->Translate( 'Model' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, 1 );
 			
-			$this->MaintainVariable( 'micEnabled', $this->Translate( 'Is Microphone enabled' ), 0, '', $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
+			$this->MaintainVariable( 'micEnabled', $this->Translate( 'Is Microphone enabled' ), 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'microphone-lines', 'OPTIONS' => '[{"ColorDisplay":16077123,"Value":false,"Caption":"Aus","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"An","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			$this->MaintainVariable( 'micVolume', $this->Translate( 'Microphone Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>1,'STEP_SIZE'=>1,'USAGE_TYPE'=> 2, 'SUFFIX'=> ' %' , 'ICON'=> 'volume-high'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
@@ -59,9 +59,9 @@ declare(strict_types=1);
 				}
 			}
 
-			$this->MaintainVariable( 'Temperature', $this->Translate( 'Temperature' ), 2, '', $vpos++, ($this->ReadPropertyBoolean("Temperature")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
-			$this->MaintainVariable( 'Humidity', $this->Translate( 'Humidity' ), 2, '', $vpos++, ($this->ReadPropertyBoolean("Humidity")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
-			$this->MaintainVariable( 'Illuminance', $this->Translate( 'Illuminance' ), 2, '', $vpos++, ($this->ReadPropertyBoolean("Illuminance")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
+			$this->MaintainVariable( 'Temperature', $this->Translate( 'Temperature' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>-50,'USAGE_TYPE'=> 1,'DIGITS'=> 2, 'SUFFIX'=> ' °C' , 'ICON'=> 'temperature-list'], $vpos++, ($this->ReadPropertyBoolean("Temperature")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
+			$this->MaintainVariable( 'Humidity', $this->Translate( 'Humidity' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' % RH' , 'ICON'=> 'droplet-degree'], $vpos++, ($this->ReadPropertyBoolean("Humidity")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
+			$this->MaintainVariable( 'Illuminance', $this->Translate( 'Illuminance' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100000,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' Lux' , 'ICON'=> 'sun'], $vpos++, ($this->ReadPropertyBoolean("Illuminance")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
 			
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$arrayStream = array();
@@ -98,6 +98,11 @@ declare(strict_types=1);
 				$this->SetStatus( 102 );
 				$this->Send('getDeviceData',$this->ReadPropertyString('DeviceType'));
 			}
+
+
+			$this->MaintainVariable( 'State', $this->Translate( 'State' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0,'DIGITS'=> 0, 
+																				'OPTIONS'=> '[{"Value":"CONNECTED","Caption":"Verbunden","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":65280,"Color":-1,"ColorDisplay":65280},{"Value":"CONNECTING","Caption":"Verbinde...","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":16776960,"Color":-1,"ColorDisplay":16776960},{"Value":"DISCONNECTED","Caption":"Nicht Verbunden","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":16711680,"Color":-1,"ColorDisplay":16711680}]'
+																				,'ICON'=> 'link'], $vpos++, 1 );
 
 
 		}
@@ -232,15 +237,24 @@ declare(strict_types=1);
 							$this->SetValue('Humidity', $deviceData['stats']['humidity']['value'] ?? 0);
 							$this->SetValue('Illuminance', $deviceData['stats']['light']['value'] ?? 0);							
 							if (!empty($deviceData['batteryStatus']['percentage'])) {
-								$this->MaintainVariable( 'batteryStatus', $this->Translate( 'Battery Status' ), 1, '', 200, 1 );
+								$this->MaintainVariable( 'batteryStatus', $this->Translate( 'Battery Status' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' %' , 'ICON'=> 'battery-bolt'], 200, 1 );
 								$this->SetValue('batteryStatus', $deviceData['batteryStatus']['percentage']);
 							}
 						}
 						if (isset($deviceData['name'])) {
 							$this->SetValue('Name',$deviceData['name']);
+							$summary=$deviceData['name'];
 						}
 						if (isset($deviceData['modelKey'])) {
 							$this->SetValue('Model',$deviceData['modelKey']);
+							$summary=$summary.' - ' .$deviceData['modelKey'];
+						}
+						if (!empty($summary)) {
+							$this->SetSummary($summary);
+						}
+						if (isset($deviceData['state'])) {
+							$this->SetValue('State',$deviceData['state']);
+							$summary=$summary.' - ' .$deviceData['modelKey'];
 						}
 						if (isset($deviceData['id']) && $this->ReadPropertyBoolean("IDAnzeigen")) {
 							$this->SetValue('ID',$deviceData['id']);
@@ -268,6 +282,8 @@ declare(strict_types=1);
 			$arrayElements[] = array( 'type' => 'NumberSpinner', 'name' => 'Timer', 'caption' => 'Timer (s) -> 0=Off' );
 			$arrayOptions[] = array( 'caption' => 'Camera', 'value' => 'Camera' );
 			$arrayOptions[] = array( 'caption' => 'All-In-One Sensor', 'value' => 'UP-Sense' );
+			$arrayOptions[] = array( 'caption' => 'Chime', 'value' => 'Chime' );
+			$arrayOptions[] = array( 'caption' => 'Light', 'value' => 'Light' );
 			$arrayElements[] = array( 'type' => 'Select', 'name' => 'DeviceType', 'caption' => 'Device Type', 'options' => $arrayOptions );
 
 			unset($arrayOptions);

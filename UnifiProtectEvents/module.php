@@ -15,7 +15,7 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'smartEvents', false );
 			$this->RegisterPropertyBoolean( 'motionEvents', false );
 			$this->RegisterPropertyBoolean( 'sensorMotionEvents', false );
-
+			
 
 			$this->RequireParent('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
 		}
@@ -30,6 +30,8 @@ declare(strict_types=1);
 		{
 			//Never delete this line!
 			parent::ApplyChanges();
+			$this->SetSummary($this->ReadPropertyString('ServerAddress'));
+
 		}
 
 		public function Send()
@@ -98,7 +100,7 @@ declare(strict_types=1);
 				$camName='Sensor-'.$camID;
 			}
 			$varIdent = 'EventActive_' . $type . '_' . $camID;
-			$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. 'active' , 0, '', 0, 1 );
+			$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. 'active' , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Aus","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"An","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, 1 );
 			$this->SendDebug('HandleEvent', 'Var Name: ' . $camName . '-' . $type .' '. 'active' . " (ID: $idCam)", 0);
 			// if ($type === 'smartDetectZone') {
 			// 	$eventTypes = $event['item']['smartDetectTypes'] ?? [];

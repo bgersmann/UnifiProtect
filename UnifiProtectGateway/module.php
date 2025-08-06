@@ -247,6 +247,10 @@ declare(strict_types=1);
 				$JSONData = $this->getCameras();
 			} elseif ($deviceType === 'UP-Sense') {
 				$JSONData = $this->getSensors();
+			} elseif ($deviceType === 'Chime') {
+				$JSONData = $this->getChimes();
+			} elseif ($deviceType === 'Lights') {
+				$JSONData = $this->getLights();
 			} else {
 				$this->SendDebug("UnifiPGW", "Unknown device type: " . $deviceType, 0);
 				return [];
@@ -283,6 +287,56 @@ declare(strict_types=1);
 
 		public function getSensors():array {
 			$JSONData = $this->getApiData( '/sensors' );
+			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
+				if (isset($JSONData)) {
+					$devices = $JSONData;
+					usort( $devices, function ( $a, $b ) {
+						return strcmp($a['name'], $b['name']);
+					});
+
+					foreach ( $devices as $device ) {
+						$value[] = [
+							'caption'=>$device[ 'name' ],
+							'value'=> $device[ 'id' ]
+						];
+					}
+				} else {
+					$value[] = [
+						'caption'=>'default',
+						'value'=> 'default'
+					];
+				}
+				return $value;
+			}
+		}
+
+		public function getChimes():array {
+			$JSONData = $this->getApiData( '/chimes' );
+			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
+				if (isset($JSONData)) {
+					$devices = $JSONData;
+					usort( $devices, function ( $a, $b ) {
+						return strcmp($a['name'], $b['name']);
+					});
+
+					foreach ( $devices as $device ) {
+						$value[] = [
+							'caption'=>$device[ 'name' ],
+							'value'=> $device[ 'id' ]
+						];
+					}
+				} else {
+					$value[] = [
+						'caption'=>'default',
+						'value'=> 'default'
+					];
+				}
+				return $value;
+			}
+		}
+
+		public function getLights():array {
+			$JSONData = $this->getApiData( '/lights' );
 			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
 				if (isset($JSONData)) {
 					$devices = $JSONData;
@@ -395,6 +449,10 @@ declare(strict_types=1);
 				$JSONData = $this->getApiData( '/cameras/' . $deviceID );
 			} elseif ($deviceType === 'UP-Sense') {
 				$JSONData = $this->getApiData( '/sensors/' . $deviceID );
+			} elseif ($deviceType === 'Light') {
+				$JSONData = $this->getApiData( '/lights/' . $deviceID );
+			} elseif ($deviceType === 'Chime') {
+				$JSONData = $this->getApiData( '/chimes/' . $deviceID );
 			} else {
 				$this->SendDebug("UnifiPGW", "Unknown device type: " . $deviceType, 0);
 				return [];
@@ -522,6 +580,62 @@ declare(strict_types=1);
                     $value[] = $addValue;
                     }
                 }
+				#https://192.168.178.1/proxy/protect/v1/chimes
+				$chimes = $this->getApiData( '/chimes/' );
+				if ( is_array( $chimes ) && isset( $chimes ) ) {
+					usort( $chimes, function ( $a, $b ) {
+					return $a[ 'name' ]>$b[ 'name' ];
+					});
+					foreach ( $chimes as $chime )
+					{
+					$addValue = array(
+							'Name'	=>$chime[ 'name' ],
+							'Type'	=>$chime[ 'modelKey' ],
+							'State' =>$chime['state'],
+							'ID'		=>isset( $chime[ 'id' ] ) ? $chime[ 'id' ] : 'missing' ,                        
+							'instanceID'	=>$this->getInstanceIDForGuid( $chime[ 'id' ], '{F78D1159-D735-D23A-0A97-69F07962BB89}' )
+							);
+							if (isset($chime['id']) && !empty($chime['id'])) {
+								$addValue['create'] = array(
+								'moduleID'      => '{F78D1159-D735-D23A-0A97-69F07962BB89}',
+								'configuration' => [
+									'ID'	=> isset( $chime[ 'id' ] ) ? $chime[ 'id' ] : '',
+									'DeviceType' => 'Chime'
+								],
+								'name' => $chime[ 'name' ]
+								);
+							}
+						$value[] = $addValue;
+						}
+					}
+				#https://192.168.178.1/proxy/protect/v1/lights
+				$lights = $this->getApiData( '/lights/' );
+				if ( is_array( $lights ) && isset( $lights ) ) {
+					usort( $lights, function ( $a, $b ) {
+					return $a[ 'name' ]>$b[ 'name' ];
+					});
+					foreach ( $lights as $light )
+					{
+					$addValue = array(
+							'Name'	=>$light[ 'name' ],
+							'Type'	=>$light[ 'modelKey' ],
+							'State' =>$light['state'],
+							'ID'		=>isset( $light[ 'id' ] ) ? $light[ 'id' ] : 'missing' ,                        
+							'instanceID'	=>$this->getInstanceIDForGuid( $light[ 'id' ], '{F78D1159-D735-D23A-0A97-69F07962BB89}' )
+							);
+							if (isset($light['id']) && !empty($light['id'])) {
+								$addValue['create'] = array(
+								'moduleID'      => '{F78D1159-D735-D23A-0A97-69F07962BB89}',
+								'configuration' => [
+									'ID'	=> isset( $light[ 'id' ] ) ? $light[ 'id' ] : '',
+									'DeviceType' => 'Light'
+								],
+								'name' => $light[ 'name' ]
+								);
+							}
+						$value[] = $addValue;
+						}
+					}
 			$this->SendDebug("UnifiPGW", "getDevicesConfig: " . json_encode($value), 0);
             return $value;
     	}
