@@ -58,8 +58,8 @@ declare(strict_types=1);
 			$arrayOptions[] = array( 'caption' => 'default', 'value' => 'default' );
 			
 			$arrayStatus = array();
-			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => 'Instanz ist aktiv' );
-
+			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instanz ist aktiv') );
+			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => $this->Translate('Instanz ist inaktiv') );
 			$arraySort = array();
 			#$arraySort = array( 'column' => 'Name', 'direction' => 'ascending' );
 
@@ -77,11 +77,11 @@ declare(strict_types=1);
 				$arrayValues=json_decode($Bufferdata);
 			}
 			$arrayElements = array();
-			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('UniFi Protect Device Configurator'));
+			$arrayElements[] = array( 'type' => 'Label','bold' => true, 'label' => $this->Translate('UniFi Protect Device Configurator'));
 			$arrayElements[] = array( 'type' => 'Configurator', 'name' => $this->Translate('UnifiDevices'), 'caption' => 'Unifi Protect Devices', 'rowCount' => 10, 'delete' => false, 'sort' => $arraySort, 'columns' => $arrayColumns, 'values' => $arrayValues );
 
 			$arrayActions = array();
-			$arrayActions[] = array( 'type' => 'Button', 'label' => 'Geräte auslesen', 'onClick' => 'UNIFIPCG_Send($id,"getDevicesConfig","");');
+			$arrayActions[] = array( 'type' => 'Button', 'label' => $this->Translate('Get Devices'), 'onClick' => 'UNIFIPCG_Send($id,"getDevicesConfig","");');
 
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
 

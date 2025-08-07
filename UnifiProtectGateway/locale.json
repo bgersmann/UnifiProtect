@@ -1,8 +1,29 @@
 {
     "translations": {
         "de": {
-            "Translation 1": "Übersetzung 1",
-            "Translation 2": "Übersetzung 2"
+            "UniFi Protect Gateway": "UniFi Protect Gateway",
+            "Please create API Key under \"UniFi Network > Settings > Control Plane > Integrations\"": "Bitte API Key unter \"UniFi Network > Einstellungen > Control Plane > Integrationen\" erzeugen",
+            "Unifi Device IP": "Unifi Geräte-IP",
+            "APIKey": "API-Schlüssel",
+            "Show Application Version": "Anwendungsversion anzeigen",
+            "Protect Application Version: ": "Protect Anwendungsversion: ",
+            "Protect Application Version: not found": "Protect Anwendungsversion: nicht gefunden",
+            "Instance is active": "Instanz ist aktiv",
+            "Instance is inactive": "Instanz ist inaktiv",
+            "Instance is faulty: Data query error": "Instanz ist fehlerhaft: Fehler Datenabfrage",
+            "Instance is faulty: Bad Request": "Instanz ist fehlerhaft: Ungültige Anfrage",
+            "Instance is faulty: Unauthorized": "Instanz ist fehlerhaft: Nicht autorisiert",
+            "Instance is faulty: Forbidden": "Instanz ist fehlerhaft: Verboten",
+            "Instance is faulty: Not Found": "Instanz ist fehlerhaft: Nicht gefunden",
+            "Instance is faulty: Rate Limit": "Instanz ist fehlerhaft: Rate Limit",
+            "Instance is faulty: Server Error": "Instanz ist fehlerhaft: Serverfehler",
+            "Instance is faulty: Bad Gateway": "Instanz ist fehlerhaft: Fehlerhaftes Gateway",
+            "Name": "Name",
+            "Typ": "Typ",
+            "State": "Status",
+            "ID": "ID",
+            "default": "Standard",
+            "missing": "Fehlt"
         }
     }
 }

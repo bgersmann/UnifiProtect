@@ -3,7 +3,7 @@
 declare(strict_types=1);
 	class UnifiProtectEvents extends IPSModule
 	{
-		public const DEFAULT_WS_URL = 'wss://192.168.178.1/proxy/protect/integration/v1/subscribe/events/';
+		public const DEFAULT_WS_URL = '192.168.1.1';
 		public function Create()
 		{
 			//Never delete this line!
@@ -15,8 +15,9 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'smartEvents', false );
 			$this->RegisterPropertyBoolean( 'motionEvents', false );
 			$this->RegisterPropertyBoolean( 'sensorMotionEvents', false );
-			
-
+			$this->RegisterPropertyBoolean( 'motionGlobal', false );
+			$this->RegisterPropertyBoolean( 'smartGlobal', false );
+			$this->RegisterPropertyBoolean( 'sensorGlobal', false );
 			$this->RequireParent('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
 		}
 
@@ -31,7 +32,9 @@ declare(strict_types=1);
 			//Never delete this line!
 			parent::ApplyChanges();
 			$this->SetSummary($this->ReadPropertyString('ServerAddress'));
-
+			$this->MaintainVariable( 'motionGlobal',  $this->Translate('global motion detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('motionGlobal'));
+			$this->MaintainVariable( 'smartGlobal',  $this->Translate('global smart detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('smartGlobal'));
+			$this->MaintainVariable( 'sensorGlobal',  $this->Translate('global sensor detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorGlobal'));
 		}
 
 		public function Send()
@@ -87,43 +90,38 @@ declare(strict_types=1);
 					$camName=GetValueString($IDName);
 					$this->SendDebug('HandleEvent', "Sende Event an Kamera $camName (ID: $idCam)", 0);   
 				} else {
-					$camName='Unbekannt';
+					$camName=$this->Translate('Unknown');
 					$this->SendDebug('HandleEvent', "Sende Event an Kamera $camName (ID: $idCam)", 0);   
 				}
 			} else {
 				// Wenn keine Kamera-ID vorhanden ist, setze einen generischen Namen
-				$camName = 'Unbekannt';
+				$camName = $this->Translate('Unknown');
 				$this->SendDebug('HandleEvent', "Keine Kamera-ID gefunden, setze generischen Namen: $camName", 0);
 			}
-			if ($camName=='Unbekannt'&& $type == 'sensorMotion') {
+			if ($camName==$this->Translate('Unknown')&& $type == 'sensorMotion') {
 				//Sensor noch nicht integriert
 				$camName='Sensor-'.$camID;
 			}
 			$varIdent = 'EventActive_' . $type . '_' . $camID;
-			$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. 'active' , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Aus","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"An","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, 1 );
+			$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. $this->Translate('active') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"'.$this->Translate('no motion').'","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"'.$this->Translate('motion detected').'","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, 1 );
 			$this->SendDebug('HandleEvent', 'Var Name: ' . $camName . '-' . $type .' '. 'active' . " (ID: $idCam)", 0);
-			// if ($type === 'smartDetectZone') {
-			// 	$eventTypes = $event['item']['smartDetectTypes'] ?? [];
-			// } else {
-			// 	IPS_LogMessage('UnifiProtectEvents', "Unbekannter Event-Typ: $type");
-			// }
 			// Setze die Variable für den Event-Typ
 			$active = !isset($event['item']['end']);
 			$this->SetValue($varIdent,$active);
-
-			// if (!empty($eventTypes) && $active) {
-			// 	// Wenn es Smart Detection Typen gibt, logge sie
-			// 	$types = implode(', ', $eventTypes);
-			// 	$this->SetValue('smartEventsType', $types);
-			// 	IPS_LogMessage('UnifiProtectEvents', "Event $eventId vom Typ $type mit Smart Detection Typen: $types");
-			// } else {
-			// 	IPS_LogMessage('UnifiProtectEvents', "Event $eventId vom Typ $type ohne Smart Detection Typen");
-			// }			
+			if( $type === 'smartDetectZone' && $this->ReadPropertyBoolean('smartGlobal')) {
+				$this->SetValue('smartGlobal',$active);
+			}
+			if ( $type === 'motion' && $this->ReadPropertyBoolean('motionGlobal')) {
+				$this->SetValue('motionGlobal',$active);
+			}
+			if ( $type === 'sensorMotion' && $this->ReadPropertyBoolean('sensorGlobal')) {
+				$this->SetValue('sensorGlobal',$active);
+			}
+		
 		}
 
 		public function GetConfigurationForParent()
 		{
-			#'wss://'. $ip ? $ip : self::DEFAULT_WS_URL.'/proxy/protect/integration/v1/subscribe/events/'
 			$parent = IPS_GetInstance($this->InstanceID)['ConnectionID'];
 			$ip = IPS_GetProperty($this->InstanceID, 'ServerAddress');
 			$apiKey = IPS_GetProperty($this->InstanceID, 'APIKey');
@@ -158,30 +156,34 @@ declare(strict_types=1);
 
 		public function GetConfigurationForm(){
 			$arrayStatus = array();
-			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => 'Instanz ist aktiv' );
+			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instance is active') );
+			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is inactive') );
+
 
 			$arrayElements = array();
-			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('UniFi Protect Events')); 
-			$arrayElements[] = array( 'type' => 'Label', 'label' => 'Bitte API Key unter "UniFi Network > Settings > Control Plane > Integrations" erzeugen');
-			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'ServerAddress', 'caption' => 'Unifi Protect Host IP', 'validate' => "^(([a-zA-Z0-9\\.\\-\\_]+(\\.[a-zA-Z]{2,3})+)|(\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b))$" );
-			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => 'APIKey' );
+			$arrayElements[] = array( 'type' => 'Label','bold' => true, 'label' => $this->Translate('UniFi Protect Events')); 
+			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Please create API Key under "UniFi Network > Settings > Control Plane > Integrations"'));
+			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'ServerAddress', 'caption' => $this->Translate('Unifi Protect Host IP'), 'validate' => "^(([a-zA-Z0-9\\.\\-\\_]+(\\.[a-zA-Z]{2,3})+)|(\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b))$" );
+			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => $this->Translate('APIKey') );
 
 			unset($arrayOptions);
-
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartEvents', 'width' => '220px','caption' => $this->Translate('Smart Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'motionEvents', 'width' => '220px','caption' => $this->Translate('Motion Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorMotionEvents', 'width' => '240px','caption' => $this->Translate('Sensor Motion Detections') );
+			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
+			
+			
+			unset($arrayOptions);#Variable for Global 
+			$arrayElements[] = array('type' => 'Label', 'bold' => true, 'label' => $this->Translate('Variable for global events'));
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartGlobal', 'width' => '220px','caption' => $this->Translate('Smart Detection') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'motionGlobal', 'width' => '220px','caption' => $this->Translate('Motion Detections') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorGlobal', 'width' => '240px','caption' => $this->Translate('Sensor Motion Detections') );
 			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 
 		
 
 			$arrayActions = array();
-			unset($arrayOptions);
-			// $arrayOptions[] = array( 'type' => 'Button', 'label' => 'Devices Holen', 'width' => '220px','onClick' => 'UNIFIPDV_Send($id,"getCameras","");' );
-			// $arrayOptions[] = array( 'type' => 'Button', 'label' => 'Streams auslesen','width' => '220px', 'onClick' => 'UNIFIPDV_Send($id,"getStreams","");' );
-			// $arrayOptions[] = array( 'type' => 'Button', 'label' => 'Snapshot holen', 'width' => '220px','onClick' => 'UNIFIPDV_Send($id,"getSnapshot","");' );			
-			// $arrayOptions[] = array( 'type' => 'Button', 'label' => 'Daten holen', 'width' => '220px','onClick' => 'UNIFIPDV_Send($id,"getCameraData","");' );			
-			// $arrayActions[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions	 );
+			unset($arrayOptions);			
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
 	    }
 	}

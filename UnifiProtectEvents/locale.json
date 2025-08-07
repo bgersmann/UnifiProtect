@@ -1,8 +1,21 @@
 {
     "translations": {
         "de": {
-            "Translation 1": "Übersetzung 1",
-            "Translation 2": "Übersetzung 2"
+            "UniFi Protect Events": "UniFi Protect Ereignisse",
+            "Please create API Key under \"UniFi Network > Settings > Control Plane > Integrations\"": "Bitte API Key unter \"UniFi Network > Einstellungen > Control Plane > Integrationen\" erzeugen",
+            "Unifi Protect Host IP": "Unifi Protect Host IP",
+            "APIKey": "API-Schlüssel",
+            "Smart Detections": "Smarte Erkennung",
+            "Motion Detections": "Bewegungserkennung",
+            "Sensor Motion Detections": "Sensor Bewegungserkennung",
+            "Variable for global events": "Variable für globale Ereignisse",
+            "Smart Detection": "Smarte Erkennung",
+            "Instance is active": "Instanz ist aktiv",
+            "Instance is inactive": "Instanz ist inaktiv",
+            "active": "aktiv",
+            "no motion": "Keine Bewegung",
+            "motion detected": "Bewegung erkannt",
+            "Unknown": "Unbekannt"
         }
     }
 }

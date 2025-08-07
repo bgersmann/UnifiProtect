@@ -101,7 +101,7 @@ declare(strict_types=1);
 
 
 			$this->MaintainVariable( 'State', $this->Translate( 'State' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0,'DIGITS'=> 0, 
-																				'OPTIONS'=> '[{"Value":"CONNECTED","Caption":"Verbunden","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":65280,"Color":-1,"ColorDisplay":65280},{"Value":"CONNECTING","Caption":"Verbinde...","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":16776960,"Color":-1,"ColorDisplay":16776960},{"Value":"DISCONNECTED","Caption":"Nicht Verbunden","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":16711680,"Color":-1,"ColorDisplay":16711680}]'
+																				'OPTIONS'=> '[{"Value":"CONNECTED","Caption":"'.$this->Translate( 'Connected' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":65280,"Color":-1,"ColorDisplay":65280},{"Value":"CONNECTING","Caption":"'.$this->Translate( 'Connecting' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":16776960,"Color":-1,"ColorDisplay":16776960},{"Value":"DISCONNECTED","Caption":"'.$this->Translate( 'Disconnected' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":16711680,"Color":-1,"ColorDisplay":16711680}]'
 																				,'ICON'=> 'link'], $vpos++, 1 );
 
 
@@ -274,17 +274,17 @@ declare(strict_types=1);
 				$this->Send("getDevices",$this->ReadPropertyString('DeviceType'));
 			}	
 			$arrayStatus = array();
-			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => 'Instanz ist aktiv' );
-			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => 'Instanz ist inaktiv' );
+			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instanz ist aktiv') );
+			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => $this->Translate('Instanz ist inaktiv') );
 
 			$arrayElements = array();
-			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('UniFi Protect Device')); 
-			$arrayElements[] = array( 'type' => 'NumberSpinner', 'name' => 'Timer', 'caption' => 'Timer (s) -> 0=Off' );
+			$arrayElements[] = array( 'type' => 'Label','bold' => true, 'label' => $this->Translate('UniFi Protect Device')); 
+			$arrayElements[] = array( 'type' => 'NumberSpinner', 'name' => 'Timer', 'caption' => $this->Translate('Timer (s) -> 0=Off'));
 			$arrayOptions[] = array( 'caption' => 'Camera', 'value' => 'Camera' );
 			$arrayOptions[] = array( 'caption' => 'All-In-One Sensor', 'value' => 'UP-Sense' );
 			$arrayOptions[] = array( 'caption' => 'Chime', 'value' => 'Chime' );
 			$arrayOptions[] = array( 'caption' => 'Light', 'value' => 'Light' );
-			$arrayElements[] = array( 'type' => 'Select', 'name' => 'DeviceType', 'caption' => 'Device Type', 'options' => $arrayOptions );
+			$arrayElements[] = array( 'type' => 'Select', 'name' => 'DeviceType', 'caption' => $this->Translate('Device Type'), 'options' => $arrayOptions );
 
 			unset($arrayOptions);
 			$Bufferdata = $this->GetBuffer("devices");
@@ -293,7 +293,7 @@ declare(strict_types=1);
 			} else {
 				$arrayOptions=json_decode($Bufferdata);
 			}		
-			$arrayElements[] = array( 'type' => 'Select', 'name' => 'ID', 'caption' => 'Device ID', 'options' => $arrayOptions );
+			$arrayElements[] = array( 'type' => 'Select', 'name' => 'ID', 'caption' => $this->Translate('Device ID'), 'options' => $arrayOptions );
 			unset($arrayOptions);
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'IDAnzeigen', 'width' => '220px','caption' => $this->Translate('Show ID') );			
 			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
@@ -314,12 +314,12 @@ declare(strict_types=1);
 
 			$arrayActions = array();
 			unset($arrayOptions);
-			$arrayOptions[] = array( 'type' => 'Button', 'label' => 'Devices Holen', 'width' => '220px','onClick' => 'UNIFIPDV_Send($id,"getDevices","'.$this->ReadPropertyString('DeviceType').'");' );
+			$arrayOptions[] = array( 'type' => 'Button', 'label' => $this->Translate('Get Devices'), 'width' => '220px','onClick' => 'UNIFIPDV_Send($id,"getDevices","'.$this->ReadPropertyString('DeviceType').'");' );
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
-				$arrayOptions[] = array( 'type' => 'Button', 'label' => 'Streams auslesen','width' => '220px', 'onClick' => 'UNIFIPDV_Send($id,"getStreams","");' );
-				$arrayOptions[] = array( 'type' => 'Button', 'label' => 'Snapshot holen', 'width' => '220px','onClick' => 'UNIFIPDV_Send($id,"getSnapshot","");' );
+				$arrayOptions[] = array( 'type' => 'Button', 'label' => $this->Translate('Get Streams'),'width' => '220px', 'onClick' => 'UNIFIPDV_Send($id,"getStreams","");' );
+				$arrayOptions[] = array( 'type' => 'Button', 'label' => $this->Translate('Get Snapshot'), 'width' => '220px','onClick' => 'UNIFIPDV_Send($id,"getSnapshot","");' );
 			}
-			$arrayOptions[] = array( 'type' => 'Button', 'label' => 'Daten holen', 'width' => '220px','onClick' => 'UNIFIPDV_getData($id);' );			
+			$arrayOptions[] = array( 'type' => 'Button', 'label' => $this->Translate('Get Device Data'), 'width' => '220px','onClick' => 'UNIFIPDV_getData($id);' );			
 			$arrayActions[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions	 );
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
 	    }

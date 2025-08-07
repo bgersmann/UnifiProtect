@@ -277,7 +277,7 @@ declare(strict_types=1);
 					}
 				} else {
 					$value[] = [
-						'caption'=>'default',
+						'caption'=>$this->Translate('default'),
 						'value'=> 'default'
 					];
 				}
@@ -464,7 +464,7 @@ declare(strict_types=1);
 			$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
 			$APIKey = $this->ReadPropertyString( 'APIKey' );
 			$ch = curl_init();
-			curl_setopt( $ch, CURLOPT_URL, 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot' );
+			curl_setopt( $ch, CURLOPT_URL, 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot?forceHighQuality=true' );
 			curl_setopt( $ch, CURLOPT_HTTPGET, true );
 			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 			curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
@@ -487,24 +487,24 @@ declare(strict_types=1);
 			$APIKey = $this->ReadPropertyString( 'APIKey' );
 
 			$arrayStatus = array();
-			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => 'Instanz ist aktiv' );
-			$arrayStatus[] = array( 'code' => 201, 'icon' => 'inactive', 'caption' => 'Instanz ist fehlerhaft: Fehler Datenabfrage' );
-			$arrayStatus[] = array( 'code' => 400, 'icon' => 'inactive', 'caption' => 'Instanz ist fehlerhaft: Bad Request' );
-			$arrayStatus[] = array( 'code' => 401, 'icon' => 'inactive', 'caption' => 'Instanz ist fehlerhaft: Unauthorized' );
-			$arrayStatus[] = array( 'code' => 403, 'icon' => 'inactive', 'caption' => 'Instanz ist fehlerhaft: Forbidden' );
-			$arrayStatus[] = array( 'code' => 404, 'icon' => 'inactive', 'caption' => 'Instanz ist fehlerhaft: Not Found' );
-			$arrayStatus[] = array( 'code' => 429, 'icon' => 'inactive', 'caption' => 'Instanz ist fehlerhaft: Rate Limit' );
-			$arrayStatus[] = array( 'code' => 500, 'icon' => 'inactive', 'caption' => 'Instanz ist fehlerhaft: Server Error' );
-			$arrayStatus[] = array( 'code' => 502, 'icon' => 'inactive', 'caption' => 'Instanz ist fehlerhaft: Bad Gateway' );
+			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instance is active') );
+			$arrayStatus[] = array( 'code' => 201, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Data query error') );
+			$arrayStatus[] = array( 'code' => 400, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Bad Request' ));
+			$arrayStatus[] = array( 'code' => 401, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Unauthorized' ));
+			$arrayStatus[] = array( 'code' => 403, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Forbidden') );
+			$arrayStatus[] = array( 'code' => 404, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Not Found') );
+			$arrayStatus[] = array( 'code' => 429, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Rate Limit') );
+			$arrayStatus[] = array( 'code' => 500, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Server Error') );
+			$arrayStatus[] = array( 'code' => 502, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Bad Gateway') );
 
 			$arraySort = array();
 			#$arraySort = array( 'column' => 'DeviceName', 'direction' => 'ascending' );
 
 			$arrayElements = array();
-			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('UniFi Protect Gateway'));
-			$arrayElements[] = array( 'type' => 'Label', 'label' => 'Bitte API Key unter "UniFi Network > Settings > Control Plane > Integrations" erzeugen');
-			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'ServerAddress', 'caption' => 'Unifi Device IP', 'validate' => "^(([a-zA-Z0-9\\.\\-\\_]+(\\.[a-zA-Z]{2,3})+)|(\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b))$" );
-			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => 'APIKey' );
+			$arrayElements[] = array( 'type' => 'Label','bold' => true, 'label' => $this->Translate('UniFi Protect Gateway'));
+			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Please create API Key under "UniFi Network > Settings > Control Plane > Integrations"'));
+			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'ServerAddress', 'caption' => $this->Translate('Unifi Device IP'), 'validate' => "^(([a-zA-Z0-9\\.\\-\\_]+(\\.[a-zA-Z]{2,3})+)|(\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b))$" );
+			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => $this->Translate('APIKey') );
 			$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'applicationVersion', 'caption' => $this->Translate('Show Application Version') );
 			if ( !empty( $APIKey && $this->GetStatus() === 102)) {
 				if ($this->ReadPropertyBoolean("applicationVersion")) {
@@ -537,7 +537,7 @@ declare(strict_types=1);
 						'Name'	=>$camera[ 'name' ],
 						'Type'	=>$camera[ 'modelKey' ],
 						'State' =>$camera['state'],
-						'ID'		=>isset( $camera[ 'id' ] ) ? $camera[ 'id' ] : 'missing' ,                    
+						'ID'		=>isset( $camera[ 'id' ] ) ? $camera[ 'id' ] : $this->Translate('missing') ,                    
 						'instanceID'	=>$this->getInstanceIDForGuid( isset( $camera[ 'id' ] ) ? $camera[ 'id' ] : '', '{F78D1159-D735-D23A-0A97-69F07962BB89}' )
 					);
 					if (isset($camera['id']) && !empty($camera['id'])) {

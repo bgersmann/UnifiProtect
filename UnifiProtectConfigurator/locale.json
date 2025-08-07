@@ -1,8 +1,17 @@
 {
     "translations": {
         "de": {
-            "UniFi Device Configurator": "UniFi Geräte Konfigurator",
-            "UnifiDevices": "Unifi Geräte"
+            "Instanz ist aktiv": "Instanz ist aktiv",
+            "Instanz ist inaktiv": "Instanz ist inaktiv",
+            "UniFi Protect Device Configurator": "UniFi Protect Geräte-Konfigurator",
+            "UnifiDevices": "Unifi Geräte",
+            "Unifi Protect Devices": "Unifi Protect Geräte",
+            "Get Devices": "Geräte holen",
+            "Name": "Name",
+            "Typ": "Typ",
+            "State": "Status",
+            "ID": "ID",
+            "Test": "Test"
         }
     }
 }

@@ -1,8 +1,37 @@
 {
     "translations": {
         "de": {
-            "Translation 1": "Übersetzung 1",
-            "Translation 2": "Übersetzung 2"
+            "UniFi Protect Device": "UniFi Protect Gerät",
+            "Timer": "Timer",
+            "Device Type": "Gerätetyp",            
+            "Device ID": "Geräte-ID",            
+            "Show ID": "ID anzeigen",
+            "Stream Low": "Stream Niedrig",
+            "Stream Medium": "Stream Mittel",
+            "Stream High": "Stream Hoch",
+            "Temperature": "Temperatur",
+            "Humidity": "Luftfeuchtigkeit",
+            "Illuminance": "Beleuchtungsstärke",
+            "Bewegung": "Bewegung",
+            "Motion (Motion shows up in Protect Events)": "Bewegung (Bewegung erscheint in Protect Events)",
+            "Motion": "Bewegung",
+            "Get Devices": "Geräte holen",
+            "Get Streams": "Streams auslesen",
+            "Get Snapshot": "Schnappschuss holen",
+            "Get Device Data": "Gerätedaten holen",
+            "Name": "Name",
+            "ID": "ID",
+            "Model": "Modell",
+            "Is Microphone enabled": "Mikrofon aktiviert",
+            "Microphone Volume": "Mikrofon-Lautstärke",
+            "Snapshot": "Schnappschuss",
+            "State": "Status",
+            "Battery Status": "Batteriestatus",
+            "Instanz ist aktiv": "Instanz ist aktiv",
+            "Instanz ist inaktiv": "Instanz ist inaktiv",
+            "Connected": "Verbunden",
+            "Connecting": "Verbinde...",
+            "Disconnected": "Nicht verbunden"
         }
     }
 }
