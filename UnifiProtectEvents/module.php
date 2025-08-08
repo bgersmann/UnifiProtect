@@ -67,7 +67,31 @@ declare(strict_types=1);
 			}
 			$type = $event['item']['type'];
 			$camID = $event['item']['device'];
-			
+			$eventID = $event['item']['id'];
+			$eventType=$event['type'];			
+			#$this->SetBuffer("devices", $data['data']);
+			$Bufferdata = $this->GetBuffer("activeEvents");
+			$this->SendDebug('HandleEvent-1',$Bufferdata,0);
+			if ($Bufferdata=="") {
+				$activeEvents=array();
+			} else {
+				$activeEvents=json_decode($Bufferdata,true);
+			}
+			if ($eventType=='add') {
+				$activeEvents[]=[$eventID => ['camID'=> $camID, 'type' => $type, 'Start'=> $event['item']['start']]];
+			} else {				
+				if (isset($event['item']['end'])) {
+					$this->SendDebug('HandleEvent-Unset',$eventID,0);
+					foreach ($activeEvents as $index => $event) {
+						if (array_key_exists($eventID, $event)) {
+							unset($activeEvents[$index]);
+							#break; // Optional: wenn du nur einen Eintrag mit dieser ID erwartest
+						}
+					}
+				}
+			}
+			$this->SetBuffer("activeEvents", json_encode($activeEvents));
+			$this->SendDebug('HandleEvent-2',json_encode($activeEvents),0);
 			// Logik für Smart Detection Events
 			if( $type === 'smartDetectZone' && !$this->ReadPropertyBoolean('smartEvents')) {
 				return; // Smart Detection Events sind deaktiviert
@@ -106,8 +130,26 @@ declare(strict_types=1);
 			$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. $this->Translate('active') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"'.$this->Translate('no motion').'","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"'.$this->Translate('motion detected').'","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, 1 );
 			$this->SendDebug('HandleEvent', 'Var Name: ' . $camName . '-' . $type .' '. 'active' . " (ID: $idCam)", 0);
 			// Setze die Variable für den Event-Typ
-			$active = !isset($event['item']['end']);
+			$active=false;
+			foreach ($activeEvents as $event) {
+				foreach ($event as $details) {
+					if ($details['camID'] === $camID && $details['type'] === $type) {
+						$active = true;
+						break 2; // Bricht beide Schleifen ab
+					}
+				}
+			}
 			$this->SetValue($varIdent,$active);
+
+			$active=false;
+			foreach ($activeEvents as $event) {
+				foreach ($event as $details) {
+					if ($details['type'] === $type) {
+						$active = true;
+						break 2; // Bricht beide Schleifen ab, sobald ein Treffer gefunden wurde
+					}
+				}
+			}			
 			if( $type === 'smartDetectZone' && $this->ReadPropertyBoolean('smartGlobal')) {
 				$this->SetValue('smartGlobal',$active);
 			}
