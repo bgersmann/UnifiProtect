@@ -72,6 +72,7 @@ declare(strict_types=1);
 			#$this->SetBuffer("devices", $data['data']);
 			$Bufferdata = $this->GetBuffer("activeEvents");
 			$this->SendDebug('HandleEvent-1',$Bufferdata,0);
+			IPS_LogMessage('GetConfigurationForParent', 'VorEvent: ' . $Bufferdata);
 			if ($Bufferdata=="") {
 				$activeEvents=array();
 			} else {
@@ -91,6 +92,7 @@ declare(strict_types=1);
 				}
 			}
 			$this->SetBuffer("activeEvents", json_encode($activeEvents));
+			IPS_LogMessage('GetConfigurationForParent', 'NachEvent: ' . json_encode($activeEvents));
 			$this->SendDebug('HandleEvent-2',json_encode($activeEvents),0);
 			// Logik für Smart Detection Events
 			if( $type === 'smartDetectZone' && !$this->ReadPropertyBoolean('smartEvents')) {
