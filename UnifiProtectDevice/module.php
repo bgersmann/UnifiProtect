@@ -225,6 +225,7 @@ declare(strict_types=1);
 								IPS_SetMediaContent($MedienID, $snapshot);
 							}
 						}
+						IPS_LogMessage('UnifiProtectDevice', 'Got Snapshot.');
 					break;
 					case "getDeviceData":
 						$deviceData = json_decode($data['data'], true);
@@ -337,6 +338,7 @@ declare(strict_types=1);
 					break;
 				case 'snapshot':
 					//Hier würde normalerweise eine Aktion z.B. das Schalten ausgeführt werden
+					IPS_LogMessage('UnifiProtectDevice', 'Get Snapshot.');
 					$this->SendDebug("UnifiPDevice", "snapshot: New state is $Value", 0);
 					$this->Send('getSnapshot','');
 					SetValue($this->GetIDForIdent($Ident), $Value);
