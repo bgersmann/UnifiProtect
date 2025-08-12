@@ -59,7 +59,7 @@ declare(strict_types=1);
 		 */
 		public function HandleEvent(string $eventJson):void
 		{
-			IPS_LogMessage('UnifiProtectEvents', 'EventStart.');
+			#IPS_LogMessage('UnifiProtectEvents', 'EventStart.');
 			$this->SendDebug('HandleEvent', $eventJson, 0);
 			$event = json_decode($eventJson, true);
 			if (!isset($event['item']['type'])) {
@@ -111,7 +111,7 @@ declare(strict_types=1);
 			}
 			$idCam=$this->getInstanceIDForGuid( $camID, '{F78D1159-D735-D23A-0A97-69F07962BB89}' );
 			if ($idCam > 0) {
-				IPS_LogMessage('GetConfigurationForParent', 'VorObjectByIdent: ' . $idCam);
+				#IPS_LogMessage('GetConfigurationForParent', 'VorObjectByIdent: ' . $idCam);
 				// Wenn eine Kamera-ID vorhanden ist, sende das Event an die Kamera-Instanz
 				$IDName=@IPS_GetObjectIDByIdent('Name',$idCam);
 				if (!$IDName === false) {
@@ -163,7 +163,7 @@ declare(strict_types=1);
 			if ( $type === 'sensorMotion' && $this->ReadPropertyBoolean('sensorGlobal')) {
 				$this->SetValue('sensorGlobal',$active);
 			}
-			IPS_LogMessage('UnifiProtectEvents', 'EventFertig.');
+			#IPS_LogMessage('UnifiProtectEvents', 'EventFertig.');
 		
 		}
 
