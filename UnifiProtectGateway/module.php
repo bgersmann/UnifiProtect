@@ -464,7 +464,7 @@ declare(strict_types=1);
 			$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
 			$APIKey = $this->ReadPropertyString( 'APIKey' );
 			$ch = curl_init();
-			curl_setopt( $ch, CURLOPT_URL, 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot?forceHighQuality=true' );
+			curl_setopt( $ch, CURLOPT_URL, 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot?forceHighQuality=false' );
 			curl_setopt( $ch, CURLOPT_HTTPGET, true );
 			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 			curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
