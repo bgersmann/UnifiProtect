@@ -220,6 +220,7 @@ declare(strict_types=1);
 						$this->SendDebug("UnifiPDevice", "Stream: " . json_encode($stream), 0);						
 						break;
 					case "getSnapshot":
+						IPS_LogMessage('UnifiProtectDevice', 'Got Snapshot -1.');
 						$MedienID = IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);
 						if ($MedienID > 0) {
 							$snapshot = $data['data'];
@@ -231,7 +232,7 @@ declare(strict_types=1);
 						$this->SendDebug("UnifiPDevice", "Got Snapshot", 0);
 						SetValue($this->GetIDForIdent('snapshot'), 1);
 						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
-						IPS_LogMessage('UnifiProtectDevice', 'Got Snapshot.');
+						IPS_LogMessage('UnifiProtectDevice', 'Got Snapshot -2.');
 					break;
 					case "getDeviceData":
 						$deviceData = json_decode($data['data'], true);
