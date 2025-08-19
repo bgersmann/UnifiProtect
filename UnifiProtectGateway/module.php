@@ -62,7 +62,9 @@ declare(strict_types=1);
 						break;
 					case "getSnapshot":
 						$snapshot = $this->getSnapshot(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->InstanceID);
+						IPS_LogMessage('UnifiProtectGateway', 'Get Snapshot 3.');
 						$this->send($data->InstanceID,$data->Api,$snapshot);
+						IPS_LogMessage('UnifiProtectGateway', 'Get Snapshot 4.');
 						break;
 					case "createStream":
 						$stream = $this->createStream(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
