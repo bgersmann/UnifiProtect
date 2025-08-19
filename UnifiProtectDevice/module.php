@@ -40,9 +40,12 @@ declare(strict_types=1);
 			
 			$this->MaintainVariable( 'micEnabled', $this->Translate( 'Is Microphone enabled' ), 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'microphone-lines', 'OPTIONS' => '[{"ColorDisplay":16077123,"Value":false,"Caption":"Aus","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"An","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			$this->MaintainVariable( 'micVolume', $this->Translate( 'Microphone Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>1,'STEP_SIZE'=>1,'USAGE_TYPE'=> 2, 'SUFFIX'=> ' %' , 'ICON'=> 'volume-high'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
+			#$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Erzeuge Snapshot...","Color":16711680,"IconActive":false,"IconValue":"","Value":0},{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
+			
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$this->MaintainAction('micVolume', true);
+				SetValue($this->GetIDForIdent('snapshot'), 1);
 				$this->MaintainAction('snapshot', true);
 			}
 			$MedienID = @IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);			
@@ -225,6 +228,9 @@ declare(strict_types=1);
 								IPS_SetMediaContent($MedienID, $snapshot);
 							}
 						}
+						$this->SendDebug("UnifiPDevice", "Got Snapshot", 0);
+						SetValue($this->GetIDForIdent('snapshot'), 1);
+						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
 						IPS_LogMessage('UnifiProtectDevice', 'Got Snapshot.');
 					break;
 					case "getDeviceData":
@@ -337,11 +343,18 @@ declare(strict_types=1);
 					SetValue($this->GetIDForIdent($Ident), $Value);
 					break;
 				case 'snapshot':
+					$idIdent=$this->GetIDForIdent($Ident);
 					//Hier würde normalerweise eine Aktion z.B. das Schalten ausgeführt werden
-					IPS_LogMessage('UnifiProtectDevice', 'Get Snapshot.');
-					$this->SendDebug("UnifiPDevice", "snapshot: New state is $Value", 0);
-					$this->Send('getSnapshot','');
-					SetValue($this->GetIDForIdent($Ident), $Value);
+					if (GetValueInteger($idIdent) == 1) {
+						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Erzeuge Snapshot...","Color":16711680,"IconActive":false,"IconValue":"","Value":0}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
+			
+						SetValue($idIdent, 0);
+						$this->Send('getSnapshot','');
+						$this->SendDebug("UnifiPDevice", "Get Snapshot", 0);						
+					} else {
+						SetValue($idIdent, 0);
+						$this->SendDebug("UnifiPDevice", "Already waiting on Snapshot: ".GetValueInteger($idIdent), 0);
+					}
 					break;
 				default:
 					throw new Exception("Invalid Ident");
