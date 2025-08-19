@@ -461,6 +461,7 @@ declare(strict_types=1);
 		}
 
 		public function getSnapshot(string $cameraID, int $idParent):string {
+			IPS_LogMessage('UnifiProtectGateway', 'Get Snapshot 1.');
 			$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
 			$APIKey = $this->ReadPropertyString( 'APIKey' );
 			$ch = curl_init();
@@ -479,6 +480,7 @@ declare(strict_types=1);
 				$this->SetStatus( 201 ); // Set status to error
 				return '';
 			}
+			IPS_LogMessage('UnifiProtectGateway', 'Get Snapshot 2.');
 			return  base64_encode($RawData);
 		}
 

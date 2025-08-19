@@ -348,8 +348,8 @@ declare(strict_types=1);
 					//Hier würde normalerweise eine Aktion z.B. das Schalten ausgeführt werden
 					if (GetValueInteger($idIdent) == 1) {
 						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Erzeuge Snapshot...","Color":16711680,"IconActive":false,"IconValue":"","Value":0}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
-			
 						SetValue($idIdent, 0);
+						IPS_LogMessage('UnifiProtectDevice', 'Get Snapshot.');
 						$this->Send('getSnapshot','');
 						$this->SendDebug("UnifiPDevice", "Get Snapshot", 0);						
 					} else {
