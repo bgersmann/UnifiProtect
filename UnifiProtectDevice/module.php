@@ -114,28 +114,31 @@ declare(strict_types=1);
 		public function Send(string $api, string $param1)
 		{
 			if ($this->HasActiveParent()) {
-				$this->SendDataToParent(json_encode(['DataID' => '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}',
+				$data=$this->SendDataToParent(json_encode(['DataID' => '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}',
 					'Api' => $api,
 					'InstanceID' => $this->InstanceID,
 					'Param1' => $param1
 					]));
-			}			
-		}
-
-		public function ReceiveData($JSONString)
-		{
-			$data = json_decode($JSONString,true);
-			#$this->SendDebug("UnifiPDevice", "Data: " . $JSONString, 0);
-			If ($data['id']== $this->InstanceID) {
-				//IPS_LogMessage('UNIFIDV-'.$this->InstanceID,utf8_decode($data['data']));				
-				switch($data['Api']) {
+				if (!$data) {
+					$this->SendDebug("UnifiPDevice", "Send Data error: " . $api, 0);
+					return;
+				};
+				switch($api) {
+					case "getSnapshot":
+						$snapshot=unserialize($data);
+						$this->SendDebug("UnifiPDevice", "Snapshot: " . $snapshot, 0);
+						SetValue($this->GetIDForIdent('snapshot'), 1);
+						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
+						break;
 					case "getDevices":
-						$this->UpdateFormField("ID", "options", $data['data']);
-						$this->SetBuffer("devices", $data['data']);
+						$deviceData=unserialize($data);
+						$this->SendDebug("UnifiPDevice", "Data: " . json_encode($deviceData), 0);
+						$this->UpdateFormField("ID", "options", json_encode($deviceData));
+						$this->SetBuffer("devices", json_encode($deviceData));
 						break;
 					case "createStream":
 					case "getStreams":
-						$streams = json_decode($data['data'], true);
+						$streams=unserialize($data);
 						$this->SendDebug("UnifiPDevice", "Data: " . json_encode($streams), 0);
 						if ( is_array( $streams ) && isset( $streams ) ) {
 							if (isset($streams['high'])) {
@@ -216,26 +219,11 @@ declare(strict_types=1);
 						}
 						break;
 					case "createStream":
-						$stream = json_decode($data['data'], true);
+						$stream = unserialize($data);							
 						$this->SendDebug("UnifiPDevice", "Stream: " . json_encode($stream), 0);						
 						break;
-					case "getSnapshot":
-						IPS_LogMessage('UnifiProtectDevice', 'Got Snapshot -1.');
-						$MedienID = IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);
-						if ($MedienID > 0) {
-							$snapshot = $data['data'];
-							if (isset($snapshot)) {
-								IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
-								IPS_SetMediaContent($MedienID, $snapshot);
-							}
-						}
-						$this->SendDebug("UnifiPDevice", "Got Snapshot", 0);
-						SetValue($this->GetIDForIdent('snapshot'), 1);
-						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
-						IPS_LogMessage('UnifiProtectDevice', 'Got Snapshot -2.');
-					break;
 					case "getDeviceData":
-						$deviceData = json_decode($data['data'], true);
+						$deviceData = unserialize($data);
 						$this->SendDebug("UnifiPDevice", "Device Data: " . json_encode($deviceData), 0);
 						if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 							$this->SetValue('micEnabled', $deviceData['isMicEnabled'] ?? false);
@@ -268,9 +256,13 @@ declare(strict_types=1);
 							$this->SetValue('ID',$deviceData['id']);
 						}
 					break;
+					default:
+						$this->SendDebug("UnifiPDevice", "Unknown API: " . $api, 0);
+						break;
 				}
-			}			
+			}
 		}
+		
 
 		public function getData():string {
 			$this->Send("getDeviceData",$this->ReadPropertyString('DeviceType'));
@@ -349,7 +341,6 @@ declare(strict_types=1);
 					if (GetValueInteger($idIdent) == 1) {
 						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Erzeuge Snapshot...","Color":16711680,"IconActive":false,"IconValue":"","Value":0}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
 						SetValue($idIdent, 0);
-						IPS_LogMessage('UnifiProtectDevice', 'Get Snapshot.');
 						$this->Send('getSnapshot','');
 						$this->SendDebug("UnifiPDevice", "Get Snapshot", 0);						
 					} else {

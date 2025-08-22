@@ -25,32 +25,31 @@ declare(strict_types=1);
 		public function Send(string $api, string $param1)
 		{
 			if ($this->HasActiveParent()) {
-				$this->SendDataToParent(json_encode(['DataID' => '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}',
+				$data=$this->SendDataToParent(json_encode(['DataID' => '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}',
 					'Api' => $api,
 					'InstanceID' => $this->InstanceID,
 					'Param1' => $param1
 					]));
-			}			
-		}
-
-		public function ReceiveData($JSONString)
-		{
-			$data = json_decode($JSONString,true);
-			If ($data['id']== $this->InstanceID) {
-				//IPS_LogMessage('UNIFICL-'.$this->InstanceID,utf8_decode($data['data']));
-				switch($data['Api']) {
+				if (!$data) {
+					$this->SendDebug("UnifiPDevice", "Send Data error: " . $api, 0);
+					return;
+				};
+				switch($api) {
 					case "getDevicesConfig":
-						#$test = json_decode($data['data'], true);
-						$this->SendDebug("UnifiPCG", "getDevicesConfig: " . json_encode( $data['data']), 0);
-						$this->UpdateFormField("UnifiDevices", "values", $data['data']);
-						$this->SetBuffer("configurator", $data['data']);					
+						$deviceData=json_encode(unserialize($data));
+						$this->SendDebug("UnifiPCG", "getDevicesConfig: " .  $deviceData, 0);
+						$this->UpdateFormField("UnifiDevices", "values", $deviceData);
+						$this->SetBuffer("configurator", $deviceData);
+						break;
+					default:
+						$this->SendDebug("UnifiPCG", "Unknown API: " . $api, 0);
 						break;
 				}
 			}			
-		}
+		}	
 
 
-		 public function GetConfigurationForm()
+		public function GetConfigurationForm()
 		{
 			if ($this->HasActiveParent()) {
 				$this->Send("getDevicesConfig","");

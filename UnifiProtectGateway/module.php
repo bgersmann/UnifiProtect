@@ -54,37 +54,39 @@ declare(strict_types=1);
 				switch ($data->Api) {
 					case "getDevices":
 						$array = $this->getDevices($data->Param1);
-						$this->send($data->InstanceID,$data->Api,json_encode($array));
+						return serialize($array);
 						break;
 					case "getStreams":
 						$array = $this->getStreams(IPS_GetProperty( $data->InstanceID, 'ID' ));
-						$this->send($data->InstanceID,$data->Api,json_encode($array));
+						return serialize($array);
 						break;
 					case "getSnapshot":
 						$snapshot = $this->getSnapshot(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->InstanceID);
-						IPS_LogMessage('UnifiProtectGateway', 'Get Snapshot 3.');
-						$this->send($data->InstanceID,$data->Api,$snapshot);
-						IPS_LogMessage('UnifiProtectGateway', 'Get Snapshot 4.');
+						$this->SendDebug("UnifiPGW", "Snapshot: " . $snapshot, 0);
+						return serialize($snapshot);
 						break;
 					case "createStream":
 						$stream = $this->createStream(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
-						$this->send($data->InstanceID,$data->Api,json_encode($stream));
+						return serialize($stream);
 						break;
 					case "getDeviceData":
 						$deviceData = $this->getDeviceData(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
-						$this->send($data->InstanceID,$data->Api,json_encode($deviceData));
+						return serialize($deviceData);
 						break;
 					case "patchSettingCamera":
 						$setting = $this->patchSettingCamera(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
-						$this->send($data->InstanceID,$data->Api,json_encode($setting));
+						return serialize($setting);
 						break;
 					case "patchSettingSensor":
 						$setting = $this->patchSettingSensor(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
-						$this->send($data->InstanceID,$data->Api,json_encode($setting));
+						return serialize($setting);
 						break;
 					case "getDevicesConfig":
 						$config = $this->getDevicesConfig();
-						$this->send($data->InstanceID,$data->Api,json_encode($config));
+						return serialize($config);
+						break;
+					default:
+						$this->SendDebug("UnifiPGW", "Unknown API: " . $api, 0);
 						break;
 				}
 			}
@@ -93,10 +95,11 @@ declare(strict_types=1);
 		public function Send( int $id,string $Api, string $Text )
 		{
 			$this->SendDataToChildren( json_encode( [ 'DataID' => '{C7147748-F01B-E4F9-D11E-72DFA08E7048}',
-													'id' =>  $id,
-													'Api'=> $Api,
-													'data'=> $Text ]));
+					'id' =>  $id,
+					'Api'=> $Api,
+					'data'=> $Text ]));
 		}
+
 
 
 		#https://192.168.178.1/proxy/protect/v1/cameras
@@ -139,7 +142,6 @@ declare(strict_types=1);
 
 			$ch = curl_init();
 			curl_setopt( $ch, CURLOPT_URL, 'https://'.$ServerAddress.'/proxy/protect/integration/v1'.$endpoint );
-			#curl_setopt( $ch, CURLOPT_HTTPGET, true );
 			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
 			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 			curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
@@ -462,8 +464,7 @@ declare(strict_types=1);
 			return $JSONData;
 		}
 
-		public function getSnapshot(string $cameraID, int $idParent):string {
-			IPS_LogMessage('UnifiProtectGateway', 'Get Snapshot 1.');
+		public function getSnapshot(string $cameraID, int $idParent):bool {
 			$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
 			$APIKey = $this->ReadPropertyString( 'APIKey' );
 			$ch = curl_init();
@@ -475,15 +476,25 @@ declare(strict_types=1);
 			curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'X-API-KEY:'.$APIKey ) );
 			curl_setopt( $ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1' );
 			$RawData = curl_exec($ch);
-			curl_close( $ch );
+			curl_close( $ch );			
 			if ($RawData === false) {
 				// Handle error
 				$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
 				$this->SetStatus( 201 ); // Set status to error
 				return '';
+			}			
+			$MedienID = IPS_GetObjectIDByIdent('Snapshot', $idParent);
+			if ($MedienID > 0) {
+				if (isset($RawData) && !empty($RawData)) {
+					IPS_SetMediaFile($MedienID, 'Snapshot_'.$idParent.'.jpeg', FALSE);
+					IPS_SetMediaContent($MedienID, base64_encode($RawData));
+				} else {
+					return false;
+				}
+			} else {
+				return false;
 			}
-			IPS_LogMessage('UnifiProtectGateway', 'Get Snapshot 2.');
-			return  base64_encode($RawData);
+			return true;
 		}
 
 		public function GetConfigurationForm() {
