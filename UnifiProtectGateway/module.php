@@ -481,7 +481,7 @@ declare(strict_types=1);
 				// Handle error
 				$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
 				$this->SetStatus( 201 ); // Set status to error
-				return '';
+				return false;
 			}			
 			$MedienID = IPS_GetObjectIDByIdent('Snapshot', $idParent);
 			if ($MedienID > 0) {
