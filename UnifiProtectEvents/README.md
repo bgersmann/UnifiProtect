@@ -13,16 +13,18 @@ Beschreibung des Moduls.
 
 ### 1. Funktionsumfang
 
-*
+* Empfang und Verarbeitung von Ereignissen aus UniFi Protect (z.B. Bewegung, smarte Erkennung, Sensor-Events)
+* Automatische Statusvariablen für globale und gerätespezifische Events
+* Visualisierung von Ereignissen im WebFront
 
 ### 2. Voraussetzungen
 
-- IP-Symcon ab Version 7.1
+- IP-Symcon ab Version 8.0
+- UniFi Protect mit aktiviertem API-Zugang und gültigem API-Key
 
 ### 3. Software-Installation
 
 * Über den Module Store das 'UnifiProtectEvents'-Modul installieren.
-* Alternativ über das Module Control folgende URL hinzufügen
 
 ### 4. Einrichten der Instanzen in IP-Symcon
 
@@ -31,10 +33,8 @@ Beschreibung des Moduls.
 
 __Konfigurationsseite__:
 
-Name     | Beschreibung
--------- | ------------------
-         |
-         |
+Unifi Protect Host IP | IP-Adresse der UniFi Protect Installation
+API-Schlüssel         | API Key unter „UniFi Network > Settings > Control Plane > Integrations“ erzeugen
 
 ### 5. Statusvariablen und Profile
 
@@ -42,21 +42,22 @@ Die Statusvariablen/Kategorien werden automatisch angelegt. Das Löschen einzeln
 
 #### Statusvariablen
 
-Name   | Typ     | Beschreibung
------- | ------- | ------------
-       |         |
-       |         |
+Name             | Typ     | Beschreibung
+---------------- | ------- | ------------
+motionGlobal     | Boolean | Globale Bewegungserkennung
+smartGlobal      | Boolean | Globale smarte Erkennung
+sensorGlobal     | Boolean | Globale Sensor-Bewegungserkennung
+EventActive_*    | Boolean | Gerätespezifische Ereignisse
 
 #### Profile
 
-Name   | Typ
------- | -------
-       |
-       |
+keine Vorhanden
 
 ### 6. Visualisierung
 
-Die Funktionalität, die das Modul in der Visualisierung bietet.
+- Anzeige von aktuellen Ereignissen und deren Status
+- Visualisierung von Bewegungs- und Smart-Events
+- Übersicht aller aktiven Events
 
 ### 7. PHP-Befehlsreferenz
 

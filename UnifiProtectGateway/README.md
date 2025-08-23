@@ -13,16 +13,16 @@ Beschreibung des Moduls.
 
 ### 1. Funktionsumfang
 
-*
+*  Die Schnittstelle zwischen Symcon und der Local Unifi Protect API
 
 ### 2. Voraussetzungen
 
-- IP-Symcon ab Version 7.1
+- IP-Symcon ab Version 8.0
+- UniFi Protect mit aktiviertem API-Zugang und gültigem API-Key
 
 ### 3. Software-Installation
 
-* Über den Module Store das 'UnifiProtectGateway'-Modul installieren.
-* Alternativ über das Module Control folgende URL hinzufügen
+* Über den Module Store das 'UnifiProtect'-Modul installieren.
 
 ### 4. Einrichten der Instanzen in IP-Symcon
 
@@ -33,8 +33,10 @@ __Konfigurationsseite__:
 
 Name     | Beschreibung
 -------- | ------------------
-         |
-         |
+Unifi Geräte-IP    | IP Adresse der Unifi Protect installation
+API-Schlüssel | API Key "UniFi Protect > Settings > Control Plane > Integrations" erzeugen.
+Anwendungsversion anzeigen |  Erzeugt eine Variable mit der aktuellen Unifi Protect Version.
+
 
 ### 5. Statusvariablen und Profile
 
@@ -42,26 +44,24 @@ Die Statusvariablen/Kategorien werden automatisch angelegt. Das Löschen einzeln
 
 #### Statusvariablen
 
-Name   | Typ     | Beschreibung
------- | ------- | ------------
-       |         |
-       |         |
+| Name         | Typ      | Beschreibung                |
+| ------------ | -------- | --------------------------  |
+| Application Version         | String   | Unifi Protect version                  |
+
 
 #### Profile
 
-Name   | Typ
------- | -------
-       |
-       |
+Keine vorhanden.
+
 
 ### 6. Visualisierung
 
-Die Funktionalität, die das Modul in der Visualisierung bietet.
+keine
 
 ### 7. PHP-Befehlsreferenz
 
-`boolean UNIFIPGW_BeispielFunktion(integer $InstanzID);`
-Erklärung der Funktion.
+bool UNIFIPGW_getProtectVersion(int $InstanzID);
+Ruft die aktuelle Protect-Version ab.
 
 Beispiel:
-`UNIFIPGW_BeispielFunktion(12345);`
+UNIFIPGW_getProtectVersion(123456);

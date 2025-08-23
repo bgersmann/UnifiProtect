@@ -13,16 +13,19 @@ Beschreibung des Moduls.
 
 ### 1. Funktionsumfang
 
-*
+- Integration von UniFi Protect Geräten (Kameras, Sensoren, Chimes, Lights) in IP-Symcon
+- Abruf und Steuerung von Streams und Snapshots
+- Verwaltung von Geräte-Einstellungen und Status
+- Ereignis- und Bewegungsmeldungen
 
 ### 2. Voraussetzungen
 
-- IP-Symcon ab Version 7.1
+- IP-Symcon ab Version 8.0
+- UniFi Protect mit aktiviertem API-Zugang und gültigem API-Key
 
 ### 3. Software-Installation
 
 * Über den Module Store das 'UnifiProtectDevice'-Modul installieren.
-* Alternativ über das Module Control folgende URL hinzufügen
 
 ### 4. Einrichten der Instanzen in IP-Symcon
 
@@ -33,8 +36,11 @@ __Konfigurationsseite__:
 
 Name     | Beschreibung
 -------- | ------------------
-         |
-         |
+Timer    | Abfrage intervall
+Gerätetyp | Gerätetyp (Kamera/Sensor/Licht/Gong)
+Geräte-ID | Gerätename aus Unifi
+ID-Anzeigen | ID als Variable anlegen
+Stream Niedrig/Mittel/Hoch | Stream in entsprechender Auflösung anlegen (Schaltet auch Stream in Unifi Protect ein/aus!!)
 
 ### 5. Statusvariablen und Profile
 
@@ -42,21 +48,24 @@ Die Statusvariablen/Kategorien werden automatisch angelegt. Das Löschen einzeln
 
 #### Statusvariablen
 
-Name   | Typ     | Beschreibung
------- | ------- | ------------
-       |         |
-       |         |
+| Name         | Typ      | Beschreibung                |
+| ------------ | -------- | --------------------------  |
+| Name         | String   | Gerätename                  |
+| ID           | String   | Geräte-ID                   |
+| Model        | String   | Gerätemodell                |
+| State        | String   | Verbindungsstatus           |
+| Is Microphone enabled  | Boolean      | Status Mikrofon |
+| Microphone Volume | Integer | Mikrofon Lautstärke |
 
 #### Profile
 
-Name   | Typ
------- | -------
-       |
-       |
+keine vorhanden
 
 ### 6. Visualisierung
 
-Die Funktionalität, die das Modul in der Visualisierung bietet.
+- Anzeige von Live-Streams und Snapshots
+- Steuerung von Geräten und Anzeige von Ereignissen
+- Visualisierung von Status und Sensorwerten
 
 ### 7. PHP-Befehlsreferenz
 

@@ -13,15 +13,16 @@ Beschreibung des Moduls.
 
 ### 1. Funktionsumfang
 
-* Zeigt alle Geräte und Clients der Unifi Site da und ermöglicht ein schneller erstellen als eigene Instanzen.
+* Zeigt alle Geräte von Unifi Protect dar und ermöglicht ein schnelles erstellen als eigene Instanzen.
 
 ### 2. Voraussetzungen
 
 - IP-Symcon ab Version 8.0
+- UniFi Protect mit aktiviertem API-Zugang und gültigem API-Key
 
 ### 3. Software-Installation
 
-* Über den Module Store das 'UnifiNet'-Modul installieren.
+* Über den Module Store das 'UnifiProtect'-Modul installieren.
 
 ### 4. Einrichten der Instanzen in IP-Symcon
 
@@ -32,7 +33,7 @@ __Konfigurationsseite__:
 
 Name     | Beschreibung
 -------- | ------------------
-Unifi Devices | Zeigt alle Unifi Geräte und Clients an.
+Unifi Protect Devices | Zeigt alle Unifi Protect Geräte an.
 
 ### 5. Statusvariablen und Profile
 

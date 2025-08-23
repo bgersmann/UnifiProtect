@@ -125,8 +125,9 @@ declare(strict_types=1);
 				};
 				switch($api) {
 					case "getSnapshot":
-						$snapshot=unserialize($data);
-						$this->SendDebug("UnifiPDevice", "Snapshot: " . $snapshot, 0);
+						$array=unserialize($data);
+						$this->SendDebug("UnifiPDevice", "Snapshot: " .json_encode($array), 0);
+						$this->getSnapshot($array);
 						SetValue($this->GetIDForIdent('snapshot'), 1);
 						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
 						break;
@@ -262,7 +263,37 @@ declare(strict_types=1);
 				}
 			}
 		}
-		
+
+		public function getSnapshot(array $array):bool {
+			$ch = curl_init();
+			curl_setopt( $ch, CURLOPT_URL, $array['url'] );
+			curl_setopt( $ch, CURLOPT_HTTPGET, true );
+			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+			curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
+			curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, false );
+			curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'X-API-KEY:'.$array['apikey'] ) );
+			curl_setopt( $ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1' );
+			$RawData = curl_exec($ch);
+			curl_close( $ch );			
+			if ($RawData === false) {
+				// Handle error
+				$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
+				$this->SetStatus( 201 ); // Set status to error
+				return false;
+			}
+			$MedienID = IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);
+			if ($MedienID > 0) {
+				if (isset($RawData) && !empty($RawData)) {
+					IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
+					IPS_SetMediaContent($MedienID, base64_encode($RawData));
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
+			return true;
+		}
 
 		public function getData():string {
 			$this->Send("getDeviceData",$this->ReadPropertyString('DeviceType'));

@@ -61,9 +61,13 @@ declare(strict_types=1);
 						return serialize($array);
 						break;
 					case "getSnapshot":
-						$snapshot = $this->getSnapshot(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->InstanceID);
-						$this->SendDebug("UnifiPGW", "Snapshot: " . $snapshot, 0);
-						return serialize($snapshot);
+						$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
+						$APIKey = $this->ReadPropertyString( 'APIKey' );
+						$cameraID = IPS_GetProperty( $data->InstanceID, 'ID' );
+						$url = 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot?forceHighQuality=true';
+						$array = array('apikey' => $APIKey, 'url' => $url);
+						$this->SendDebug("UnifiPGW", "Snapshot: " . json_encode($array), 0);
+						return serialize($array);
 						break;
 					case "createStream":
 						$stream = $this->createStream(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
@@ -464,38 +468,38 @@ declare(strict_types=1);
 			return $JSONData;
 		}
 
-		public function getSnapshot(string $cameraID, int $idParent):bool {
-			$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
-			$APIKey = $this->ReadPropertyString( 'APIKey' );
-			$ch = curl_init();
-			curl_setopt( $ch, CURLOPT_URL, 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot?forceHighQuality=false' );
-			curl_setopt( $ch, CURLOPT_HTTPGET, true );
-			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-			curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
-			curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, false );
-			curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'X-API-KEY:'.$APIKey ) );
-			curl_setopt( $ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1' );
-			$RawData = curl_exec($ch);
-			curl_close( $ch );			
-			if ($RawData === false) {
-				// Handle error
-				$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
-				$this->SetStatus( 201 ); // Set status to error
-				return false;
-			}			
-			$MedienID = IPS_GetObjectIDByIdent('Snapshot', $idParent);
-			if ($MedienID > 0) {
-				if (isset($RawData) && !empty($RawData)) {
-					IPS_SetMediaFile($MedienID, 'Snapshot_'.$idParent.'.jpeg', FALSE);
-					IPS_SetMediaContent($MedienID, base64_encode($RawData));
-				} else {
-					return false;
-				}
-			} else {
-				return false;
-			}
-			return true;
-		}
+		// public function getSnapshot(string $cameraID, int $idParent):bool {
+		// 	$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
+		// 	$APIKey = $this->ReadPropertyString( 'APIKey' );
+		// 	$ch = curl_init();
+		// 	curl_setopt( $ch, CURLOPT_URL, 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot?forceHighQuality=true' );
+		// 	curl_setopt( $ch, CURLOPT_HTTPGET, true );
+		// 	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		// 	curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
+		// 	curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, false );
+		// 	curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'X-API-KEY:'.$APIKey ) );
+		// 	curl_setopt( $ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1' );
+		// 	$RawData = curl_exec($ch);
+		// 	curl_close( $ch );			
+		// 	if ($RawData === false) {
+		// 		// Handle error
+		// 		$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
+		// 		$this->SetStatus( 201 ); // Set status to error
+		// 		return false;
+		// 	}			
+		// 	$MedienID = IPS_GetObjectIDByIdent('Snapshot', $idParent);
+		// 	if ($MedienID > 0) {
+		// 		if (isset($RawData) && !empty($RawData)) {
+		// 			IPS_SetMediaFile($MedienID, 'Snapshot_'.$idParent.'.jpeg', FALSE);
+		// 			IPS_SetMediaContent($MedienID, base64_encode($RawData));
+		// 		} else {
+		// 			return false;
+		// 		}
+		// 	} else {
+		// 		return false;
+		// 	}
+		// 	return true;
+		// }
 
 		public function GetConfigurationForm() {
 			$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
