@@ -81,6 +81,7 @@ declare(strict_types=1);
 				$arrayStream=array('qualities' => $streamQuality);
 				$this->SendDebug("UnifiPDevice", "Stream Qualities: " . json_encode($arrayStream), 0);
 				$this->Send('createStream', json_encode($arrayStream));
+				
 			} elseif ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 				$arraySettings = array();
 				$arraySettings['temperatureSettings'] = ['isEnabled'=> $this->ReadPropertyBoolean('Temperature')];
@@ -147,7 +148,8 @@ declare(strict_types=1);
 								if (isset($urlStream)) {
 									if (!$this->ReadPropertyBoolean('StreamHigh')) {
 										$this->UpdateFormField("StreamHigh", "value", true);
-									} 
+										IPS_SetProperty($this->InstanceID, 'StreamHigh', true);
+									}
 									$MedienID = @IPS_GetObjectIDByIdent('Stream_High', $this->InstanceID);
 									$this->SendDebug("UnifiPDevice", "Stream High: " . $MedienID, 0);
 									if ($MedienID > 0) {
@@ -218,11 +220,7 @@ declare(strict_types=1);
 								}
 							}
 						}
-						break;
-					case "createStream":
-						$stream = unserialize($data);							
-						$this->SendDebug("UnifiPDevice", "Stream: " . json_encode($stream), 0);						
-						break;
+						break;					
 					case "getDeviceData":
 						$deviceData = unserialize($data);
 						$this->SendDebug("UnifiPDevice", "Device Data: " . json_encode($deviceData), 0);

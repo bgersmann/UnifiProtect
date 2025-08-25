@@ -57,6 +57,7 @@ declare(strict_types=1);
 						return serialize($array);
 						break;
 					case "getStreams":
+						$this->SendDebug("UnifiPGW", "Get Streams for CameraID: " . IPS_GetProperty( $data->InstanceID, 'ID' ), 0);
 						$array = $this->getStreams(IPS_GetProperty( $data->InstanceID, 'ID' ));
 						return serialize($array);
 						break;
@@ -70,6 +71,7 @@ declare(strict_types=1);
 						return serialize($array);
 						break;
 					case "createStream":
+						$this->SendDebug("UnifiPGW", "Create Streams for CameraID: " . IPS_GetProperty( $data->InstanceID, 'ID' ), 0);
 						$stream = $this->createStream(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
 						return serialize($stream);
 						break;
@@ -560,14 +562,34 @@ declare(strict_types=1);
 						'instanceID'	=>$this->getInstanceIDForGuid( isset( $camera[ 'id' ] ) ? $camera[ 'id' ] : '', '{F78D1159-D735-D23A-0A97-69F07962BB89}' )
 					);
 					if (isset($camera['id']) && !empty($camera['id'])) {
+						$streams=$this->getStreams($camera['id']);
+						$this->SendDebug("UnifiPGW", "Streams: " . json_encode($streams), 0);
 						$addValue['create'] = array(
 							'moduleID'      => '{F78D1159-D735-D23A-0A97-69F07962BB89}',
 							'configuration' => [
 								'ID'	=> isset( $camera[ 'id' ] ) ? $camera[ 'id' ] : '',
-								'DeviceType' => 'Camera'
+								'DeviceType' => 'Camera'								
 							],
 							'name' => $camera[ 'name' ]
 						);
+							if (isset($streams['high'])) {
+								$urlStream = $streams['high'];
+								if (isset($urlStream)) {
+									$addValue['create']['configuration']['StreamHigh'] = True;
+								}
+							}
+							if (isset($streams['medium'])) {
+								$urlStream = $streams['medium'];
+								if (isset($urlStream)) {
+									$addValue['create']['configuration']['StreamMedium'] = True;
+								}
+							}
+							if (isset($streams['low'])) {
+								$urlStream = $streams['low'];
+								if (isset($urlStream)) {
+									$addValue['create']['configuration']['StreamLow'] = True;
+								}
+							}
 					}
 					$value[] = $addValue;
 				}
