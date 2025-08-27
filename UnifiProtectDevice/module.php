@@ -40,27 +40,16 @@ declare(strict_types=1);
 			
 			$this->MaintainVariable( 'micEnabled', $this->Translate( 'Is Microphone enabled' ), 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'microphone-lines', 'OPTIONS' => '[{"ColorDisplay":16077123,"Value":false,"Caption":"Aus","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"An","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			$this->MaintainVariable( 'micVolume', $this->Translate( 'Microphone Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>1,'STEP_SIZE'=>1,'USAGE_TYPE'=> 2, 'SUFFIX'=> ' %' , 'ICON'=> 'volume-high'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
+			#Snapshot umgezogen 105 freihalten:
+			$vpos++;
 			#$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Erzeuge Snapshot...","Color":16711680,"IconActive":false,"IconValue":"","Value":0},{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
-			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
+			//$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$this->MaintainAction('micVolume', true);
 				SetValue($this->GetIDForIdent('snapshot'), 1);
 				$this->MaintainAction('snapshot', true);
-			}
-			$MedienID = @IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);			
-			if ($MedienID == 0) {
-				if ($this->ReadPropertyString('DeviceType') == 'Camera') {
-					$MediaID = IPS_CreateMedia(1);
-					IPS_SetParent($MediaID, $this->InstanceID);
-					IPS_SetName($MediaID, $this->Translate('Snapshot'));
-					IPS_SetIdent($MediaID, 'Snapshot');
-				} 
-			} else {
-				if ($this->ReadPropertyString('DeviceType') !== 'Camera') {
-					IPS_DeleteMedia($MedienID,true);
-				}
-			}
+			}			
 
 			$this->MaintainVariable( 'Temperature', $this->Translate( 'Temperature' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>-50,'USAGE_TYPE'=> 1,'DIGITS'=> 2, 'SUFFIX'=> ' °C' , 'ICON'=> 'temperature-list'], $vpos++, ($this->ReadPropertyBoolean("Temperature")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
 			$this->MaintainVariable( 'Humidity', $this->Translate( 'Humidity' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' % RH' , 'ICON'=> 'droplet-degree'], $vpos++, ($this->ReadPropertyBoolean("Humidity")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
@@ -130,7 +119,7 @@ declare(strict_types=1);
 						$this->SendDebug("UnifiPDevice", "Snapshot: " .json_encode($array), 0);
 						$this->getSnapshot($array);
 						SetValue($this->GetIDForIdent('snapshot'), 1);
-						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
+						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], 105, $this->ReadPropertyString('DeviceType') == 'Camera');
 						break;
 					case "getDevices":
 						$deviceData=unserialize($data);
@@ -227,6 +216,14 @@ declare(strict_types=1);
 						if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 							$this->SetValue('micEnabled', $deviceData['isMicEnabled'] ?? false);
 							$this->SetValue('micVolume', $deviceData['micVolume'] ?? 0);
+							if (isset($deviceData['featureFlags']['supportFullHdSnapshot'])) {
+								if ($deviceData['featureFlags']['supportFullHdSnapshot']) {
+									$this->SendDebug("UnifiPDevice", "Support Full HD Snapshot: " . ($deviceData['featureFlags']['supportFullHdSnapshot'] ? 'Yes' : 'No'), 0);								
+									$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], 105, $this->ReadPropertyString('DeviceType') == 'Camera');
+								} else {
+									$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1,'' , 105, 0);
+								}
+							}
 						} elseif ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 							$this->SetValue('Temperature', $deviceData['stats']['temperature']['value'] ?? 0);
 							$this->SetValue('Humidity', $deviceData['stats']['humidity']['value'] ?? 0);
@@ -234,7 +231,7 @@ declare(strict_types=1);
 							if (!empty($deviceData['batteryStatus']['percentage'])) {
 								$this->MaintainVariable( 'batteryStatus', $this->Translate( 'Battery Status' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' %' , 'ICON'=> 'battery-bolt'], 200, 1 );
 								$this->SetValue('batteryStatus', $deviceData['batteryStatus']['percentage']);
-							}
+							}							
 						}
 						if (isset($deviceData['name'])) {
 							$this->SetValue('Name',$deviceData['name']);
@@ -286,16 +283,32 @@ declare(strict_types=1);
 				$this->SetStatus(201);
 				return false;
 			}
-			$this->SendDebug("UnifiPDevice", "Got Snapshot: " . $RawData, 0);
-			$MedienID = IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);
-			if ($MedienID > 0) {
-				if (isset($RawData) && !empty($RawData)) {
-					IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
-					IPS_SetMediaContent($MedienID, base64_encode($RawData));
-				} else {
-					return false;
+			//$this->SendDebug("UnifiPDevice", "Got Snapshot: " . $RawData, 0);
+			$MedienID = @IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);			
+			if ($MedienID == 0) {
+				if ($this->ReadPropertyString('DeviceType') == 'Camera') {
+					$MedienID = IPS_CreateMedia(1);
+					IPS_SetParent($MedienID, $this->InstanceID);
+					IPS_SetName($MedienID, $this->Translate('Snapshot'));
+					IPS_SetIdent($MedienID, 'Snapshot');									
 				}
 			} else {
+				if ($this->ReadPropertyString('DeviceType') !== 'Camera') {
+					IPS_DeleteMedia($MedienID,true);
+					return false;
+				}
+			}
+			$MedienID = @IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);	
+			if ($MedienID !== 0) {
+					// Set media content
+					if (isset($RawData) && !empty($RawData)) {
+						IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
+						IPS_SetMediaContent($MedienID, base64_encode($RawData));
+					} else {
+						return false;
+					}			
+			} else {
+				$this->SendDebug("UnifiPDevice", "Snapshot media not found", 0);
 				return false;
 			}
 			return true;
@@ -376,7 +389,7 @@ declare(strict_types=1);
 					$idIdent=$this->GetIDForIdent($Ident);
 					//Hier würde normalerweise eine Aktion z.B. das Schalten ausgeführt werden
 					if (GetValueInteger($idIdent) == 1) {
-						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Erzeuge Snapshot...","Color":16711680,"IconActive":false,"IconValue":"","Value":0}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
+						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Erzeuge Snapshot...","Color":16711680,"IconActive":false,"IconValue":"","Value":0}]', 'ICON'=> 'camera-polaroid'], 105, $this->ReadPropertyString('DeviceType') == 'Camera');
 						SetValue($idIdent, 0);
 						$this->Send('getSnapshot','');
 						$this->SendDebug("UnifiPDevice", "Get Snapshot", 0);						
