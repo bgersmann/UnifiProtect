@@ -123,7 +123,7 @@ declare(strict_types=1);
 			curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'X-API-KEY:'.$APIKey ) );
 			curl_setopt( $ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1' );
 			$RawData = curl_exec($ch);
-			curl_close( $ch );
+			curl_close( $ch );		
 			$this->SendDebug("UnifiPGW", "API Endpoint: " .$RawData, 0);
 			if ($RawData === false) {
 				// Handle error
@@ -131,7 +131,8 @@ declare(strict_types=1);
 				$this->SetStatus( 201 ); // Set status to error
 				return [];
 			}
-			$JSONData = json_decode( $RawData, true );
+			usleep(100000); // 100 ms Pause zwischen Requests
+			$JSONData = json_decode( $RawData, true );			
 			if ( isset( $JSONData[ 'statusCode' ] ) ) {
 				if ($JSONData[ 'statusCode' ]<> 200) {
 					// instance inactive
@@ -163,6 +164,7 @@ declare(strict_types=1);
 				$this->SetStatus( 201 ); // Set status to error
 				return [];
 			}
+			usleep(100000); // 100 ms Pause zwischen Requests
 			$JSONData = json_decode( $RawData, true );
 			if ( isset( $JSONData[ 'statusCode' ] ) ) {
 				if ($JSONData[ 'statusCode' ]<> 200) {
@@ -196,6 +198,7 @@ declare(strict_types=1);
 				$this->SetStatus( 201 ); // Set status to error
 				return [];
 			}
+			usleep(100000); // 100 ms Pause zwischen Requests
 			$JSONData = json_decode( $RawData, true );
 			if ( isset( $JSONData[ 'statusCode' ] ) ) {
 				if ($JSONData[ 'statusCode' ]<> 200) {
@@ -229,6 +232,7 @@ declare(strict_types=1);
 				$this->SetStatus( 201 ); // Set status to error
 				return [];
 			}
+			usleep(100000); // 100 ms Pause zwischen Requests
 			$JSONData = json_decode( $RawData, true );
 			if ( isset( $JSONData[ 'statusCode' ] ) ) {
 				if ($JSONData[ 'statusCode' ]<> 200) {

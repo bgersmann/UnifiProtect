@@ -7,9 +7,7 @@ declare(strict_types=1);
 		public function Create()
 		{
 			//Never delete this line!
-			parent::Create();
-
-			
+			parent::Create();			
 			$this->RegisterPropertyString( 'ServerAddress', '192.168.178.1' );
 			$this->RegisterPropertyString( 'APIKey', '' );
 			$this->RegisterPropertyBoolean( 'smartEvents', false );
