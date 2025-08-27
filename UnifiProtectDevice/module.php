@@ -275,10 +275,11 @@ declare(strict_types=1);
 			curl_close( $ch );			
 			if ($RawData === false) {
 				// Handle error
-				$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
+				$this->SendDebug("UnifiPDevice", "Curl error: " . curl_error($ch), 0);
 				$this->SetStatus( 201 ); // Set status to error
 				return false;
 			}
+			$this->SendDebug("UnifiPDevice", "Got Snapshot: " . $RawData, 0);
 			$MedienID = IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);
 			if ($MedienID > 0) {
 				if (isset($RawData) && !empty($RawData)) {
