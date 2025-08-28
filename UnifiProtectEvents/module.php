@@ -13,9 +13,11 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'smartEvents', false );
 			$this->RegisterPropertyBoolean( 'motionEvents', false );
 			$this->RegisterPropertyBoolean( 'sensorMotionEvents', false );
+			$this->RegisterPropertyBoolean( 'lineEvents', false );
 			$this->RegisterPropertyBoolean( 'motionGlobal', false );
 			$this->RegisterPropertyBoolean( 'smartGlobal', false );
 			$this->RegisterPropertyBoolean( 'sensorGlobal', false );
+			$this->RegisterPropertyBoolean( 'lineGlobal', false );
 			$this->RequireParent('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
 		}
 
@@ -103,7 +105,10 @@ declare(strict_types=1);
 			if ( $type === 'sensorMotion' && !$this->ReadPropertyBoolean('sensorMotionEvents')) {
 				return; // Sensor Motion Detection Events sind deaktiviert
 			}
-			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion') {
+			if ( $type === 'smartDetectLine' && !$this->ReadPropertyBoolean('lineEvents')) {
+				return; // Smart Detect Line Events sind deaktiviert
+			}
+			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion' && $type !== 'smartDetectLine') {
 				IPS_LogMessage('UnifiProtectEvents', "Unbekannter Event-Typ: $type");
 				return; // Unbekannter Event-Typ
 			}
@@ -161,6 +166,9 @@ declare(strict_types=1);
 			if ( $type === 'sensorMotion' && $this->ReadPropertyBoolean('sensorGlobal')) {
 				$this->SetValue('sensorGlobal',$active);
 			}
+			if ( $type === 'smartDetectLine' && $this->ReadPropertyBoolean('lineGlobal')) {
+				$this->SetValue('lineGlobal',$active);
+			}
 			#IPS_LogMessage('UnifiProtectEvents', 'EventFertig.');
 		
 		}
@@ -215,6 +223,7 @@ declare(strict_types=1);
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartEvents', 'width' => '220px','caption' => $this->Translate('Smart Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'motionEvents', 'width' => '220px','caption' => $this->Translate('Motion Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorMotionEvents', 'width' => '240px','caption' => $this->Translate('Sensor Motion Detections') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'lineEvents', 'width' => '220px','caption' => $this->Translate('Line Events') );
 			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 			
 			
@@ -223,6 +232,7 @@ declare(strict_types=1);
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartGlobal', 'width' => '220px','caption' => $this->Translate('Smart Detection') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'motionGlobal', 'width' => '220px','caption' => $this->Translate('Motion Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorGlobal', 'width' => '240px','caption' => $this->Translate('Sensor Motion Detections') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'lineGlobal', 'width' => '220px','caption' => $this->Translate('Line Events') );
 			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 
 		

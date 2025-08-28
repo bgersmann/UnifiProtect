@@ -18,7 +18,9 @@
             "Unknown": "Unbekannt",
             "global motion detect":"globale Bewegungserkennung",
             "global smart detect":"globale Smarte Erkennung",
-            "global sensor detect":"globale Sensor Bewegungserkennung"
+            "global sensor detect":"globale Sensor Bewegungserkennung",
+            "Line Events":"Linienereignisse",
+            "global line detect":"globale Linienereignisse"
         }
     }
 }
