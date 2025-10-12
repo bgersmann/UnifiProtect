@@ -271,6 +271,9 @@ declare(strict_types=1);
 			curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, false );
 			curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'X-API-KEY:'.$array['apikey'] ) );
 			curl_setopt( $ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1' );
+			// Timeout-Einstellungen
+			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 10);  
 			$RawData = curl_exec($ch);
 			curl_close( $ch );			
 			if ($RawData === false) {
@@ -379,8 +382,14 @@ declare(strict_types=1);
 						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Erzeuge Snapshot...","Color":16711680,"IconActive":false,"IconValue":"","Value":0}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
 						SetValue($idIdent, 0);
 						$this->Send('getSnapshot','');
-						$this->SendDebug("UnifiPDevice", "Get Snapshot", 0);						
+						$this->SendDebug("UnifiPDevice", "Get Snapshot...", 0);						
 					} else {
+						$varTmp=IPS_GetVariable($idIdent);
+						if ((time()-$varTmp['VariableChanged']) > 10) {
+							SetValue($idIdent, 1);
+							$this->SendDebug("UnifiPDevice", "Error waiting on snapshot-", 0);
+							return;
+						}
 						SetValue($idIdent, 0);
 						$this->SendDebug("UnifiPDevice", "Already waiting on Snapshot: ".GetValueInteger($idIdent), 0);
 					}
