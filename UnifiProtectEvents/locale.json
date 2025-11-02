@@ -20,7 +20,10 @@
             "global smart detect":"globale Smarte Erkennung",
             "global sensor detect":"globale Sensor Bewegungserkennung",
             "Line Events":"Linienereignisse",
-            "global line detect":"globale Linienereignisse"
+            "global line detect":"globale Linienereignisse",
+            "global smart audio detect":"globale Smarte Audioerkennung",
+            "Smart Audio Detections":"Smarte Audioerkennungen",
+            "Smart Audio Detection":"Smarte Audioerkennung"
         }
     }
 }

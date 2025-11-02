@@ -14,10 +14,14 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'motionEvents', false );
 			$this->RegisterPropertyBoolean( 'sensorMotionEvents', false );
 			$this->RegisterPropertyBoolean( 'lineEvents', false );
+			$this->RegisterPropertyBoolean( 'smartAudioEvents', false );
 			$this->RegisterPropertyBoolean( 'motionGlobal', false );
 			$this->RegisterPropertyBoolean( 'smartGlobal', false );
 			$this->RegisterPropertyBoolean( 'sensorGlobal', false );
 			$this->RegisterPropertyBoolean( 'lineGlobal', false );
+			$this->RegisterPropertyBoolean( 'smartAudioGlobal', false );
+
+			//smartAudioDetect
 			$this->RequireParent('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
 		}
 
@@ -36,6 +40,7 @@ declare(strict_types=1);
 			$this->MaintainVariable( 'smartGlobal',  $this->Translate('global smart detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('smartGlobal'));
 			$this->MaintainVariable( 'sensorGlobal',  $this->Translate('global sensor detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorGlobal'));
 			$this->MaintainVariable( 'lineGlobal',  $this->Translate('global line detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('lineGlobal'));
+			$this->MaintainVariable( 'smartAudioGlobal',  $this->Translate('global smart audio detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('smartAudioGlobal'));
 		}
 
 		public function Send()
@@ -109,7 +114,10 @@ declare(strict_types=1);
 			if ( $type === 'smartDetectLine' && !$this->ReadPropertyBoolean('lineEvents')) {
 				return; // Smart Detect Line Events sind deaktiviert
 			}
-			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion' && $type !== 'smartDetectLine') {
+			if ( $type === 'smartAudioDetect' && !$this->ReadPropertyBoolean('smartAudioEvents')) {
+				return; // Smart Audio Detection Events sind deaktiviert
+			}
+			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion' && $type !== 'smartDetectLine' && $type !== 'smartAudioDetect') {
 				IPS_LogMessage('UnifiProtectEvents', "Unbekannter Event-Typ: $type");
 				return; // Unbekannter Event-Typ
 			}
@@ -170,8 +178,11 @@ declare(strict_types=1);
 			if ( $type === 'smartDetectLine' && $this->ReadPropertyBoolean('lineGlobal')) {
 				$this->SetValue('lineGlobal',$active);
 			}
+			if ( $type === 'smartAudioDetect' && $this->ReadPropertyBoolean('smartAudioGlobal')) {
+				$this->SetValue('smartAudioGlobal',$active);
+			}
 			#IPS_LogMessage('UnifiProtectEvents', 'EventFertig.');
-		
+
 		}
 
 		public function GetConfigurationForParent()
@@ -225,6 +236,7 @@ declare(strict_types=1);
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'motionEvents', 'width' => '220px','caption' => $this->Translate('Motion Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorMotionEvents', 'width' => '240px','caption' => $this->Translate('Sensor Motion Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'lineEvents', 'width' => '220px','caption' => $this->Translate('Line Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartAudioEvents', 'width' => '220px','caption' => $this->Translate('Smart Audio Detections') );
 			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 			
 			
@@ -234,6 +246,7 @@ declare(strict_types=1);
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'motionGlobal', 'width' => '220px','caption' => $this->Translate('Motion Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorGlobal', 'width' => '240px','caption' => $this->Translate('Sensor Motion Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'lineGlobal', 'width' => '220px','caption' => $this->Translate('Line Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartAudioGlobal', 'width' => '220px','caption' => $this->Translate('Smart Audio Detections') );
 			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 
 		
