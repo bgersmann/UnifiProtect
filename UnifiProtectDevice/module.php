@@ -263,45 +263,59 @@ declare(strict_types=1);
 		}
 
 		public function getSnapshot(array $array):bool {
-			$ch = curl_init();
-			curl_setopt( $ch, CURLOPT_URL, $array['url'] );
-			curl_setopt( $ch, CURLOPT_HTTPGET, true );
-			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-			curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
-			curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, false );
-			curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'X-API-KEY:'.$array['apikey'] ) );
-			curl_setopt( $ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1' );
-			// Timeout-Einstellungen
-			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 10);  
-			$RawData = curl_exec($ch);
-			curl_close( $ch );			
-			if ($RawData === false) {
-				// Handle error
-				$this->SendDebug("UnifiPDevice", "Curl error: " . curl_error($ch), 0);
-				//$this->SetStatus( 201 ); // Set status to error
+			if (!IPS_SemaphoreEnter("UnifiProtectAPI", 500)) {
+				$this->SendDebug("UnifiPDevice", "Semaphore Timeout - Request abgebrochen", 0);
 				return false;
 			}
-			// Fehler-JSON abfangen
-			$json = json_decode($RawData, true);
-			if (is_array($json) && isset($json['error'])) {
-				$this->SendDebug("UnifiPDevice", "Snapshot error: " . $json['error'], 0);
-				//$this->SetStatus(201);
-				return false;
-			}
-			$this->SendDebug("UnifiPDevice", "Got Snapshot: " . $RawData, 0);
-			$MedienID = IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);
-			if ($MedienID > 0) {
-				if (isset($RawData) && !empty($RawData)) {
-					IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
-					IPS_SetMediaContent($MedienID, base64_encode($RawData));
+
+			try {
+				$starttime=microtime(true);
+				$ch = curl_init();
+				curl_setopt( $ch, CURLOPT_URL, $array['url'] );
+				curl_setopt( $ch, CURLOPT_HTTPGET, true );
+				curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+				curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
+				curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, false );
+				curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'X-API-KEY:'.$array['apikey'] ) );
+				curl_setopt( $ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1' );
+				// Timeout-Einstellungen
+				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+				curl_setopt($ch, CURLOPT_TIMEOUT, 10);  
+				$RawData = curl_exec($ch);
+				$curl_error = curl_error($ch);		
+				if ($RawData === false) {
+					// Handle error
+					$this->SendDebug("UnifiPDevice", "Curl error: " . $curl_error, 0);
+					//$this->SetStatus( 201 ); // Set status to error
+					return false;
+				}
+				// Fehler-JSON abfangen
+				$json = json_decode($RawData, true);
+				if (is_array($json) && isset($json['error'])) {
+					$this->SendDebug("UnifiPDevice", "Snapshot error: " . $json['error'], 0);
+					//$this->SetStatus(201);
+					return false;
+				}
+				$this->SendDebug("UnifiPDevice", "Got Snapshot: " . $RawData, 0);
+				$MedienID = IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);
+				if ($MedienID > 0) {
+					if (isset($RawData) && !empty($RawData)) {
+						IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
+						IPS_SetMediaContent($MedienID, base64_encode($RawData));
+					} else {
+						return false;
+					}
 				} else {
 					return false;
 				}
-			} else {
-				return false;
+				if(microtime(true)-$starttime<=0.05){
+					usleep((int)(50-(microtime(true)-$starttime*1000000)));
+				}
+				return true;
+			} finally {
+				// Semaphore freigeben
+				IPS_SemaphoreLeave("UnifiProtectAPI");
 			}
-			return true;
 		}
 
 		public function getData():string {

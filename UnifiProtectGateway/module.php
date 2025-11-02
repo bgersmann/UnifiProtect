@@ -132,15 +132,15 @@ declare(strict_types=1);
 				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 				curl_setopt($ch, CURLOPT_TIMEOUT, 10);  
 				$RawData = curl_exec($ch);
-				curl_close( $ch );		
+				$curl_error = curl_error($ch);
+        		curl_close( $ch );		
 				$this->SendDebug("UnifiPGW", "API Endpoint: " .$RawData, 0);
 				if ($RawData === false) {
 					// Handle error
-					$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
+					$this->SendDebug("UnifiPGW", "Curl error: " . $curl_error, 0);
 					$this->SetStatus( 201 ); // Set status to error
 					return [];
 				}
-				usleep(100000); // 100 ms Pause zwischen Requests
 				$JSONData = json_decode( $RawData, true );			
 				if ( isset( $JSONData[ 'statusCode' ] ) ) {
 					if ($JSONData[ 'statusCode' ]<> 200) {
@@ -149,8 +149,9 @@ declare(strict_types=1);
 						$this->SetStatus( $JSONData[ 'statusCode' ] );
 					}
 				}
-				if(microtime(true)-$starttime<=0.05){
-					usleep((50-(microtime(true)-$starttime*1000000)));
+				$elapsed = microtime(true) - $starttime;
+				if($elapsed < 0.05) {
+					usleep((int)((0.05 - $elapsed) * 1000000));
 				}
 				return $JSONData;
 			} finally {
@@ -179,15 +180,15 @@ declare(strict_types=1);
 				curl_setopt( $ch, CURLOPT_HTTPHEADER, array( 'X-API-KEY:'.$APIKey ) );
 				curl_setopt( $ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1' );
 				$RawData = curl_exec($ch);
+				$curl_error = curl_error($ch);  
 				curl_close( $ch );
 				$this->SendDebug("UnifiPGW", "API Endpoint: " .$RawData, 0);
 				if ($RawData === false) {
 					// Handle error
-					$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
+					$this->SendDebug("UnifiPGW", "Curl error: " . $curl_error, 0);
 					$this->SetStatus( 201 ); // Set status to error
 					return [];
 				}
-				usleep(100000); // 100 ms Pause zwischen Requests
 				$JSONData = json_decode( $RawData, true );
 				if ( isset( $JSONData[ 'statusCode' ] ) ) {
 					if ($JSONData[ 'statusCode' ]<> 200) {
@@ -196,9 +197,10 @@ declare(strict_types=1);
 						$this->SetStatus( $JSONData[ 'statusCode' ] );
 					}
 				}						
-				if(microtime(true)-$starttime<=0.05){
-						usleep((50-(microtime(true)-$starttime*1000000)));
-					}
+				$elapsed = microtime(true) - $starttime;
+				if($elapsed < 0.05) {
+					usleep((int)((0.05 - $elapsed) * 1000000));
+				}
 				return [];
 			} finally {
 				// Semaphore freigeben
@@ -229,15 +231,15 @@ declare(strict_types=1);
 				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 				curl_setopt($ch, CURLOPT_TIMEOUT, 10);  
 				$RawData = curl_exec($ch);
-				curl_close( $ch );
+				$curl_error = curl_error($ch); // ✅ VOR curl_close() speichern
+        		curl_close( $ch );
 				$this->SendDebug("UnifiPGW", "API Endpoint: " .$RawData, 0);
 				if ($RawData === false) {
 					// Handle error
-					$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
+					$this->SendDebug("UnifiPGW", "Curl error: " . $curl_error, 0);
 					$this->SetStatus( 201 ); // Set status to error
 					return [];
 				}
-				usleep(100000); // 100 ms Pause zwischen Requests
 				$JSONData = json_decode( $RawData, true );
 				if ( isset( $JSONData[ 'statusCode' ] ) ) {
 					if ($JSONData[ 'statusCode' ]<> 200) {
@@ -246,9 +248,10 @@ declare(strict_types=1);
 						$this->SetStatus( $JSONData[ 'statusCode' ] );
 					}
 				}
-				if(microtime(true)-$starttime<=0.05){
-						usleep((50-(microtime(true)-$starttime*1000000)));
-					}
+				$elapsed = microtime(true) - $starttime;
+				if($elapsed < 0.05) {
+					usleep((int)((0.05 - $elapsed) * 1000000));
+				}
 				return [];
 			} finally {
 				// Semaphore freigeben
@@ -279,15 +282,15 @@ declare(strict_types=1);
 				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 				curl_setopt($ch, CURLOPT_TIMEOUT, 10);  
 				$RawData = curl_exec($ch);
-				curl_close( $ch );
+				$curl_error = curl_error($ch); // ✅ VOR curl_close() speichern
+        		curl_close( $ch );
 				$this->SendDebug("UnifiPGW", "API Endpoint: " .$RawData, 0);
 				if ($RawData === false) {
 					// Handle error
-					$this->SendDebug("UnifiPGW", "Curl error: " . curl_error($ch), 0);
+					$this->SendDebug("UnifiPGW", "Curl error: " . $curl_error, 0);
 					$this->SetStatus( 201 ); // Set status to error
 					return [];
 				}
-				usleep(100000); // 100 ms Pause zwischen Requests
 				$JSONData = json_decode( $RawData, true );
 				if ( isset( $JSONData[ 'statusCode' ] ) ) {
 					if ($JSONData[ 'statusCode' ]<> 200) {
@@ -296,9 +299,10 @@ declare(strict_types=1);
 						$this->SetStatus( $JSONData[ 'statusCode' ] );
 					}
 				}
-				if(microtime(true)-$starttime<=0.05){
-							usleep((50-(microtime(true)-$starttime*1000000)));
-						}
+				$elapsed = microtime(true) - $starttime;
+				if($elapsed < 0.05) {
+					usleep((int)((0.05 - $elapsed) * 1000000));
+				}
 				return $JSONData;
 			} finally {
 				// Semaphore freigeben
@@ -338,6 +342,7 @@ declare(strict_types=1);
 
 		public function getCameras():array {			
 			$JSONData = $this->getApiData( '/cameras' );
+			$value = [];
 			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
 				if (isset($JSONData)) {
 					$devices = $JSONData;
@@ -363,6 +368,7 @@ declare(strict_types=1);
 
 		public function getSensors():array {
 			$JSONData = $this->getApiData( '/sensors' );
+			$value = [];
 			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
 				if (isset($JSONData)) {
 					$devices = $JSONData;
@@ -388,6 +394,7 @@ declare(strict_types=1);
 
 		public function getChimes():array {
 			$JSONData = $this->getApiData( '/chimes' );
+			$value = [];
 			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
 				if (isset($JSONData)) {
 					$devices = $JSONData;
@@ -413,6 +420,7 @@ declare(strict_types=1);
 
 		public function getLights():array {
 			$JSONData = $this->getApiData( '/lights' );
+			$value = [];
 			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
 				if (isset($JSONData)) {
 					$devices = $JSONData;
