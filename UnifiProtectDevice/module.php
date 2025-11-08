@@ -47,6 +47,7 @@ declare(strict_types=1);
 				$this->MaintainAction('micVolume', true);
 				SetValue($this->GetIDForIdent('snapshot'), 1);
 				$this->MaintainAction('snapshot', true);
+				
 			}
 			$MedienID = @IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);			
 			if ($MedienID == 0) {
@@ -227,12 +228,21 @@ declare(strict_types=1);
 						if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 							$this->SetValue('micEnabled', $deviceData['isMicEnabled'] ?? false);
 							$this->SetValue('micVolume', $deviceData['micVolume'] ?? 0);
+							$lcdMessageText = '';
+                            if (isset($deviceData['lcdMessage']) && is_array($deviceData['lcdMessage'])) {
+                                $lcdMessageText = $deviceData['lcdMessage']['text'] ?? '';
+                            }
+                            if ($lcdMessageText !== '') {
+                                $this->MaintainVariable('lcdMessage',$this->Translate('LCD Message'),3,['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,'USAGE_TYPE' => 0,'ICON' => 'text'], 201, true);
+								$this->MaintainAction('lcdMessage', true);
+                                $this->SetValue('lcdMessage', (string)$lcdMessageText);
+                            }
 						} elseif ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 							$this->SetValue('Temperature', $deviceData['stats']['temperature']['value'] ?? 0);
 							$this->SetValue('Humidity', $deviceData['stats']['humidity']['value'] ?? 0);
 							$this->SetValue('Illuminance', $deviceData['stats']['light']['value'] ?? 0);							
 							if (!empty($deviceData['batteryStatus']['percentage'])) {
-								$this->MaintainVariable( 'batteryStatus', $this->Translate( 'Battery Status' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' %' , 'ICON'=> 'battery-bolt'], 200, 1 );
+								$this->MaintainVariable('batteryStatus', $this->Translate('Battery Status'), 1, ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX' => 100, 'MIN' => 0, 'USAGE_TYPE' => 1, 'DIGITS' => 0, 'SUFFIX' => ' %', 'ICON' => 'battery-bolt'], 200, 1);
 								$this->SetValue('batteryStatus', $deviceData['batteryStatus']['percentage']);
 							}
 						}
@@ -408,6 +418,17 @@ declare(strict_types=1);
 						$this->SendDebug("UnifiPDevice", "Already waiting on Snapshot: ".GetValueInteger($idIdent), 0);
 					}
 					break;
+				case 'lcdMessage':
+                    $this->SendDebug('UnifiPDevice', 'lcdMessage: New value is '.$Value, 0);
+                    $payload = [
+                        'lcdMessage' => [
+                            'type' => 'CUSTOM_MESSAGE',
+                            'text' => (string)$Value
+                        ]
+                    ];
+                    $this->Send('patchSettingCamera', json_encode($payload));
+                    SetValue($this->GetIDForIdent($Ident), (string)$Value);
+                    break;
 				default:
 					throw new Exception("Invalid Ident");
 			}
