@@ -7,7 +7,7 @@ declare(strict_types=1);
 		public function Create()
 		{
 			//Never delete this line!
-			parent::Create();			
+			parent::Create();		
 			$this->RegisterPropertyString( 'ServerAddress', '192.168.178.1' );
 			$this->RegisterPropertyString( 'APIKey', '' );
 			$this->RegisterPropertyBoolean( 'smartEvents', false );
@@ -15,11 +15,31 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'sensorMotionEvents', false );
 			$this->RegisterPropertyBoolean( 'lineEvents', false );
 			$this->RegisterPropertyBoolean( 'smartAudioEvents', false );
+			$this->RegisterPropertyBoolean( 'ringEvents', false );
+			$this->RegisterPropertyBoolean( 'sensorExtremeValuesEvents', false );
+			$this->RegisterPropertyBoolean( 'sensorWaterLeakEvents', false );
+			$this->RegisterPropertyBoolean( 'sensorTamperEvents', false );
+			$this->RegisterPropertyBoolean( 'sensorBatteryLowEvents', false );
+			$this->RegisterPropertyBoolean( 'sensorAlarmEvents', false );
+			$this->RegisterPropertyBoolean( 'sensorOpenedEvents', false );
+			$this->RegisterPropertyBoolean( 'sensorClosedEvents', false );
+			$this->RegisterPropertyBoolean( 'lightMotionEvents', false );
+			$this->RegisterPropertyBoolean( 'smartDetectLoiterZoneEvents', false );
 			$this->RegisterPropertyBoolean( 'motionGlobal', false );
 			$this->RegisterPropertyBoolean( 'smartGlobal', false );
 			$this->RegisterPropertyBoolean( 'sensorGlobal', false );
 			$this->RegisterPropertyBoolean( 'lineGlobal', false );
 			$this->RegisterPropertyBoolean( 'smartAudioGlobal', false );
+			$this->RegisterPropertyBoolean( 'ringGlobal', false );
+			$this->RegisterPropertyBoolean( 'sensorExtremeValuesGlobal', false );
+			$this->RegisterPropertyBoolean( 'sensorWaterLeakGlobal', false );
+			$this->RegisterPropertyBoolean( 'sensorTamperGlobal', false );
+			$this->RegisterPropertyBoolean( 'sensorBatteryLowGlobal', false );
+			$this->RegisterPropertyBoolean( 'sensorAlarmGlobal', false );
+			$this->RegisterPropertyBoolean( 'sensorOpenedGlobal', false );
+			$this->RegisterPropertyBoolean( 'sensorClosedGlobal', false );
+			$this->RegisterPropertyBoolean( 'lightMotionGlobal', false );
+			$this->RegisterPropertyBoolean( 'smartDetectLoiterZoneGlobal', false );
 
 			//smartAudioDetect
 			$this->RequireParent('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
@@ -41,6 +61,16 @@ declare(strict_types=1);
 			$this->MaintainVariable( 'sensorGlobal',  $this->Translate('global sensor detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorGlobal'));
 			$this->MaintainVariable( 'lineGlobal',  $this->Translate('global line detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('lineGlobal'));
 			$this->MaintainVariable( 'smartAudioGlobal',  $this->Translate('global smart audio detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('smartAudioGlobal'));
+			$this->MaintainVariable( 'ringGlobal',  $this->Translate('global ring detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('ringGlobal'));
+			$this->MaintainVariable( 'sensorExtremeValuesGlobal',  $this->Translate('global sensor extreme values detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorExtremeValuesGlobal'));
+			$this->MaintainVariable( 'sensorWaterLeakGlobal',  $this->Translate('global sensor water leak detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorWaterLeakGlobal'));
+			$this->MaintainVariable( 'sensorTamperGlobal',  $this->Translate('global sensor tamper detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorTamperGlobal'));
+			$this->MaintainVariable( 'sensorBatteryLowGlobal',  $this->Translate('global sensor battery low detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorBatteryLowGlobal'));
+			$this->MaintainVariable( 'sensorAlarmGlobal',  $this->Translate('global sensor alarm detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorAlarmGlobal'));
+			$this->MaintainVariable( 'sensorOpenedGlobal',  $this->Translate('global sensor opened detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorOpenedGlobal'));
+			$this->MaintainVariable( 'sensorClosedGlobal',  $this->Translate('global sensor closed detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorClosedGlobal'));
+			$this->MaintainVariable( 'lightMotionGlobal',  $this->Translate('global light motion detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('lightMotionGlobal'));
+			$this->MaintainVariable( 'smartDetectLoiterZoneGlobal',  $this->Translate('global smart detect loiter zone') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('smartDetectLoiterZoneGlobal'));
 		}
 
 		public function Send()
@@ -117,7 +147,37 @@ declare(strict_types=1);
 			if ( $type === 'smartAudioDetect' && !$this->ReadPropertyBoolean('smartAudioEvents')) {
 				return; // Smart Audio Detection Events sind deaktiviert
 			}
-			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion' && $type !== 'smartDetectLine' && $type !== 'smartAudioDetect') {
+			if ( $type === 'ring' && !$this->ReadPropertyBoolean('ringEvents')) {
+				return;
+			}
+			if ( $type === 'sensorExtremeValues' && !$this->ReadPropertyBoolean('sensorExtremeValuesEvents')) {
+				return;
+			}
+			if ( $type === 'sensorWaterLeak' && !$this->ReadPropertyBoolean('sensorWaterLeakEvents')) {
+				return;
+			}
+			if ( $type === 'sensorTamper' && !$this->ReadPropertyBoolean('sensorTamperEvents')) {
+				return;
+			}
+			if ( $type === 'sensorBatteryLow' && !$this->ReadPropertyBoolean('sensorBatteryLowEvents')) {
+				return;
+			}
+			if ( $type === 'sensorAlarm' && !$this->ReadPropertyBoolean('sensorAlarmEvents')) {
+				return;
+			}
+			if ( $type === 'sensorOpened' && !$this->ReadPropertyBoolean('sensorOpenedEvents')) {
+				return;
+			}
+			if ( $type === 'sensorClosed' && !$this->ReadPropertyBoolean('sensorClosedEvents')) {
+				return;
+			}
+			if ( $type === 'lightMotion' && !$this->ReadPropertyBoolean('lightMotionEvents')) {
+				return;
+			}
+			if ( $type === 'smartDetectLoiterZone' && !$this->ReadPropertyBoolean('smartDetectLoiterZoneEvents')) {
+				return;
+			}
+			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion' && $type !== 'smartDetectLine' && $type !== 'smartAudioDetect' && $type !== 'ring' && $type !== 'sensorExtremeValues' && $type !== 'sensorWaterLeak' && $type !== 'sensorTamper' && $type !== 'sensorBatteryLow' && $type !== 'sensorAlarm' && $type !== 'sensorOpened' && $type !== 'sensorClosed' && $type !== 'lightMotion' && $type !== 'smartDetectLoiterZone') {
 				IPS_LogMessage('UnifiProtectEvents', "Unbekannter Event-Typ: $type");
 				return; // Unbekannter Event-Typ
 			}
@@ -181,6 +241,36 @@ declare(strict_types=1);
 			if ( $type === 'smartAudioDetect' && $this->ReadPropertyBoolean('smartAudioGlobal')) {
 				$this->SetValue('smartAudioGlobal',$active);
 			}
+			if ( $type === 'ring' && $this->ReadPropertyBoolean('ringGlobal')) {
+				$this->SetValue('ringGlobal',$active);
+			}
+			if ( $type === 'sensorExtremeValues' && $this->ReadPropertyBoolean('sensorExtremeValuesGlobal')) {
+				$this->SetValue('sensorExtremeValuesGlobal',$active);
+			}
+			if ( $type === 'sensorWaterLeak' && $this->ReadPropertyBoolean('sensorWaterLeakGlobal')) {
+				$this->SetValue('sensorWaterLeakGlobal',$active);
+			}
+			if ( $type === 'sensorTamper' && $this->ReadPropertyBoolean('sensorTamperGlobal')) {
+				$this->SetValue('sensorTamperGlobal',$active);
+			}
+			if ( $type === 'sensorBatteryLow' && $this->ReadPropertyBoolean('sensorBatteryLowGlobal')) {
+				$this->SetValue('sensorBatteryLowGlobal',$active);
+			}
+			if ( $type === 'sensorAlarm' && $this->ReadPropertyBoolean('sensorAlarmGlobal')) {
+				$this->SetValue('sensorAlarmGlobal',$active);
+			}
+			if ( $type === 'sensorOpened' && $this->ReadPropertyBoolean('sensorOpenedGlobal')) {
+				$this->SetValue('sensorOpenedGlobal',$active);
+			}
+			if ( $type === 'sensorClosed' && $this->ReadPropertyBoolean('sensorClosedGlobal')) {
+				$this->SetValue('sensorClosedGlobal',$active);
+			}
+			if ( $type === 'lightMotion' && $this->ReadPropertyBoolean('lightMotionGlobal')) {
+				$this->SetValue('lightMotionGlobal',$active);
+			}
+			if ( $type === 'smartDetectLoiterZone' && $this->ReadPropertyBoolean('smartDetectLoiterZoneGlobal')) {
+				$this->SetValue('smartDetectLoiterZoneGlobal',$active);
+			}
 			#IPS_LogMessage('UnifiProtectEvents', 'EventFertig.');
 
 		}
@@ -232,22 +322,51 @@ declare(strict_types=1);
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => $this->Translate('APIKey') );
 
 			unset($arrayOptions);
-			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartEvents', 'width' => '220px','caption' => $this->Translate('Smart Detections') );
-			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'motionEvents', 'width' => '220px','caption' => $this->Translate('Motion Detections') );
-			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorMotionEvents', 'width' => '240px','caption' => $this->Translate('Sensor Motion Detections') );
-			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'lineEvents', 'width' => '220px','caption' => $this->Translate('Line Events') );
-			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartAudioEvents', 'width' => '220px','caption' => $this->Translate('Smart Audio Detections') );
-			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
+			$arrayElements[] = array('type' => 'Label', 'bold' => true, 'label' => $this->Translate('Variable for events'));
+			$arrayOptions = array(
+				array( 'type' => 'CheckBox', 'name' => 'smartEvents', 'width' => '220px','caption' => $this->Translate('Smart Detections') ),
+				array( 'type' => 'CheckBox', 'name' => 'motionEvents', 'width' => '220px','caption' => $this->Translate('Motion Detections') ),
+				array( 'type' => 'CheckBox', 'name' => 'sensorMotionEvents', 'width' => '220px','caption' => $this->Translate('Sensor Motion Detections') ),
+				array( 'type' => 'CheckBox', 'name' => 'lineEvents', 'width' => '220px','caption' => $this->Translate('Line Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'smartAudioEvents', 'width' => '220px','caption' => $this->Translate('Smart Audio Detections') ),
+				array( 'type' => 'CheckBox', 'name' => 'ringEvents', 'width' => '220px','caption' => $this->Translate('Ring Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'sensorExtremeValuesEvents', 'width' => '220px','caption' => $this->Translate('Sensor Extreme Values Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'sensorWaterLeakEvents', 'width' => '220px','caption' => $this->Translate('Sensor Water Leak Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'sensorTamperEvents', 'width' => '220px','caption' => $this->Translate('Sensor Tamper Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'sensorBatteryLowEvents', 'width' => '220px','caption' => $this->Translate('Sensor Battery Low Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'sensorAlarmEvents', 'width' => '220px','caption' => $this->Translate('Sensor Alarm Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'sensorOpenedEvents', 'width' => '220px','caption' => $this->Translate('Sensor Opened Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'sensorClosedEvents', 'width' => '220px','caption' => $this->Translate('Sensor Closed Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'lightMotionEvents', 'width' => '220px','caption' => $this->Translate('Light Motion Events') ),
+				array( 'type' => 'CheckBox', 'name' => 'smartDetectLoiterZoneEvents', 'width' => '220px','caption' => $this->Translate('Smart Detect Loiter Zone Events') )
+			);
+			$chunkSize = (int)ceil(count($arrayOptions) / 3);
+			foreach (array_chunk($arrayOptions, $chunkSize) as $optionRow) {
+				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $optionRow );
+			}
 			
 			
 			unset($arrayOptions);#Variable for Global 
 			$arrayElements[] = array('type' => 'Label', 'bold' => true, 'label' => $this->Translate('Variable for global events'));
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartGlobal', 'width' => '220px','caption' => $this->Translate('Smart Detection') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'motionGlobal', 'width' => '220px','caption' => $this->Translate('Motion Detections') );
-			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorGlobal', 'width' => '240px','caption' => $this->Translate('Sensor Motion Detections') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorGlobal', 'width' => '220px','caption' => $this->Translate('Sensor Motion Detections') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'lineGlobal', 'width' => '220px','caption' => $this->Translate('Line Events') );
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartAudioGlobal', 'width' => '220px','caption' => $this->Translate('Smart Audio Detections') );
-			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'ringGlobal', 'width' => '220px','caption' => $this->Translate('Ring Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorExtremeValuesGlobal', 'width' => '220px','caption' => $this->Translate('Sensor Extreme Values Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorWaterLeakGlobal', 'width' => '220px','caption' => $this->Translate('Sensor Water Leak Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorTamperGlobal', 'width' => '220px','caption' => $this->Translate('Sensor Tamper Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorBatteryLowGlobal', 'width' => '220px','caption' => $this->Translate('Sensor Battery Low Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorAlarmGlobal', 'width' => '220px','caption' => $this->Translate('Sensor Alarm Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorOpenedGlobal', 'width' => '220px','caption' => $this->Translate('Sensor Opened Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'sensorClosedGlobal', 'width' => '220px','caption' => $this->Translate('Sensor Closed Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'lightMotionGlobal', 'width' => '220px','caption' => $this->Translate('Light Motion Events') );
+			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartDetectLoiterZoneGlobal', 'width' => '220px','caption' => $this->Translate('Smart Detect Loiter Zone Events') );
+			$chunkSize = (int)ceil(count($arrayOptions) / 3);
+			foreach (array_chunk($arrayOptions, $chunkSize) as $optionRow) {
+				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $optionRow );
+			}
 
 		
 

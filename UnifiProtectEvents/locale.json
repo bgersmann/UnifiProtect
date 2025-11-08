@@ -23,7 +23,28 @@
             "global line detect":"globale Linienereignisse",
             "global smart audio detect":"globale Smarte Audioerkennung",
             "Smart Audio Detections":"Smarte Audioerkennungen",
-            "Smart Audio Detection":"Smarte Audioerkennung"
+            "Smart Audio Detection":"Smarte Audioerkennung",
+            "Ring Events":"Klingelereignisse",
+            "Sensor Extreme Values Events":"Sensor Grenzwert-Ereignisse",
+            "Sensor Water Leak Events":"Sensor Wasseralarm-Ereignisse",
+            "Sensor Tamper Events":"Sensor Sabotage-Ereignisse",
+            "Sensor Battery Low Events":"Sensor Batterie-leer-Ereignisse",
+            "Sensor Alarm Events":"Sensor Alarm-Ereignisse",
+            "Sensor Opened Events":"Sensor offen-Ereignisse",
+            "Sensor Closed Events":"Sensor geschlossen-Ereignisse",
+            "Light Motion Events":"Licht Bewegungserkennung",
+            "Smart Detect Loiter Zone Events":"Smarte Loiter-Zonenereignisse",
+            "global ring detect":"globale Klingelerkennung",
+            "global sensor extreme values detect":"globale Sensor Grenzwerte",
+            "global sensor water leak detect":"globale Sensor Wasseralarm",
+            "global sensor tamper detect":"globale Sensor Sabotage",
+            "global sensor battery low detect":"globale Sensor Batterie-leer",
+            "global sensor alarm detect":"globale Sensor Alarm",
+            "global sensor opened detect":"globale Sensor offen",
+            "global sensor closed detect":"globale Sensor geschlossen",
+            "global light motion detect":"globale Licht Bewegungserkennung",
+            "global smart detect loiter zone":"globale Smarte Loiter-Zone",
+            "variable for events":"Variable für Ereignisse"
         }
     }
 }
