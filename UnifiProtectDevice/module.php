@@ -49,7 +49,7 @@ declare(strict_types=1);
 				$this->MaintainAction('snapshot', true);
 				
 			}
-			$MedienID = @IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);			
+			$MedienID = @$this->GetIDForIdent('Snapshot');			
 			if ($MedienID == 0) {
 				if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 					$MediaID = IPS_CreateMedia(1);
@@ -149,9 +149,9 @@ declare(strict_types=1);
 								if (isset($urlStream)) {
 									if (!$this->ReadPropertyBoolean('StreamHigh')) {
 										$this->UpdateFormField("StreamHigh", "value", true);
-										IPS_SetProperty($this->InstanceID, 'StreamHigh', true);
+										$this->SetProperty('StreamHigh', true);
 									}
-									$MedienID = @IPS_GetObjectIDByIdent('Stream_High', $this->InstanceID);
+									$MedienID = @$this->GetIDForIdent('Stream_High');
 									$this->SendDebug("UnifiPDevice", "Stream High: " . $MedienID, 0);
 									if ($MedienID > 0) {
 										IPS_SetMediaFile($MedienID, $urlStream, true);
@@ -163,7 +163,7 @@ declare(strict_types=1);
 										IPS_SetMediaFile($MedienID, $urlStream, true);
 									}
 								} else {
-									$MedienID = @IPS_GetObjectIDByIdent('Stream_High', $this->InstanceID);
+									$MedienID = @$this->GetIDForIdent('Stream_High');
 									if ($MedienID > 0) {
 										IPS_SetMediaFile($MedienID, $urlStream, true);
 										IPS_DeleteMedia ($MedienID,true);
@@ -176,7 +176,7 @@ declare(strict_types=1);
 									if (!$this->ReadPropertyBoolean('StreamMedium')) {
 										$this->UpdateFormField("StreamMedium", "value", true);
 									} 
-									$MedienID = @IPS_GetObjectIDByIdent('Stream_Medium', $this->InstanceID);
+									$MedienID = @$this->GetIDForIdent('Stream_Medium');
 									$this->SendDebug("UnifiPDevice", "Stream Medium: " . $MedienID, 0);
 									if ($MedienID > 0) {
 										IPS_SetMediaFile($MedienID, $urlStream, true);										
@@ -188,7 +188,7 @@ declare(strict_types=1);
 										IPS_SetMediaFile($MedienID, $urlStream, true);
 									}
 								} else {
-									$MedienID = @IPS_GetObjectIDByIdent('Stream_Medium', $this->InstanceID);
+									$MedienID = @$this->GetIDForIdent('Stream_Medium');
 									if ($MedienID > 0) {
 											IPS_SetMediaFile($MedienID, $urlStream, true);
 											IPS_DeleteMedia ($MedienID,true);
@@ -201,7 +201,7 @@ declare(strict_types=1);
 									if (!$this->ReadPropertyBoolean('StreamLow')) {
 										$this->UpdateFormField("StreamLow", "value", true);
 									} 
-									$MedienID = @IPS_GetObjectIDByIdent('Stream_Low', $this->InstanceID);
+									$MedienID = @$this->GetIDForIdent('Stream_Low');
 									$this->SendDebug("UnifiPDevice", "Stream Low: " . $MedienID, 0);
 									if ($MedienID > 0) {
 										IPS_SetMediaFile($MedienID, $urlStream, true);										
@@ -213,7 +213,7 @@ declare(strict_types=1);
 										IPS_SetMediaFile($MedienID, $urlStream, true);
 									}
 								} else {
-									$MedienID = @IPS_GetObjectIDByIdent('Stream_Low', $this->InstanceID);
+									$MedienID = @$this->GetIDForIdent('Stream_Low');
 									if ($MedienID > 0) {
 											IPS_SetMediaFile($MedienID, $urlStream, true);
 											IPS_DeleteMedia ($MedienID,true);
@@ -307,7 +307,7 @@ declare(strict_types=1);
 					return false;
 				}
 				$this->SendDebug("UnifiPDevice", "Got Snapshot: " . $RawData, 0);
-				$MedienID = IPS_GetObjectIDByIdent('Snapshot', $this->InstanceID);
+				$MedienID = $this->GetIDForIdent('Snapshot');
 				if ($MedienID > 0) {
 					if (isset($RawData) && !empty($RawData)) {
 						IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
@@ -408,14 +408,14 @@ declare(strict_types=1);
 						$this->Send('getSnapshot','');
 						$this->SendDebug("UnifiPDevice", "Get Snapshot...", 0);						
 					} else {
-						$varTmp=IPS_GetVariable($idIdent);
+						$varTmp=$this->GetVariable($idIdent);
 						if ((time()-$varTmp['VariableChanged']) > 10) {
 							SetValue($idIdent, 1);
 							$this->SendDebug("UnifiPDevice", "Error waiting on snapshot-", 0);
 							return;
 						}
-						SetValue($idIdent, 0);
-						$this->SendDebug("UnifiPDevice", "Already waiting on Snapshot: ".GetValueInteger($idIdent), 0);
+						$this->SetValue($idIdent, 0);
+						$this->SendDebug("UnifiPDevice", "Already waiting on Snapshot: ".$this->GetValue($idIdent), 0);
 					}
 					break;
 				case 'lcdMessage':

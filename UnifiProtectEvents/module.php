@@ -81,11 +81,10 @@ declare(strict_types=1);
 		public function ReceiveData($JSONString)
 		{
 			$data = json_decode($JSONString);
-			#IPS_LogMessage('Device RECV', utf8_decode($data->Buffer));
 			if (isset($data->Buffer)) {
 				$this->HandleEvent($data->Buffer);
 			} else {
-				IPS_LogMessage('UnifiProtectEvents', 'ReceiveData: Ungültige Daten empfangen');
+				$this->SendDebug('UnifiProtectEvents', 'ReceiveData: Ungültige Daten empfangen', 0);
 			}			
 		}
 
@@ -95,21 +94,18 @@ declare(strict_types=1);
 		 */
 		public function HandleEvent(string $eventJson):void
 		{
-			#IPS_LogMessage('UnifiProtectEvents', 'EventStart.');
 			$this->SendDebug('HandleEvent', $eventJson, 0);
 			$event = json_decode($eventJson, true);
 			if (!isset($event['item']['type'])) {
-				IPS_LogMessage('UnifiProtectEvents', 'Ungültiges Event empfangen');
+				$this->SendDebug('UnifiProtectEvents', 'Ungültiges Event empfangen', 0);
 				return;
 			}
 			$type = $event['item']['type'];
 			$camID = $event['item']['device'];
 			$eventID = $event['item']['id'];
 			$eventType=$event['type'];			
-			#$this->SetBuffer("devices", $data['data']);
 			$Bufferdata = $this->GetBuffer("activeEvents");
 			$this->SendDebug('HandleEvent-1',$Bufferdata,0);
-			#IPS_LogMessage('GetConfigurationForParent', 'VorEvent: ' . $Bufferdata);
 			if ($Bufferdata=="") {
 				$activeEvents=array();
 			} else {
@@ -129,7 +125,6 @@ declare(strict_types=1);
 				}
 			}
 			$this->SetBuffer("activeEvents", json_encode($activeEvents));
-			#IPS_LogMessage('GetConfigurationForParent', 'NachEvent: ' . json_encode($activeEvents));
 			$this->SendDebug('HandleEvent-2',json_encode($activeEvents),0);
 			// Logik für Smart Detection Events
 			if( $type === 'smartDetectZone' && !$this->ReadPropertyBoolean('smartEvents')) {
@@ -178,14 +173,13 @@ declare(strict_types=1);
 				return;
 			}
 			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion' && $type !== 'smartDetectLine' && $type !== 'smartAudioDetect' && $type !== 'ring' && $type !== 'sensorExtremeValues' && $type !== 'sensorWaterLeak' && $type !== 'sensorTamper' && $type !== 'sensorBatteryLow' && $type !== 'sensorAlarm' && $type !== 'sensorOpened' && $type !== 'sensorClosed' && $type !== 'lightMotion' && $type !== 'smartDetectLoiterZone') {
-				IPS_LogMessage('UnifiProtectEvents', "Unbekannter Event-Typ: $type");
+				$this->SendDebug('UnifiProtectEvents', "Unbekannter Event-Typ: $type", 0);
 				return; // Unbekannter Event-Typ
 			}
 			$idCam=$this->getInstanceIDForGuid( $camID, '{F78D1159-D735-D23A-0A97-69F07962BB89}' );
-			if ($idCam > 0) {
-				#IPS_LogMessage('GetConfigurationForParent', 'VorObjectByIdent: ' . $idCam);
+			if ($idCam > 0) {				
 				// Wenn eine Kamera-ID vorhanden ist, sende das Event an die Kamera-Instanz
-				$IDName=@IPS_GetObjectIDByIdent('Name',$idCam);
+				$IDName=@$this->GetIDForIdent('Name',$idCam);
 				if (!$IDName === false) {
 					$camName=GetValueString($IDName);
 					$this->SendDebug('HandleEvent', "Sende Event an Kamera $camName (ID: $idCam)", 0);   
@@ -271,7 +265,6 @@ declare(strict_types=1);
 			if ( $type === 'smartDetectLoiterZone' && $this->ReadPropertyBoolean('smartDetectLoiterZoneGlobal')) {
 				$this->SetValue('smartDetectLoiterZoneGlobal',$active);
 			}
-			#IPS_LogMessage('UnifiProtectEvents', 'EventFertig.');
 
 		}
 
