@@ -179,7 +179,7 @@ declare(strict_types=1);
 			$idCam=$this->getInstanceIDForGuid( $camID, '{F78D1159-D735-D23A-0A97-69F07962BB89}' );
 			if ($idCam > 0) {				
 				// Wenn eine Kamera-ID vorhanden ist, sende das Event an die Kamera-Instanz
-				$IDName=@$this->GetIDForIdent('Name',$idCam);
+				$IDName=@$this->GetIDForIdent('Name');
 				if (!$IDName === false) {
 					$camName=GetValueString($IDName);
 					$this->SendDebug('HandleEvent', "Sende Event an Kamera $camName (ID: $idCam)", 0);   
@@ -269,10 +269,10 @@ declare(strict_types=1);
 		}
 
 		public function GetConfigurationForParent()
-		{
+		{			
 			$parent = IPS_GetInstance($this->InstanceID)['ConnectionID'];
-			$ip = IPS_GetProperty($this->InstanceID, 'ServerAddress');
-			$apiKey = IPS_GetProperty($this->InstanceID, 'APIKey');
+			$ip = $this->ReadPropertyString('ServerAddress');
+			$apiKey = $this->ReadPropertyString('APIKey');
 			$status=false;
 			if (!empty($ip) && !empty($apiKey)) {
 				$status=true;
