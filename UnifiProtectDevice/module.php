@@ -408,7 +408,7 @@ declare(strict_types=1);
 						$this->Send('getSnapshot','');
 						$this->SendDebug("UnifiPDevice", "Get Snapshot...", 0);						
 					} else {
-						$varTmp=$this->GetVariable($idIdent);
+						$varTmp=IPS_GetVariablet($idIdent);
 						if ((time()-$varTmp['VariableChanged']) > 10) {
 							SetValue($idIdent, 1);
 							$this->SendDebug("UnifiPDevice", "Error waiting on snapshot-", 0);
