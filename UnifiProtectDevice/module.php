@@ -387,6 +387,7 @@ declare(strict_types=1);
 			$arrayActions[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions	 );
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
 	    }
+		
 		public function RequestAction($Ident, $Value) {
 			switch($Ident) {
 				case "micVolume":

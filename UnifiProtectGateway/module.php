@@ -54,13 +54,11 @@ declare(strict_types=1);
 				switch ($data->Api) {
 					case "getDevices":
 						$array = $this->getDevices($data->Param1);
-						return serialize($array);
-						break;
+						return serialize($array);						
 					case "getStreams":
 						$this->SendDebug("UnifiPGW", "Get Streams for CameraID: " . IPS_GetProperty( $data->InstanceID, 'ID' ), 0);
 						$array = $this->getStreams(IPS_GetProperty( $data->InstanceID, 'ID' ));
 						return serialize($array);
-						break;
 					case "getSnapshot":
 						$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
 						$APIKey = $this->ReadPropertyString( 'APIKey' );
@@ -69,30 +67,24 @@ declare(strict_types=1);
 						$array = array('apikey' => $APIKey, 'url' => $url);
 						$this->SendDebug("UnifiPGW", "Snapshot: " . json_encode($array), 0);
 						return serialize($array);
-						break;
 					case "createStream":
 						$this->SendDebug("UnifiPGW", "Create Streams for CameraID: " . IPS_GetProperty( $data->InstanceID, 'ID' ), 0);
 						$stream = $this->createStream(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
 						return serialize($stream);
-						break;
 					case "getDeviceData":
 						$deviceData = $this->getDeviceData(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
 						return serialize($deviceData);
-						break;
 					case "patchSettingCamera":
 						$setting = $this->patchSettingCamera(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
 						return serialize($setting);
-						break;
 					case "patchSettingSensor":
 						$setting = $this->patchSettingSensor(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
 						return serialize($setting);
-						break;
 					case "getDevicesConfig":
 						$config = $this->getDevicesConfig();
 						return serialize($config);
-						break;
 					default:
-						$this->SendDebug("UnifiPGW", "Unknown API: " . $api, 0);
+						$this->SendDebug("UnifiPGW", "Unknown API: " . $data->Api, 0);
 						break;
 				}
 			}
@@ -749,7 +741,10 @@ declare(strict_types=1);
 			$instanceIDs = IPS_GetInstanceListByModuleID( $guid );
 			foreach ( $instanceIDs as $instanceID ) {
 				if ( IPS_GetProperty( $instanceID, 'ID' ) == $id ) {
-					return $instanceID;
+					$instance=IPS_GetInstance($instanceID);
+					if ($instance['ConnectionID']==$this->InstanceID) {
+						return $instanceID;
+					}
 				}
 			}
 			return 0;
