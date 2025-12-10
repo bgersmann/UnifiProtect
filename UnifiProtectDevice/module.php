@@ -398,25 +398,25 @@ declare(strict_types=1);
 					$this->Send('patchSettingCamera', json_encode(array('micVolume' => $Value)));
 
 					//Neuen Wert in die Statusvariable schreiben
-					SetValue($this->GetIDForIdent($Ident), $Value);
+					SetValue($Ident, $Value);
 					break;
 				case 'snapshot':
 					$idIdent=$this->GetIDForIdent($Ident);
 					//Hier würde normalerweise eine Aktion z.B. das Schalten ausgeführt werden
 					if (GetValueInteger($idIdent) == 1) {
 						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Erzeuge Snapshot...","Color":16711680,"IconActive":false,"IconValue":"","Value":0}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
-						SetValue($idIdent, 0);
+						SetValue($Ident, 0);
 						$this->Send('getSnapshot','');
 						$this->SendDebug("UnifiPDevice", "Get Snapshot...", 0);						
 					} else {
 						$varTmp=IPS_GetVariable($idIdent);
 						if ((time()-$varTmp['VariableChanged']) > 10) {
-							SetValue($idIdent, 1);
+							SetValue($Ident, 1);
 							$this->SendDebug("UnifiPDevice", "Error waiting on snapshot-", 0);
 							return;
 						}
-						$this->SetValue($idIdent, 0);
-						$this->SendDebug("UnifiPDevice", "Already waiting on Snapshot: ".$this->GetValue($idIdent), 0);
+						$this->SetValue($Ident, 0);
+						$this->SendDebug("UnifiPDevice", "Already waiting on Snapshot: ".$this->GetValue($Ident), 0);
 					}
 					break;
 				case 'lcdMessage':
@@ -428,7 +428,7 @@ declare(strict_types=1);
                         ]
                     ];
                     $this->Send('patchSettingCamera', json_encode($payload));
-                    SetValue($this->GetIDForIdent($Ident), (string)$Value);
+                    SetValue($Ident, (string)$Value);
                     break;
 				default:
 					throw new Exception("Invalid Ident");
