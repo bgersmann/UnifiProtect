@@ -12,4 +12,5 @@ Dieses Modul repräsentiert die Unifi Protect Geräte in IP-Symcon.
 Empfängt und verarbeitet Ereignisse (z.B. Bewegung, smarte Erkennung, Sensor-Events) von UniFi Protect.
 
 - __UnifiProtectConfigurator__ ([Dokumentation](UnifiProtectConfigurator))  
+- UnifiWebsocket ([Dokumentation](UnifiWebsocket))
 Modul zur komfortablen Auswahl und Instanz-Erstellung der verfügbaren UniFi Protect Geräte.

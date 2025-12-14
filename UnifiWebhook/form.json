@@ -1,0 +1,74 @@
+{
+    "elements": [
+        {
+            "type": "Label",
+            "bold": true,
+            "caption": "UniFi Protect Webhooks",
+            "color": 0,
+            "italic": false,
+            "link": false,
+            "name": "",
+            "underline": false,
+            "visible": true,
+            "width": ""
+        },
+        {
+            "type": "Label",
+            "bold": false,
+            "caption": "Trage meine Webhook ID in die Liste ein. Dieser kann der per RequestAction($ID,true); aufgerufen werden.",
+            "color": 0,
+            "italic": false,
+            "link": false,
+            "name": "",
+            "underline": false,
+            "visible": true,
+            "width": ""
+        },
+        {
+            "type": "List",
+            "add": true,
+            "caption": "Webhooks:",
+            "changeOrder": false,
+            "sort": {
+				"column": "Name",
+				"direction": "ascending"
+			},
+            "columns": [
+                {
+                    "caption": "Name",
+                    "name": "Name",
+                    "width": "200px",
+                    "add": "Name",
+                    "edit": {
+                        "type": "ValidationTextBox"
+                    }
+                },{
+                    "caption": "Webhook ID",
+                    "name": "WebhookID",
+                    "width": "auto",
+                    "add": "26006f0f-2e73-4a34-aef2-c86238416436",
+                     "edit": {
+                        "type": "ValidationTextBox"
+                    }
+                }
+            ],
+            "delete": true,
+            "download": "",
+            "enabled": true,
+            "form": "",
+            "link": false,
+            "loadValuesFromConfiguration": true,
+            "name": "webhooks",
+            "onAdd": "",
+            "onChangeOrder": "",
+            "onDelete": "", 
+            "onEdit": "",
+            "rowCount": 0,
+            "visible": true
+        }
+    ],
+    "actions": [
+    ],
+    "status": [
+    ]
+}

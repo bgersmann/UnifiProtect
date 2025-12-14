@@ -1,0 +1,19 @@
+{
+    "id": "{9ACE9F06-CBBF-2A0B-A329-AEE7404F8A5D}",
+    "name": "UnifiWebhook",
+    "url": "https://github.com/bgersmann/UnifiProtect",
+    "type": 3,
+    "vendor": "",
+    "aliases": [
+    ],
+    "parentRequirements": [
+        "{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}"
+    ],
+    "childRequirements": [
+    ],
+    "implemented": [
+        "{C7147748-F01B-E4F9-D11E-72DFA08E7048}",
+        "{274F6995-89EB-B42C-7E74-ECA4E84DF97F}"
+    ],
+    "prefix": "UNIFIPWH"
+}

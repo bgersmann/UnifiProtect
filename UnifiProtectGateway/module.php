@@ -52,6 +52,9 @@ declare(strict_types=1);
 
 			if (isset($data->Api)) {
 				switch ($data->Api) {
+					case 'setAlarmManager':
+						$this->setAlarmManager($data->Param1);
+						return serialize([]);
 					case "getDevices":
 						$array = $this->getDevices($data->Param1);
 						return serialize($array);						
@@ -317,6 +320,10 @@ declare(strict_types=1);
 				if($elapsed < 0.05) {
 					usleep((int)((0.05 - $elapsed) * 1000000));
 				}
+				if ( $JSONData === null ) {
+					$this->SendDebug("UnifiPGW", "JSON Decode error: " . json_last_error_msg(), 0);
+					return [];
+				}
 				return $JSONData;
 			} finally {
 				// Semaphore freigeben
@@ -521,6 +528,11 @@ declare(strict_types=1);
 		private function isJson($string) {
 			json_decode($string);
 			return (json_last_error() == JSON_ERROR_NONE);
+		}
+		public function setAlarmManager(string $webhookID):array {
+			$JSONData = $this->getApiDataPost( '/alarm-manager/webhook/' . $webhookID );
+			$this->SendDebug("UnifiPGW", "setAlarmManager: " . json_encode($JSONData), 0);
+			return $JSONData;
 		}
 
 		public function getStreams(string $cameraID):array {
