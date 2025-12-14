@@ -15,7 +15,19 @@
         {
             "type": "Label",
             "bold": false,
-            "caption": "Trage meine Webhook ID in die Liste ein. Dieser kann der per RequestAction($ID,true); aufgerufen werden.",
+            "caption": "Trage eine Webhook ID in die Liste ein. Dieser kann per RequestAction($ID,1); aufgerufen werden.",
+            "color": 0,
+            "italic": false,
+            "link": false,
+            "name": "",
+            "underline": false,
+            "visible": true,
+            "width": ""
+        },
+        {
+            "type": "Label",
+            "bold": false,
+            "caption": "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!",
             "color": 0,
             "italic": false,
             "link": false,

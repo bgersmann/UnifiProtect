@@ -2,21 +2,23 @@
     "translations": {
         "de": {
             "UniFi Protect Webhooks": "UniFi Protect Webhooks",
-            "Trage meine Webhook ID in die Liste ein. Dieser kann der per RequestAction($ID,true); aufgerufen werden.": "Trage meine Webhook ID in die Liste ein. Dieser kann per RequestAction($ID,true); aufgerufen werden.",
+            "Trage eine Webhook ID in die Liste ein. Dieser kann per RequestAction($ID,1); aufgerufen werden.": "Trage eine Webhook ID in die Liste ein. Dieser kann per RequestAction($ID,1); aufgerufen werden.",
             "Webhooks:": "Webhooks:",
             "Name": "Name",
             "Webhook ID": "Webhook-ID",
             "Ausführen...": "Ausführen...",
-            "Wird ausgeführt...": "Wird ausgeführt..."
+            "Wird ausgeführt...": "Wird ausgeführt...",
+            "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!": "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!"
         },
         "en": {
             "UniFi Protect Webhooks": "UniFi Protect Webhooks",
-            "Trage meine Webhook ID in die Liste ein. Dieser kann der per RequestAction($ID,true); aufgerufen werden.": "Enter the Webhook ID in the list. It can be triggered via RequestAction($ID, true).",
+            "Trage eine Webhook ID in die Liste ein. Dieser kann per RequestAction($ID,1); aufgerufen werden.": "Enter the Webhook ID in the list. It can be triggered via RequestAction($ID, 1).",
             "Webhooks:": "Webhooks:",
             "Name": "Name",
             "Webhook ID": "Webhook ID",
             "Ausführen...": "Execute...",
-            "Wird ausgeführt...": "Executing..."
+            "Wird ausgeführt...": "Executing...",
+            "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!": "Attention, changing the name or ID will recreate the variables! The variable IDs will change!"
         }
     }
 }
