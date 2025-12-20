@@ -84,7 +84,7 @@ declare(strict_types=1);
 			if (isset($data->Buffer)) {
 				$this->HandleEvent($data->Buffer);
 			} else {
-				$this->SendDebug('UnifiProtectEvents', 'ReceiveData: Ungültige Daten empfangen', 0);
+				$this->SendDebug('UNIFIPEV', 'ReceiveData: Ungültige Daten empfangen', 0);
 			}			
 		}
 
@@ -94,28 +94,28 @@ declare(strict_types=1);
 		 */
 		public function HandleEvent(string $eventJson):void
 		{
-			$this->SendDebug('HandleEvent', $eventJson, 0);
+			$this->SendDebug('UNIFIPEV', $eventJson, 0);
 			$event = json_decode($eventJson, true);
 			if (!isset($event['item']['type'])) {
-				$this->SendDebug('UnifiProtectEvents', 'Ungültiges Event empfangen', 0);
+				$this->SendDebug('UNIFIPEV', 'Ungültiges Event empfangen', 0);
 				return;
 			}
 			$type = $event['item']['type'];
-			$camID = $event['item']['device'];
+			$deviceID = $event['item']['device'];
 			$eventID = $event['item']['id'];
 			$eventType=$event['type'];			
 			$Bufferdata = $this->GetBuffer("activeEvents");
-			$this->SendDebug('HandleEvent-1',$Bufferdata,0);
+			$this->SendDebug('UNIFIPEV',$Bufferdata,0);
 			if ($Bufferdata=="") {
 				$activeEvents=array();
 			} else {
 				$activeEvents=json_decode($Bufferdata,true);
 			}
 			if ($eventType=='add') {
-				$activeEvents[]=[$eventID => ['camID'=> $camID, 'type' => $type, 'Start'=> $event['item']['start']]];
+				$activeEvents[]=[$eventID => ['deviceID'=> $deviceID, 'type' => $type, 'Start'=> $event['item']['start']]];
 			} else {				
 				if (isset($event['item']['end'])) {
-					$this->SendDebug('HandleEvent-Unset',$eventID,0);
+					$this->SendDebug('UNIFIPEV',$eventID,0);
 					foreach ($activeEvents as $index => $event) {
 						if (array_key_exists($eventID, $event)) {
 							unset($activeEvents[$index]);
@@ -125,7 +125,7 @@ declare(strict_types=1);
 				}
 			}
 			$this->SetBuffer("activeEvents", json_encode($activeEvents));
-			$this->SendDebug('HandleEvent-2',json_encode($activeEvents),0);
+			$this->SendDebug('UNIFIPEV',json_encode($activeEvents),0);
 			// Logik für Smart Detection Events
 			if( $type === 'smartDetectZone' && !$this->ReadPropertyBoolean('smartEvents')) {
 				return; // Smart Detection Events sind deaktiviert
@@ -173,37 +173,37 @@ declare(strict_types=1);
 				return;
 			}
 			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion' && $type !== 'smartDetectLine' && $type !== 'smartAudioDetect' && $type !== 'ring' && $type !== 'sensorExtremeValues' && $type !== 'sensorWaterLeak' && $type !== 'sensorTamper' && $type !== 'sensorBatteryLow' && $type !== 'sensorAlarm' && $type !== 'sensorOpened' && $type !== 'sensorClosed' && $type !== 'lightMotion' && $type !== 'smartDetectLoiterZone') {
-				$this->SendDebug('UnifiProtectEvents', "Unbekannter Event-Typ: $type", 0);
+				$this->SendDebug('UNIFIPEV', "Unbekannter Event-Typ: $type", 0);
 				return; // Unbekannter Event-Typ
 			}
-			$idCam=$this->getInstanceIDForGuid( $camID, '{F78D1159-D735-D23A-0A97-69F07962BB89}' );
-			if ($idCam > 0) {				
-				// Wenn eine Kamera-ID vorhanden ist, sende das Event an die Kamera-Instanz
-				$IDName=@$this->GetIDForIdent('Name');
-				if (!$IDName === false) {
-					$camName=GetValueString($IDName);
-					$this->SendDebug('HandleEvent', "Sende Event an Kamera $camName (ID: $idCam)", 0);   
-				} else {
-					$camName=$this->Translate('Unknown');
-					$this->SendDebug('HandleEvent', "Sende Event an Kamera $camName (ID: $idCam)", 0);   
-				}
+			if (stripos($type, 'sensor') !== false) {
+				$DeviceType='UP-Sense';
+			} elseif (stripos($type, 'ring') !== false) {
+				$DeviceType='Chime';
+			} elseif (stripos($type, 'light') !== false) {
+				$DeviceType='Light';
 			} else {
-				// Wenn keine Kamera-ID vorhanden ist, setze einen generischen Namen
-				$camName = $this->Translate('Unknown');
-				$this->SendDebug('HandleEvent', "Keine Kamera-ID gefunden, setze generischen Namen: $camName", 0);
+				$DeviceType='Camera';
 			}
-			if ($camName==$this->Translate('Unknown')&& $type == 'sensorMotion') {
-				//Sensor noch nicht integriert
-				$camName='Sensor-'.$camID;
+			$this->SendDebug('UNIFIPEV', "Verarbeite Device-Type: $DeviceType für Kamera-ID: $deviceID und Event-Type: $type", 0);
+			$DeviceData=$this->getDeviceData($deviceID,$DeviceType);			
+			if (!$DeviceData) {
+				$this->SendDebug('UNIFIPEV', "Konnte Gerätedaten für Kamera-ID $deviceID nicht abrufen", 0);
+				$camName=$deviceID;
 			}
-			$varIdent = 'EventActive_' . $type . '_' . $camID;
+			if (isset($DeviceData['name'])) {
+				$camName=$DeviceData['name'];
+			} else {
+				$camName=$deviceID;
+			}
+			$varIdent = 'EventActive_' . $type . '_' . $deviceID;
 			$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. $this->Translate('active') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"'.$this->Translate('no motion').'","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"'.$this->Translate('motion detected').'","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, 1 );
-			$this->SendDebug('HandleEvent', 'Var Name: ' . $camName . '-' . $type .' '. 'active' . " (ID: $idCam)", 0);
+			$this->SendDebug('UNIFIPEV', 'Var Name: ' . $camName . '-' . $type .' '. 'active' . " (ID: $deviceID)", 0);
 			// Setze die Variable für den Event-Typ
 			$active=false;
 			foreach ($activeEvents as $event) {
 				foreach ($event as $details) {
-					if ($details['camID'] === $camID && $details['type'] === $type) {
+					if ($details['deviceID'] === $deviceID && $details['type'] === $type) {
 						$active = true;
 						break 2; // Bricht beide Schleifen ab
 					}
@@ -291,17 +291,97 @@ declare(strict_types=1);
 		}
 
 
-		private function getInstanceIDForGuid( $id, $guid )
-		{
-			$instanceIDs = IPS_GetInstanceListByModuleID( $guid );
-			foreach ( $instanceIDs as $instanceID ) {
-				if ( IPS_GetProperty( $instanceID, 'ID' ) == $id ) {
-					return $instanceID;
-				}
+		public function getDeviceData(string $deviceID,string $deviceType):array {
+			if (empty($deviceID)) {
+				$this->SendDebug("UnifiPGW", "Device ID is empty, returning empty array.", 0);
+				return [];
 			}
-			return 0;
+			if ($deviceType === 'Camera') {
+				$JSONData = $this->getApiData( '/cameras/' . $deviceID );
+			} elseif ($deviceType === 'UP-Sense') {
+				$JSONData = $this->getApiData( '/sensors/' . $deviceID );
+			} elseif ($deviceType === 'Light') {
+				$JSONData = $this->getApiData( '/lights/' . $deviceID );
+			} elseif ($deviceType === 'Chime') {
+				$JSONData = $this->getApiData( '/chimes/' . $deviceID );
+			} else {
+				$this->SendDebug("UNIFIPEV", "Unknown device type: " . $deviceType, 0);
+				return [];
+			}			
+			return $JSONData;
 		}
 
+		public function getApiData(string $endpoint = ''): array {
+			$maxRetries = 3;
+			$retry = 0;
+			do {
+				if (!IPS_SemaphoreEnter("UnifiProtectAPI", 50)) {
+					$this->SendDebug("UNIFIPEV", "Semaphore Timeout - Request abgebrochen", 0);
+					return [];
+				}
+				try {
+					$starttime = microtime(true);
+					$ServerAddress = $this->ReadPropertyString('ServerAddress');
+					$APIKey = $this->ReadPropertyString('APIKey');
+					$responseHeaders = [];
+					$ch = curl_init();
+					curl_setopt($ch, CURLOPT_URL, 'https://' . $ServerAddress . '/proxy/protect/integration/v1' . $endpoint);
+					curl_setopt($ch, CURLOPT_HTTPGET, true);
+					curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+					curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+					curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+					curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-API-KEY:' . $APIKey]);
+					curl_setopt($ch, CURLOPT_SSLVERSION, 'CURL_SSLVERSION_TLSv1');
+					curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+					curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+					curl_setopt($ch, CURLOPT_HEADERFUNCTION, static function ($chCurl, $header) use (&$responseHeaders) {
+						$len = strlen($header);
+						$parts = explode(':', $header, 2);
+						if (count($parts) === 2) {
+							$responseHeaders[strtolower(trim($parts[0]))] = trim($parts[1]);
+						}
+						return $len;
+					});
+					$RawData = curl_exec($ch);
+					$curl_error = curl_error($ch);
+					$httpCode = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+					curl_close($ch);
+
+					$this->SendDebug("UNIFIPEV", "API Endpoint: " . $RawData, 0);
+
+					if ($RawData === false) {
+						$this->SendDebug("UNIFIPEV", "Curl error: " . $curl_error, 0);
+						$this->SetStatus(201);
+						return [];
+					}
+
+					if ($httpCode === 429) {
+						$retryAfterHeader = $responseHeaders['retry-after'] ?? '';
+						$retryAfter = is_numeric($retryAfterHeader) ? max(0.5, (float)$retryAfterHeader) : 0.5;
+						$this->SendDebug("UNIFIPEV", "Rate Limit erreicht, warte " . $retryAfter . "s", 0);
+						$retry++;
+						usleep((int)($retryAfter * 1_000_000));
+						continue;
+					}
+
+					$JSONData = json_decode($RawData, true);
+					if (isset($JSONData['statusCode']) && $JSONData['statusCode'] !== 200) {
+						$this->SendDebug("UNIFIPEV", "Curl error: " . $JSONData['statusCode'], 0);
+						$this->SetStatus($JSONData['statusCode']);
+					}
+
+					$elapsed = microtime(true) - $starttime;
+					if ($elapsed < 0.05) {
+						usleep((int)((0.05 - $elapsed) * 1_000_000));
+					}
+					return $JSONData;
+				} finally {
+					IPS_SemaphoreLeave("UnifiProtectAPI");
+				}
+			} while ($retry < $maxRetries);
+
+			return [];
+		}
 		public function GetConfigurationForm(){
 			$arrayStatus = array();
 			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instance is active') );

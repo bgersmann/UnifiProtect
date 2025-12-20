@@ -59,29 +59,29 @@ declare(strict_types=1);
 						$array = $this->getDevices($data->Param1);
 						return serialize($array);						
 					case "getStreams":
-						$this->SendDebug("UnifiPGW", "Get Streams for CameraID: " . IPS_GetProperty( $data->InstanceID, 'ID' ), 0);
-						$array = $this->getStreams(IPS_GetProperty( $data->InstanceID, 'ID' ));
+						$this->SendDebug("UnifiPGW", "Get Streams for CameraID: " . $data->ID, 0);
+						$array = $this->getStreams($data->ID);
 						return serialize($array);
 					case "getSnapshot":
 						$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
 						$APIKey = $this->ReadPropertyString( 'APIKey' );
-						$cameraID = IPS_GetProperty( $data->InstanceID, 'ID' );
+						$cameraID = $data->ID;
 						$url = 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot?forceHighQuality=true';
 						$array = array('apikey' => $APIKey, 'url' => $url);
 						$this->SendDebug("UnifiPGW", "Snapshot: " . json_encode($array), 0);
 						return serialize($array);
 					case "createStream":
-						$this->SendDebug("UnifiPGW", "Create Streams for CameraID: " . IPS_GetProperty( $data->InstanceID, 'ID' ), 0);
-						$stream = $this->createStream(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
+						$this->SendDebug("UnifiPGW", "Create Streams for CameraID: " . $data->ID, 0);
+						$stream = $this->createStream($data->ID, $data->Param1);
 						return serialize($stream);
 					case "getDeviceData":
-						$deviceData = $this->getDeviceData(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
+						$deviceData = $this->getDeviceData($data->ID, $data->Param1);
 						return serialize($deviceData);
 					case "patchSettingCamera":
-						$setting = $this->patchSettingCamera(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
+						$setting = $this->patchSettingCamera($data->ID, $data->Param1);
 						return serialize($setting);
 					case "patchSettingSensor":
-						$setting = $this->patchSettingSensor(IPS_GetProperty( $data->InstanceID, 'ID' ), $data->Param1);
+						$setting = $this->patchSettingSensor($data->ID, $data->Param1);
 						return serialize($setting);
 					case "getDevicesConfig":
 						$config = $this->getDevicesConfig();

@@ -119,7 +119,8 @@ declare(strict_types=1);
 				$data=$this->SendDataToParent(json_encode(['DataID' => '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}',
 					'Api' => $api,
 					'InstanceID' => $this->InstanceID,
-					'Param1' => $param1
+					'Param1' => $param1,
+					'ID' => $this->ReadPropertyString('ID')
 					]));
 				if (!$data) {
 					$this->SendDebug("UnifiPDevice", "Send Data error: " . $api, 0);
