@@ -3,27 +3,37 @@
 declare(strict_types=1);
 
 // CLASS UnifiWebhook
-class UnifiWebhook extends IPSModule
+class UnifiWebhook extends IPSModuleStrict
 {
     /**
      * In contrast to Construct, this function is called only once when creating the instance and starting IP-Symcon.
      * Therefore, status variables and module properties which the module requires permanently should be created here.
      */
-    public function Create()
+    public function Create():void
     {
         //Never delete this line!
         parent::Create();
-        $this->ConnectParent('{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}');
+       // $this->ConnectParent('{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}');
         $this->RegisterPropertyString( 'webhooks', '[]' );
         $this->RegisterAttributeString('webhooksOld', '[]'); 
         
     }
 
+    // public function GetCompatibleParents(): string
+    //     {
+    //         return json_encode([
+    //             'type' => 'connect',
+    //             'moduleIDs' => [
+    //                 '{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}'
+    //             ]
+    //         ]);
+    //     }
+
     /**
      * This function is called when deleting the instance during operation and when updating via "Module Control".
      * The function is not called when exiting IP-Symcon.
      */
-    public function Destroy()
+    public function Destroy():void
     {
         parent::Destroy();
     }
@@ -33,7 +43,7 @@ class UnifiWebhook extends IPSModule
      * This way, content can be generated dynamically.
      * In this case, the "form.json" on the file system is completely ignored.
      */
-    public function GetConfigurationForm()
+    public function GetConfigurationForm():string
     {
         // Get Form
         $form = json_decode(file_get_contents(__DIR__ . '/form.json'), true);
@@ -46,7 +56,7 @@ class UnifiWebhook extends IPSModule
     /**
      * Is executed when "Apply" is pressed on the configuration page and immediately after the instance has been created.
      */
-    public function ApplyChanges()
+    public function ApplyChanges():void
     {       
         parent::ApplyChanges();
         $webhooksOldArr = json_decode($this->ReadAttributeString('webhooksOld'), true);
@@ -102,7 +112,7 @@ class UnifiWebhook extends IPSModule
      *
      * @param string $text Text message
      */
-    public function Send(string $api, string $param1)
+    public function Send(string $api, string $param1):void
     {
         if ($this->HasActiveParent()) {
 			$test=$this->SendDataToParent(json_encode(['DataID' => '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}',
@@ -114,13 +124,7 @@ class UnifiWebhook extends IPSModule
         }
     }
 
-    /**
-     * Is called when, for example, a button is clicked in the visualization.
-     *
-     * @param string $ident Ident of the variable
-     * @param mixed $value The value to be set
-     */
-    public function RequestAction($ident, $value)
+    public function RequestAction($ident, $value):void
     {
         $webhooksArr= json_decode($this->ReadPropertyString('webhooks'), true);
         foreach ($webhooksArr as $webhook) {

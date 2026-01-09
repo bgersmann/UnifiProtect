@@ -17,7 +17,7 @@ Diese Modul stellt verschiedene Erweiterungen bereit, um die Arbeit mit Symcon z
 
 ### 2. Voraussetzungen
 
-- IP-Symcon ab Version 8.1
+- IP-Symcon ab Version 8.2
 
 ### 3. Software-Installation
 

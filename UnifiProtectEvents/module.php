@@ -1,10 +1,10 @@
 <?php
 
 declare(strict_types=1);
-	class UnifiProtectEvents extends IPSModule
+	class UnifiProtectEvents extends IPSModuleStrict
 	{
 		public const DEFAULT_WS_URL = '192.168.1.1';
-		public function Create()
+		public function Create():void
 		{
 			//Never delete this line!
 			parent::Create();		
@@ -40,18 +40,26 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'sensorClosedGlobal', false );
 			$this->RegisterPropertyBoolean( 'lightMotionGlobal', false );
 			$this->RegisterPropertyBoolean( 'smartDetectLoiterZoneGlobal', false );
-
-			//smartAudioDetect
-			$this->RequireParent('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
+			
+			//$this->RequireParent('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
 		}
 
-		public function Destroy()
+		public function GetCompatibleParents(): string
+        {
+            return json_encode([
+                'type' => 'connect',
+                'moduleIDs' => [
+                    '{D68FD31F-0E90-7019-F16C-1949BD3079EF}'
+                ]
+            ]);
+        }
+		public function Destroy():void
 		{
 			//Never delete this line!
 			parent::Destroy();
 		}
 
-		public function ApplyChanges()
+		public function ApplyChanges():void
 		{
 			//Never delete this line!
 			parent::ApplyChanges();
@@ -73,19 +81,20 @@ declare(strict_types=1);
 			$this->MaintainVariable( 'smartDetectLoiterZoneGlobal',  $this->Translate('global smart detect loiter zone') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('smartDetectLoiterZoneGlobal'));
 		}
 
-		public function Send()
+		public function Send():void
 		{
 			$this->SendDataToParent(json_encode(['DataID' => '{900DB6C2-D4A8-5EC0-59E6-DB62AFB88853}']));
 		}
 
-		public function ReceiveData($JSONString)
+		public function ReceiveData($JSONString):string
 		{
 			$data = json_decode($JSONString);
 			if (isset($data->Buffer)) {
-				$this->HandleEvent($data->Buffer);
+				$this->HandleEvent(hex2bin($data->Buffer));
 			} else {
 				$this->SendDebug('UNIFIPEV', 'ReceiveData: Ungültige Daten empfangen', 0);
-			}			
+			}
+			return "";
 		}
 
 		/**
@@ -103,7 +112,8 @@ declare(strict_types=1);
 			$type = $event['item']['type'];
 			$deviceID = $event['item']['device'];
 			$eventID = $event['item']['id'];
-			$eventType=$event['type'];			
+			$eventType=$event['type'];		
+			$smartDetectionEvent = in_array($type, ['smartDetectZone', 'smartDetectLine', 'smartDetectLoiterZone'], true);
 			$Bufferdata = $this->GetBuffer("activeEvents");
 			$this->SendDebug('UNIFIPEV',$Bufferdata,0);
 			if ($Bufferdata=="") {
@@ -111,13 +121,29 @@ declare(strict_types=1);
 			} else {
 				$activeEvents=json_decode($Bufferdata,true);
 			}
+			$smartDetectTypesPayload = $event['item']['smartDetectTypes'] ?? [];
 			if ($eventType=='add') {
-				$activeEvents[]=[$eventID => ['deviceID'=> $deviceID, 'type' => $type, 'Start'=> $event['item']['start']]];
-			} else {				
+				$eventData = [
+					'deviceID'=> $deviceID,
+					'type' => $type,
+					'Start'=> $event['item']['start'] ?? 0
+				];
+				if ($smartDetectionEvent) {
+					$eventData['smartDetectTypes'] = $smartDetectTypesPayload;
+				}
+				$activeEvents[]=[$eventID => $eventData];
+			} else {			
+				if ($smartDetectionEvent && !empty($smartDetectTypesPayload)) {
+					foreach ($activeEvents as $index => $storedEvent) {
+						if (array_key_exists($eventID, $storedEvent)) {
+							$activeEvents[$index][$eventID]['smartDetectTypes'] = $smartDetectTypesPayload;
+						}
+					}
+				}
 				if (isset($event['item']['end'])) {
 					$this->SendDebug('UNIFIPEV',$eventID,0);
-					foreach ($activeEvents as $index => $event) {
-						if (array_key_exists($eventID, $event)) {
+					foreach ($activeEvents as $index => $storedEvent) {
+						if (array_key_exists($eventID, $storedEvent)) {
 							unset($activeEvents[$index]);
 							#break; // Optional: wenn du nur einen Eintrag mit dieser ID erwartest
 						}
@@ -197,78 +223,100 @@ declare(strict_types=1);
 				$camName=$deviceID;
 			}
 			$varIdent = 'EventActive_' . $type . '_' . $deviceID;
-			$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. $this->Translate('active') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"'.$this->Translate('no motion').'","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"'.$this->Translate('motion detected').'","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, 1 );
+			$this->maintainVar($varIdent, $camName, $type);
+			//$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. $this->Translate('active') , $varType, json_decode($this->getPresenstatios($type)), 0, 1 );
 			$this->SendDebug('UNIFIPEV', 'Var Name: ' . $camName . '-' . $type .' '. 'active' . " (ID: $deviceID)", 0);
 			// Setze die Variable für den Event-Typ
-			$active=false;
-			foreach ($activeEvents as $event) {
-				foreach ($event as $details) {
+			$deviceActive=false;
+			$deviceEventDetails=null;
+			foreach ($activeEvents as $storedEvent) {
+				foreach ($storedEvent as $details) {
 					if ($details['deviceID'] === $deviceID && $details['type'] === $type) {
-						$active = true;
+						$deviceActive = true;
+						$deviceEventDetails = $details;
 						break 2; // Bricht beide Schleifen ab
 					}
 				}
 			}
-			$this->SetValue($varIdent,$active);
+			if ($smartDetectionEvent) {
+				$smartValue = 'false';
+				if ($deviceActive) {
+					$smartTypes = $deviceEventDetails['smartDetectTypes'] ?? [];
+					if (is_string($smartTypes)) {
+						$smartTypes = [$smartTypes];
+					} elseif (!is_array($smartTypes)) {
+						$smartTypes = [];
+					}
+					if (!empty($smartTypes)) {
+						$smartValue = (string)$smartTypes[0];
+					} else {
+						$smartValue = 'true';
+					}
+				}
+				$this->SetValue($varIdent,$smartValue);
+			} else {
+				$this->SetValue($varIdent,$deviceActive);
+			}
+			
 
-			$active=false;
-			foreach ($activeEvents as $event) {
-				foreach ($event as $details) {
+			$globalActive=false;
+			foreach ($activeEvents as $storedEvent) {
+				foreach ($storedEvent as $details) {
 					if ($details['type'] === $type) {
-						$active = true;
+						$globalActive = true;
 						break 2; // Bricht beide Schleifen ab, sobald ein Treffer gefunden wurde
 					}
 				}
 			}			
 			if( $type === 'smartDetectZone' && $this->ReadPropertyBoolean('smartGlobal')) {
-				$this->SetValue('smartGlobal',$active);
+				$this->SetValue('smartGlobal',$globalActive);
 			}
 			if ( $type === 'motion' && $this->ReadPropertyBoolean('motionGlobal')) {
-				$this->SetValue('motionGlobal',$active);
+				$this->SetValue('motionGlobal',$globalActive);
 			}
 			if ( $type === 'sensorMotion' && $this->ReadPropertyBoolean('sensorGlobal')) {
-				$this->SetValue('sensorGlobal',$active);
+				$this->SetValue('sensorGlobal',$globalActive);
 			}
 			if ( $type === 'smartDetectLine' && $this->ReadPropertyBoolean('lineGlobal')) {
-				$this->SetValue('lineGlobal',$active);
+				$this->SetValue('lineGlobal',$globalActive);
 			}
 			if ( $type === 'smartAudioDetect' && $this->ReadPropertyBoolean('smartAudioGlobal')) {
-				$this->SetValue('smartAudioGlobal',$active);
+				$this->SetValue('smartAudioGlobal',$globalActive);
 			}
 			if ( $type === 'ring' && $this->ReadPropertyBoolean('ringGlobal')) {
-				$this->SetValue('ringGlobal',$active);
+				$this->SetValue('ringGlobal',$globalActive);
 			}
 			if ( $type === 'sensorExtremeValues' && $this->ReadPropertyBoolean('sensorExtremeValuesGlobal')) {
-				$this->SetValue('sensorExtremeValuesGlobal',$active);
+				$this->SetValue('sensorExtremeValuesGlobal',$globalActive);
 			}
 			if ( $type === 'sensorWaterLeak' && $this->ReadPropertyBoolean('sensorWaterLeakGlobal')) {
-				$this->SetValue('sensorWaterLeakGlobal',$active);
+				$this->SetValue('sensorWaterLeakGlobal',$globalActive);
 			}
 			if ( $type === 'sensorTamper' && $this->ReadPropertyBoolean('sensorTamperGlobal')) {
-				$this->SetValue('sensorTamperGlobal',$active);
+				$this->SetValue('sensorTamperGlobal',$globalActive);
 			}
 			if ( $type === 'sensorBatteryLow' && $this->ReadPropertyBoolean('sensorBatteryLowGlobal')) {
-				$this->SetValue('sensorBatteryLowGlobal',$active);
+				$this->SetValue('sensorBatteryLowGlobal',$globalActive);
 			}
 			if ( $type === 'sensorAlarm' && $this->ReadPropertyBoolean('sensorAlarmGlobal')) {
-				$this->SetValue('sensorAlarmGlobal',$active);
+				$this->SetValue('sensorAlarmGlobal',$globalActive);
 			}
 			if ( $type === 'sensorOpened' && $this->ReadPropertyBoolean('sensorOpenedGlobal')) {
-				$this->SetValue('sensorOpenedGlobal',$active);
+				$this->SetValue('sensorOpenedGlobal',$globalActive);
 			}
 			if ( $type === 'sensorClosed' && $this->ReadPropertyBoolean('sensorClosedGlobal')) {
-				$this->SetValue('sensorClosedGlobal',$active);
+				$this->SetValue('sensorClosedGlobal',$globalActive);
 			}
 			if ( $type === 'lightMotion' && $this->ReadPropertyBoolean('lightMotionGlobal')) {
-				$this->SetValue('lightMotionGlobal',$active);
+				$this->SetValue('lightMotionGlobal',$globalActive);
 			}
 			if ( $type === 'smartDetectLoiterZone' && $this->ReadPropertyBoolean('smartDetectLoiterZoneGlobal')) {
-				$this->SetValue('smartDetectLoiterZoneGlobal',$active);
+				$this->SetValue('smartDetectLoiterZoneGlobal',$globalActive);
 			}
 
 		}
 
-		public function GetConfigurationForParent()
+		public function GetConfigurationForParent():string
 		{			
 			$parent = IPS_GetInstance($this->InstanceID)['ConnectionID'];
 			$ip = $this->ReadPropertyString('ServerAddress');
@@ -382,7 +430,7 @@ declare(strict_types=1);
 
 			return [];
 		}
-		public function GetConfigurationForm(){
+		public function GetConfigurationForm():string{
 			$arrayStatus = array();
 			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instance is active') );
 			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is inactive') );
@@ -447,4 +495,42 @@ declare(strict_types=1);
 			unset($arrayOptions);			
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
 	    }
+
+
+		private function maintainVar(string $varIdent, string $camName, string $type): void
+		{
+			$isSmartDetect = in_array($type, ['smartDetectZone', 'smartDetectLine', 'smartDetectLoiterZone'], true);
+			$label = $camName . '-' . $type . ' ' . $this->Translate('active');
+			$presentation = [
+				'ICON' => 'sensor',
+				'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+				'USAGE_TYPE' => 0
+			];
+
+			if ($isSmartDetect) {
+				$varType = 3; // String
+				$options = [
+					['Value' => 'false', 'Caption' => 'Keine Bewegung', 'IconActive' => true, 'IconValue' => 'sensor', 'ColorActive' => true, 'ColorValue' => 16077123, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 16711680, 'ContentColorDisplay' => -1],
+					['Value' => 'true', 'Caption' => 'Person', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
+					['Value' => 'person', 'Caption' => 'Person', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
+					['Value' => 'vehicle', 'Caption' => 'Vehicle', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
+					['Value' => 'package', 'Caption' => 'Package', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
+					['Value' => 'licensePlate', 'Caption' => 'License Plate', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
+					['Value' => 'face', 'Caption' => 'Face', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
+					['Value' => 'animal', 'Caption' => 'Animal', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1]
+				];
+			} else {
+				$varType = 0; // Boolean
+				$options = [
+					['ColorDisplay' => 16077123, 'Value' => false, 'Caption' => $this->Translate('no motion'), 'IconValue' => 'sensor', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16077123, 'Color' => -1],
+					['ColorDisplay' => 1692672, 'Value' => true, 'Caption' => $this->Translate('motion detected'), 'IconValue' => 'sensor-on', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672, 'Color' => -1]
+				];
+			}
+
+			$presentation['OPTIONS'] = json_encode($options, JSON_UNESCAPED_SLASHES);
+			$this->MaintainVariable($varIdent, $label, $varType, $presentation, 0, 1);
+		}
 	}
+
+
+	

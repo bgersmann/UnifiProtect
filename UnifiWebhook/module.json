@@ -4,6 +4,7 @@
     "url": "https://github.com/bgersmann/UnifiProtect",
     "type": 3,
     "vendor": "",
+    "strict": true,
     "aliases": [
     ],
     "parentRequirements": [

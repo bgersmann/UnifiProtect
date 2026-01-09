@@ -1,9 +1,9 @@
 <?php
 
 declare(strict_types=1);
-	class UnifiProtectGateway extends IPSModule
+	class UnifiProtectGateway extends IPSModuleStrict
 	{
-		public function Create()
+		public function Create():void
 		{
 			//Never delete this line!
 			parent::Create();
@@ -12,13 +12,13 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean('applicationVersion', 0);
 		}
 
-		public function Destroy()
+		public function Destroy():void
 		{
 			//Never delete this line!
 			parent::Destroy();
 		}
 
-		public function ApplyChanges()
+		public function ApplyChanges():void
 		{
 			//Never delete this line!
 			parent::ApplyChanges();
@@ -36,7 +36,7 @@ declare(strict_types=1);
 			}
 		}
 
-		public function ForwardData($JSONString)
+		public function ForwardData($JSONString):string
 		{
 			$data = json_decode( $JSONString );
 			#Message('UnifiPGW', $JSONString);
@@ -93,7 +93,7 @@ declare(strict_types=1);
 			}
 		}
 
-		public function Send( int $id,string $Api, string $Text )
+		public function Send( int $id,string $Api, string $Text ):void
 		{
 			$this->SendDataToChildren( json_encode( [ 'DataID' => '{C7147748-F01B-E4F9-D11E-72DFA08E7048}',
 					'id' =>  $id,
@@ -570,7 +570,7 @@ declare(strict_types=1);
 			return $JSONData;
 		}
 
-		public function GetConfigurationForm() {
+		public function GetConfigurationForm():string {
 			$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
 			$APIKey = $this->ReadPropertyString( 'APIKey' );
 

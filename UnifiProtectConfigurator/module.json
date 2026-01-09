@@ -3,6 +3,7 @@
     "name": "UnifiProtectConfigurator",
     "type": 4,
     "vendor": "Unifi",
+    "strict": true,
     "aliases": [],
     "parentRequirements": [
         "{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}"

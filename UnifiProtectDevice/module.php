@@ -1,13 +1,13 @@
 <?php
 
 declare(strict_types=1);
-	class UnifiProtectDevice extends IPSModule
+	class UnifiProtectDevice extends IPSModuleStrict
 	{
-		public function Create()
+		public function Create() : void
 		{
 			//Never delete this line!
 			parent::Create();
-			$this->ConnectParent('{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}');
+			//$this->ConnectParent('{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}');
 			$this->RegisterPropertyString( 'DeviceType', 'Camera' );
 			$this->RegisterPropertyString( 'ID', '' );
 			$this->RegisterPropertyBoolean( 'StreamLow', false );
@@ -23,13 +23,22 @@ declare(strict_types=1);
 			
 		}
 
-		public function Destroy()
+		// public function GetCompatibleParents(): string
+        // {
+        //     return json_encode([
+        //         'type' => 'connect',
+        //         'moduleIDs' => [
+        //             '{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}'
+        //         ]
+        //     ]);
+        // }
+		public function Destroy(): void
 		{
 			//Never delete this line!
 			parent::Destroy();
 		}
 
-		public function ApplyChanges()
+		public function ApplyChanges(): void
 		{
 			//Never delete this line!
 			parent::ApplyChanges();
@@ -45,7 +54,7 @@ declare(strict_types=1);
 			
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$this->MaintainAction('micVolume', true);
-				SetValue($this->GetIDForIdent('snapshot'), 1);
+				$this->SetValue('snapshot', 1);
 				$this->MaintainAction('snapshot', true);
 				
 			}
@@ -113,7 +122,7 @@ declare(strict_types=1);
 		}
 
 
-		public function Send(string $api, string $param1)
+		public function Send(string $api, string $param1): void
 		{
 			if ($this->HasActiveParent()) {
 				$data=$this->SendDataToParent(json_encode(['DataID' => '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}',
@@ -131,7 +140,7 @@ declare(strict_types=1);
 						$array=unserialize($data);
 						$this->SendDebug("UnifiPDevice", "Snapshot: " .json_encode($array), 0);
 						$this->getSnapshot($array);
-						SetValue($this->GetIDForIdent('snapshot'), 1);
+						$this->SetValue('snapshot', 1);
 						$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], 0, $this->ReadPropertyString('DeviceType') == 'Camera');
 						break;
 					case "getDevices":
@@ -334,7 +343,7 @@ declare(strict_types=1);
 			return "";
 		}
 
-		public function GetConfigurationForm(){			
+		public function GetConfigurationForm():string{			
 			if ($this->HasActiveParent()) {
 				$this->Send("getDevices",$this->ReadPropertyString('DeviceType'));
 			}	
@@ -389,7 +398,7 @@ declare(strict_types=1);
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
 	    }
 		
-		public function RequestAction($Ident, $Value) {
+		public function RequestAction($Ident, $Value): void {
 			switch($Ident) {
 				case "micVolume":
 					//Hier würde normalerweise eine Aktion z.B. das Schalten ausgeführt werden

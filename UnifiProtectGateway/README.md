@@ -17,7 +17,7 @@ Beschreibung des Moduls.
 
 ### 2. Voraussetzungen
 
-- IP-Symcon ab Version 8.0
+- IP-Symcon ab Version 8.2
 - UniFi Protect mit aktiviertem API-Zugang und gültigem API-Key
 
 ### 3. Software-Installation

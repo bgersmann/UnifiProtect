@@ -3,6 +3,7 @@
     "name": "UnifiProtectGateway",
     "type": 1,
     "vendor": "Unifi",
+    "strict": true,
     "aliases": [],
     "parentRequirements": [],
     "childRequirements": [
