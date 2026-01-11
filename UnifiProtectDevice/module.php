@@ -59,7 +59,7 @@ declare(strict_types=1);
 				
 			}
 			$MedienID = @$this->GetIDForIdent('Snapshot');			
-			if ($MedienID == 0) {
+			if (!$MedienID) {
 				if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 					$MediaID = IPS_CreateMedia(1);
 					IPS_SetParent($MediaID, $this->InstanceID);
