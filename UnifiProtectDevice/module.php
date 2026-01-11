@@ -158,8 +158,7 @@ declare(strict_types=1);
 								$urlStream = $streams['high'];
 								if (isset($urlStream)) {
 									if (!$this->ReadPropertyBoolean('StreamHigh')) {
-										$this->UpdateFormField("StreamHigh", "value", true);
-										$this->SetProperty('StreamHigh', true);
+										$this->UpdateFormField("StreamHigh", "value", true);										
 									}
 									$MedienID = @$this->GetIDForIdent('Stream_High');
 									$this->SendDebug("UnifiPDevice", "Stream High: " . $MedienID, 0);

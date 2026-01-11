@@ -144,8 +144,7 @@ declare(strict_types=1);
 					$this->SendDebug('UNIFIPEV',$eventID,0);
 					foreach ($activeEvents as $index => $storedEvent) {
 						if (array_key_exists($eventID, $storedEvent)) {
-							unset($activeEvents[$index]);
-							#break; // Optional: wenn du nur einen Eintrag mit dieser ID erwartest
+							unset($activeEvents[$index]);							
 						}
 					}
 				}
@@ -223,6 +222,7 @@ declare(strict_types=1);
 				$camName=$deviceID;
 			}
 			$varIdent = 'EventActive_' . $type . '_' . $deviceID;
+			
 			$this->maintainVar($varIdent, $camName, $type);
 			//$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. $this->Translate('active') , $varType, json_decode($this->getPresenstatios($type)), 0, 1 );
 			$this->SendDebug('UNIFIPEV', 'Var Name: ' . $camName . '-' . $type .' '. 'active' . " (ID: $deviceID)", 0);
@@ -247,13 +247,14 @@ declare(strict_types=1);
 					} elseif (!is_array($smartTypes)) {
 						$smartTypes = [];
 					}
+					$smartTypes = array_values(array_unique(array_map(static fn($value) => (string)$value, $smartTypes)));
 					if (!empty($smartTypes)) {
-						$smartValue = (string)$smartTypes[0];
+						$smartValue = implode(',', $smartTypes);
 					} else {
 						$smartValue = 'true';
 					}
 				}
-				$this->SetValue($varIdent,$smartValue);
+				$this->SetValue($varIdent, $smartValue);
 			} else {
 				$this->SetValue($varIdent,$deviceActive);
 			}
@@ -509,16 +510,29 @@ declare(strict_types=1);
 
 			if ($isSmartDetect) {
 				$varType = 3; // String
-				$options = [
-					['Value' => 'false', 'Caption' => 'Keine Bewegung', 'IconActive' => true, 'IconValue' => 'sensor', 'ColorActive' => true, 'ColorValue' => 16077123, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 16711680, 'ContentColorDisplay' => -1],
-					['Value' => 'true', 'Caption' => 'Person', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
-					['Value' => 'person', 'Caption' => 'Person', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
-					['Value' => 'vehicle', 'Caption' => 'Vehicle', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
-					['Value' => 'package', 'Caption' => 'Package', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
-					['Value' => 'licensePlate', 'Caption' => 'License Plate', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
-					['Value' => 'face', 'Caption' => 'Face', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1],
-					['Value' => 'animal', 'Caption' => 'Animal', 'IconActive' => true, 'IconValue' => 'sensor-on', 'ColorActive' => true, 'ColorValue' => 1692672, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 65280, 'ContentColorDisplay' => -1]
+				$presentation = [
+					'ICON' => 'sensor-on',
+					'DECIMAL_SEPARATOR' => 'Client',
+					'COLOR' => 65280,
+					'CONTENT_COLOR' => -1,
+					'DIGITS' => 2,
+					'MAX' => 100,
+					'PRESENTATION' => '{3319437D-7CDE-699D-750A-3C6A3841FA75}',
+					'INTERVALS' => '[]',
+					'INTERVALS_ACTIVE' => false,
+					'MIN' => 0,
+					'MULTILINE' => false,
+					'PERCENTAGE' => false,
+					'PREFIX' => '',
+					'PREVIEW_STYLE' => 1,
+					'SHOW_PREVIEW' => true,
+					'SUFFIX' => '',
+					'THOUSANDS_SEPARATOR' => '',
+					'USAGE_TYPE' => 0,
+					'DISPLAY_TYPE' => 0
 				];
+				$options = [
+					['Value' => 'false', 'Caption' => 'Keine Bewegung', 'IconActive' => true, 'IconValue' => 'sensor', 'ColorActive' => true, 'ColorValue' => 16077123, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 16711680, 'ContentColorDisplay' => -1]];
 			} else {
 				$varType = 0; // Boolean
 				$options = [
