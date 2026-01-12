@@ -319,7 +319,8 @@ declare(strict_types=1);
 				}
 				$this->SendDebug("UnifiPDevice", "Got Snapshot: " . $RawData, 0);
 				$MedienID = $this->GetIDForIdent('Snapshot');
-				if (!$MedienID) {
+				$this->SendDebug("UnifiPDevice", "Snapshot media file: " . $MedienID, 0);
+				if ($MedienID && $MedienID > 0) {
 					if (isset($RawData) && !empty($RawData)) {
 						IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
 						IPS_SetMediaContent($MedienID, base64_encode($RawData));
