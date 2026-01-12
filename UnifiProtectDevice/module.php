@@ -59,7 +59,7 @@ declare(strict_types=1);
 				
 			}
 			$MedienID = @$this->GetIDForIdent('Snapshot');			
-			if ($MedienID <= 0) {
+			if (!$MedienID) {
 				if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 					$MediaID = IPS_CreateMedia(1);
 					IPS_SetParent($MediaID, $this->InstanceID);
@@ -163,7 +163,7 @@ declare(strict_types=1);
 									}
 									$MedienID = @$this->GetIDForIdent('Stream_High');
 									$this->SendDebug("UnifiPDevice", "Stream High: " . $MedienID, 0);
-									if ($MedienID > 0) {
+									if ($MedienID && $MedienID > 0) {
 										IPS_SetMediaFile($MedienID, $urlStream, true);										
 									} else {
 										$MedienID = IPS_CreateMedia(3);
@@ -189,7 +189,7 @@ declare(strict_types=1);
 									} 
 									$MedienID = @$this->GetIDForIdent('Stream_Medium');
 									$this->SendDebug("UnifiPDevice", "Stream Medium: " . $MedienID, 0);
-									if ($MedienID > 0) {
+									if ($MedienID && $MedienID > 0) {
 										IPS_SetMediaFile($MedienID, $urlStream, true);										
 									} else {
 										$MedienID = IPS_CreateMedia(3);
@@ -214,7 +214,7 @@ declare(strict_types=1);
 									} 
 									$MedienID = @$this->GetIDForIdent('Stream_Low');
 									$this->SendDebug("UnifiPDevice", "Stream Low: " . $MedienID, 0);
-									if ($MedienID > 0) {
+									if ($MedienID && $MedienID > 0) {
 										IPS_SetMediaFile($MedienID, $urlStream, true);										
 									}	else {
 										$MedienID = IPS_CreateMedia(3);
