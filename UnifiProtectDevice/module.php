@@ -59,7 +59,7 @@ declare(strict_types=1);
 				
 			}
 			$MedienID = @$this->GetIDForIdent('Snapshot');			
-			if (!$MedienID) {
+			if ($MedienID <= 0) {
 				if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 					$MediaID = IPS_CreateMedia(1);
 					IPS_SetParent($MediaID, $this->InstanceID);
@@ -156,14 +156,15 @@ declare(strict_types=1);
 						if ( is_array( $streams ) && isset( $streams ) ) {
 							if (isset($streams['high'])) {
 								$urlStream = $streams['high'];
-								if (isset($urlStream)) {
+								if (isset($urlStream) && !empty($urlStream)) {
+									$this->SendDebug("UnifiPDevice", "Stream High URL: " . $urlStream, 0);
 									if (!$this->ReadPropertyBoolean('StreamHigh')) {
 										$this->UpdateFormField("StreamHigh", "value", true);										
 									}
 									$MedienID = @$this->GetIDForIdent('Stream_High');
 									$this->SendDebug("UnifiPDevice", "Stream High: " . $MedienID, 0);
 									if ($MedienID > 0) {
-										IPS_SetMediaFile($MedienID, $urlStream, true);
+										IPS_SetMediaFile($MedienID, $urlStream, true);										
 									} else {
 										$MedienID = IPS_CreateMedia(3);
 										IPS_SetParent($MedienID, $this->InstanceID);
@@ -182,6 +183,7 @@ declare(strict_types=1);
 							if (isset($streams['medium'])) {
 								$urlStream = $streams['medium'];
 								if (isset($urlStream) && !empty($urlStream)) {
+									$this->SendDebug("UnifiPDevice", "Stream Medium URL: " . $urlStream, 0);
 									if (!$this->ReadPropertyBoolean('StreamMedium')) {
 										$this->UpdateFormField("StreamMedium", "value", true);
 									} 
@@ -281,7 +283,7 @@ declare(strict_types=1);
 			}
 		}
 
-		public function getSnapshot(array $array):bool {
+		private function getSnapshot(array $array):bool {
 			if (!IPS_SemaphoreEnter("UnifiProtectAPI", 500)) {
 				$this->SendDebug("UnifiPDevice", "Semaphore Timeout - Request abgebrochen", 0);
 				return false;
@@ -317,7 +319,7 @@ declare(strict_types=1);
 				}
 				$this->SendDebug("UnifiPDevice", "Got Snapshot: " . $RawData, 0);
 				$MedienID = $this->GetIDForIdent('Snapshot');
-				if ($MedienID > 0) {
+				if (!$MedienID) {
 					if (isset($RawData) && !empty($RawData)) {
 						IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
 						IPS_SetMediaContent($MedienID, base64_encode($RawData));
