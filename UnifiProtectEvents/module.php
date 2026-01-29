@@ -10,21 +10,7 @@ declare(strict_types=1);
 			parent::Create();		
 			$this->RegisterPropertyString( 'ServerAddress', '192.168.178.1' );
 			$this->RegisterPropertyString( 'APIKey', '' );
-			$this->RegisterPropertyBoolean( 'smartEvents', false );
-			$this->RegisterPropertyBoolean( 'motionEvents', false );
-			$this->RegisterPropertyBoolean( 'sensorMotionEvents', false );
-			$this->RegisterPropertyBoolean( 'lineEvents', false );
-			$this->RegisterPropertyBoolean( 'smartAudioEvents', false );
-			$this->RegisterPropertyBoolean( 'ringEvents', false );
-			$this->RegisterPropertyBoolean( 'sensorExtremeValuesEvents', false );
-			$this->RegisterPropertyBoolean( 'sensorWaterLeakEvents', false );
-			$this->RegisterPropertyBoolean( 'sensorTamperEvents', false );
-			$this->RegisterPropertyBoolean( 'sensorBatteryLowEvents', false );
-			$this->RegisterPropertyBoolean( 'sensorAlarmEvents', false );
-			$this->RegisterPropertyBoolean( 'sensorOpenedEvents', false );
-			$this->RegisterPropertyBoolean( 'sensorClosedEvents', false );
-			$this->RegisterPropertyBoolean( 'lightMotionEvents', false );
-			$this->RegisterPropertyBoolean( 'smartDetectLoiterZoneEvents', false );
+			$this->RegisterPropertyString( 'SmartDetectSelections', '[]' );
 			$this->RegisterPropertyBoolean( 'motionGlobal', false );
 			$this->RegisterPropertyBoolean( 'smartGlobal', false );
 			$this->RegisterPropertyBoolean( 'sensorGlobal', false );
@@ -79,6 +65,7 @@ declare(strict_types=1);
 			$this->MaintainVariable( 'sensorClosedGlobal',  $this->Translate('global sensor closed detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('sensorClosedGlobal'));
 			$this->MaintainVariable( 'lightMotionGlobal',  $this->Translate('global light motion detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('lightMotionGlobal'));
 			$this->MaintainVariable( 'smartDetectLoiterZoneGlobal',  $this->Translate('global smart detect loiter zone') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('smartDetectLoiterZoneGlobal'));
+			$this->synchronizeConfiguredVariables();
 		}
 
 		public function Send():void
@@ -109,7 +96,8 @@ declare(strict_types=1);
 				$this->SendDebug('UNIFIPEV', 'Ungültiges Event empfangen', 0);
 				return;
 			}
-			$type = $event['item']['type'];
+			$typeRaw = (string)$event['item']['type'];
+			$type = $this->normalizeEventType($typeRaw);
 			$deviceID = $event['item']['device'];
 			$eventID = $event['item']['id'];
 			$eventType=$event['type'];		
@@ -152,112 +140,13 @@ declare(strict_types=1);
 			$this->SetBuffer("activeEvents", json_encode($activeEvents));
 			$this->SendDebug('UNIFIPEV',json_encode($activeEvents),0);
 			// Logik für Smart Detection Events
-			if( $type === 'smartDetectZone' && !$this->ReadPropertyBoolean('smartEvents')) {
-				return; // Smart Detection Events sind deaktiviert
-			}
-			if ( $type === 'motion' && !$this->ReadPropertyBoolean('motionEvents')) {
-				return; // Motion Detection Events sind deaktiviert
-			}
-			if ( $type === 'sensorMotion' && !$this->ReadPropertyBoolean('sensorMotionEvents')) {
-				return; // Sensor Motion Detection Events sind deaktiviert
-			}
-			if ( $type === 'smartDetectLine' && !$this->ReadPropertyBoolean('lineEvents')) {
-				return; // Smart Detect Line Events sind deaktiviert
-			}
-			if ( $type === 'smartAudioDetect' && !$this->ReadPropertyBoolean('smartAudioEvents')) {
-				return; // Smart Audio Detection Events sind deaktiviert
-			}
-			if ( $type === 'ring' && !$this->ReadPropertyBoolean('ringEvents')) {
-				return;
-			}
-			if ( $type === 'sensorExtremeValues' && !$this->ReadPropertyBoolean('sensorExtremeValuesEvents')) {
-				return;
-			}
-			if ( $type === 'sensorWaterLeak' && !$this->ReadPropertyBoolean('sensorWaterLeakEvents')) {
-				return;
-			}
-			if ( $type === 'sensorTamper' && !$this->ReadPropertyBoolean('sensorTamperEvents')) {
-				return;
-			}
-			if ( $type === 'sensorBatteryLow' && !$this->ReadPropertyBoolean('sensorBatteryLowEvents')) {
-				return;
-			}
-			if ( $type === 'sensorAlarm' && !$this->ReadPropertyBoolean('sensorAlarmEvents')) {
-				return;
-			}
-			if ( $type === 'sensorOpened' && !$this->ReadPropertyBoolean('sensorOpenedEvents')) {
-				return;
-			}
-			if ( $type === 'sensorClosed' && !$this->ReadPropertyBoolean('sensorClosedEvents')) {
-				return;
-			}
-			if ( $type === 'lightMotion' && !$this->ReadPropertyBoolean('lightMotionEvents')) {
-				return;
-			}
-			if ( $type === 'smartDetectLoiterZone' && !$this->ReadPropertyBoolean('smartDetectLoiterZoneEvents')) {
-				return;
-			}
-			if ($type !== 'smartDetectZone' && $type !== 'motion' && $type !== 'sensorMotion' && $type !== 'smartDetectLine' && $type !== 'smartAudioDetect' && $type !== 'ring' && $type !== 'sensorExtremeValues' && $type !== 'sensorWaterLeak' && $type !== 'sensorTamper' && $type !== 'sensorBatteryLow' && $type !== 'sensorAlarm' && $type !== 'sensorOpened' && $type !== 'sensorClosed' && $type !== 'lightMotion' && $type !== 'smartDetectLoiterZone') {
+			$allowedTypes = ['smartDetectZone', 'motion', 'sensorMotion', 'smartDetectLine', 'smartAudioDetect', 'ring', 'sensorExtremeValues', 'sensorWaterLeak', 'sensorTamper', 'sensorBatteryLow', 'sensorAlarm', 'sensorOpened', 'sensorClosed', 'sensorSmokeTest', 'lightMotion', 'smartDetectLoiterZone'];
+			if (!in_array($type, $allowedTypes, true)) {
 				$this->SendDebug('UNIFIPEV', "Unbekannter Event-Typ: $type", 0);
 				return; // Unbekannter Event-Typ
 			}
-			if (stripos($type, 'sensor') !== false) {
-				$DeviceType='UP-Sense';
-			} elseif (stripos($type, 'ring') !== false) {
-				$DeviceType='Chime';
-			} elseif (stripos($type, 'light') !== false) {
-				$DeviceType='Light';
-			} else {
-				$DeviceType='Camera';
-			}
-			$this->SendDebug('UNIFIPEV', "Verarbeite Device-Type: $DeviceType für Kamera-ID: $deviceID und Event-Type: $type", 0);
-			$DeviceData=$this->getDeviceData($deviceID,$DeviceType);			
-			if (!$DeviceData) {
-				$this->SendDebug('UNIFIPEV', "Konnte Gerätedaten für Kamera-ID $deviceID nicht abrufen", 0);
-				$camName=$deviceID;
-			}
-			if (isset($DeviceData['name'])) {
-				$camName=$DeviceData['name'];
-			} else {
-				$camName=$deviceID;
-			}
-			$varIdent = 'EventActive_' . $type . '_' . $deviceID;
-			
-			$this->maintainVar($varIdent, $camName, $type);
-			//$this->MaintainVariable( $varIdent,  $camName . '-' . $type .' '. $this->Translate('active') , $varType, json_decode($this->getPresenstatios($type)), 0, 1 );
-			$this->SendDebug('UNIFIPEV', 'Var Name: ' . $camName . '-' . $type .' '. 'active' . " (ID: $deviceID)", 0);
-			// Setze die Variable für den Event-Typ
-			$deviceActive=false;
-			$deviceEventDetails=null;
-			foreach ($activeEvents as $storedEvent) {
-				foreach ($storedEvent as $details) {
-					if ($details['deviceID'] === $deviceID && $details['type'] === $type) {
-						$deviceActive = true;
-						$deviceEventDetails = $details;
-						break 2; // Bricht beide Schleifen ab
-					}
-				}
-			}
-			if ($smartDetectionEvent) {
-				$smartValue = 'false';
-				if ($deviceActive) {
-					$smartTypes = $deviceEventDetails['smartDetectTypes'] ?? [];
-					if (is_string($smartTypes)) {
-						$smartTypes = [$smartTypes];
-					} elseif (!is_array($smartTypes)) {
-						$smartTypes = [];
-					}
-					$smartTypes = array_values(array_unique(array_map(static fn($value) => (string)$value, $smartTypes)));
-					if (!empty($smartTypes)) {
-						$smartValue = implode(',', $smartTypes);
-					} else {
-						$smartValue = 'true';
-					}
-				}
-				$this->SetValue($varIdent, $smartValue);
-			} else {
-				$this->SetValue($varIdent,$deviceActive);
-			}
+			$this->updateSmartDetectSelectionStates($deviceID, $activeEvents);
+			$this->updateStandardEventSelectionStates($deviceID, $activeEvents);
 			
 
 			$globalActive=false;
@@ -339,26 +228,6 @@ declare(strict_types=1);
 			return json_encode($jsonArray);			
 		}
 
-
-		public function getDeviceData(string $deviceID,string $deviceType):array {
-			if (empty($deviceID)) {
-				$this->SendDebug("UnifiPGW", "Device ID is empty, returning empty array.", 0);
-				return [];
-			}
-			if ($deviceType === 'Camera') {
-				$JSONData = $this->getApiData( '/cameras/' . $deviceID );
-			} elseif ($deviceType === 'UP-Sense') {
-				$JSONData = $this->getApiData( '/sensors/' . $deviceID );
-			} elseif ($deviceType === 'Light') {
-				$JSONData = $this->getApiData( '/lights/' . $deviceID );
-			} elseif ($deviceType === 'Chime') {
-				$JSONData = $this->getApiData( '/chimes/' . $deviceID );
-			} else {
-				$this->SendDebug("UNIFIPEV", "Unknown device type: " . $deviceType, 0);
-				return [];
-			}			
-			return $JSONData;
-		}
 
 		public function getApiData(string $endpoint = ''): array {
 			$maxRetries = 3;
@@ -443,31 +312,6 @@ declare(strict_types=1);
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'ServerAddress', 'caption' => $this->Translate('Unifi Protect Host IP'), 'validate' => "^(([a-zA-Z0-9\\.\\-\\_]+(\\.[a-zA-Z]{2,3})+)|(\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b))$" );
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => $this->Translate('APIKey') );
 
-			unset($arrayOptions);
-			$arrayElements[] = array('type' => 'Label', 'bold' => true, 'label' => $this->Translate('Variable for events'));
-			$arrayOptions = array(
-				array( 'type' => 'CheckBox', 'name' => 'smartEvents', 'width' => '220px','caption' => $this->Translate('Smart Detections') ),
-				array( 'type' => 'CheckBox', 'name' => 'motionEvents', 'width' => '220px','caption' => $this->Translate('Motion Detections') ),
-				array( 'type' => 'CheckBox', 'name' => 'sensorMotionEvents', 'width' => '220px','caption' => $this->Translate('Sensor Motion Detections') ),
-				array( 'type' => 'CheckBox', 'name' => 'lineEvents', 'width' => '220px','caption' => $this->Translate('Line Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'smartAudioEvents', 'width' => '220px','caption' => $this->Translate('Smart Audio Detections') ),
-				array( 'type' => 'CheckBox', 'name' => 'ringEvents', 'width' => '220px','caption' => $this->Translate('Ring Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'sensorExtremeValuesEvents', 'width' => '220px','caption' => $this->Translate('Sensor Extreme Values Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'sensorWaterLeakEvents', 'width' => '220px','caption' => $this->Translate('Sensor Water Leak Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'sensorTamperEvents', 'width' => '220px','caption' => $this->Translate('Sensor Tamper Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'sensorBatteryLowEvents', 'width' => '220px','caption' => $this->Translate('Sensor Battery Low Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'sensorAlarmEvents', 'width' => '220px','caption' => $this->Translate('Sensor Alarm Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'sensorOpenedEvents', 'width' => '220px','caption' => $this->Translate('Sensor Opened Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'sensorClosedEvents', 'width' => '220px','caption' => $this->Translate('Sensor Closed Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'lightMotionEvents', 'width' => '220px','caption' => $this->Translate('Light Motion Events') ),
-				array( 'type' => 'CheckBox', 'name' => 'smartDetectLoiterZoneEvents', 'width' => '220px','caption' => $this->Translate('Smart Detect Loiter Zone Events') )
-			);
-			$chunkSize = (int)ceil(count($arrayOptions) / 3);
-			foreach (array_chunk($arrayOptions, $chunkSize) as $optionRow) {
-				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $optionRow );
-			}
-			
-			
 			unset($arrayOptions);#Variable for Global 
 			$arrayElements[] = array('type' => 'Label', 'bold' => true, 'label' => $this->Translate('Variable for global events'));
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'smartGlobal', 'width' => '220px','caption' => $this->Translate('Smart Detection') );
@@ -490,6 +334,34 @@ declare(strict_types=1);
 				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $optionRow );
 			}
 
+			$eventList = $this->getEventConfiguratorValues();
+			$this->SendDebug('UNIFIPEV', 'Device Event List: ' . json_encode($eventList), 0);
+			$arrayElements[] = array('type' => 'Label', 'bold' => true, 'label' => $this->Translate('Device event variables'));
+			if (!empty($eventList)) {
+				$arrayElements[] = array(
+					'type' => 'List',
+					'name' => 'SmartDetectSelections',
+					'rowCount' => 12,
+					'add' => false,
+					'delete' => false,
+					'loadValuesFromConfiguration' => false,
+					'columns' => array(
+						array('caption' => $this->Translate('Device'), 'name' => 'CameraName', 'width' => '180px', 'save' => true),
+						array('caption' => $this->Translate('Device ID'), 'name' => 'CameraID', 'width' => '200px', 'save' => true),
+						array('caption' => $this->Translate('Category'), 'name' => 'Category', 'width' => '120px', 'save' => true),
+						array('caption' => $this->Translate('Event / type'), 'name' => 'DetectType', 'width' => '200px', 'save' => true),
+						array('caption' => 'Mode', 'name' => 'Mode', 'visible' => false, 'save' => true),
+						array('caption' => 'Normalized type', 'name' => 'NormalizedType', 'visible' => false, 'save' => true),
+						array('caption' => $this->Translate('Variable ident'), 'name' => 'Ident', 'width' => '200px', 'visible' => false, 'save' => true),
+						array('caption' => $this->Translate('Create variable'), 'name' => 'Enabled', 'width' => '140px', 'edit' => array('type' => 'CheckBox'), 'save' => true)
+					),
+					'values' => $eventList					
+				);
+				$this->SendDebug('UNIFIPEV', 'Device Event List: ' . json_encode($eventList), 0);
+			} else {
+				$arrayElements[] = array('type' => 'Label', 'label' => $this->Translate('No compatible devices found or API connection failed.'));
+			}
+
 		
 
 			$arrayActions = array();
@@ -498,52 +370,484 @@ declare(strict_types=1);
 	    }
 
 
-		private function maintainVar(string $varIdent, string $camName, string $type): void
+		private function getEventConfiguratorValues(): array
 		{
-			$isSmartDetect = in_array($type, ['smartDetectZone', 'smartDetectLine', 'smartDetectLoiterZone'], true);
-			$label = $camName . '-' . $type . ' ' . $this->Translate('active');
-			$presentation = [
-				'ICON' => 'sensor',
-				'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-				'USAGE_TYPE' => 0
-			];
-
-			if ($isSmartDetect) {
-				$varType = 3; // String
-				$presentation = [
-					'ICON' => 'sensor-on',
-					'DECIMAL_SEPARATOR' => 'Client',
-					'COLOR' => 65280,
-					'CONTENT_COLOR' => -1,
-					'DIGITS' => 2,
-					'MAX' => 100,
-					'PRESENTATION' => '{3319437D-7CDE-699D-750A-3C6A3841FA75}',
-					'INTERVALS' => '[]',
-					'INTERVALS_ACTIVE' => false,
-					'MIN' => 0,
-					'MULTILINE' => false,
-					'PERCENTAGE' => false,
-					'PREFIX' => '',
-					'PREVIEW_STYLE' => 1,
-					'SHOW_PREVIEW' => true,
-					'SUFFIX' => '',
-					'THOUSANDS_SEPARATOR' => '',
-					'USAGE_TYPE' => 0,
-					'DISPLAY_TYPE' => 0
-				];
-				$options = [
-					['Value' => 'false', 'Caption' => 'Keine Bewegung', 'IconActive' => true, 'IconValue' => 'sensor', 'ColorActive' => true, 'ColorValue' => 16077123, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => 16711680, 'ContentColorDisplay' => -1]];
-			} else {
-				$varType = 0; // Boolean
-				$options = [
-					['ColorDisplay' => 16077123, 'Value' => false, 'Caption' => $this->Translate('no motion'), 'IconValue' => 'sensor', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16077123, 'Color' => -1],
-					['ColorDisplay' => 1692672, 'Value' => true, 'Caption' => $this->Translate('motion detected'), 'IconValue' => 'sensor-on', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672, 'Color' => -1]
-				];
-			}
-
-			$presentation['OPTIONS'] = json_encode($options, JSON_UNESCAPED_SLASHES);
-			$this->MaintainVariable($varIdent, $label, $varType, $presentation, 0, 1);
+			$values = array_merge(
+				$this->getStandardEventConfiguratorValues(),
+				$this->getSmartDetectConfiguratorValues()
+			);
+			usort($values, static function (array $a, array $b): int {
+				$nameCompare = strcasecmp((string)($a['CameraName'] ?? ''), (string)($b['CameraName'] ?? ''));
+				if ($nameCompare !== 0) {
+					return $nameCompare;
+				}
+				return strcasecmp((string)($a['DetectType'] ?? ''), (string)($b['DetectType'] ?? ''));
+			});
+			return $values;
 		}
+
+		private function getStandardEventConfiguratorValues(): array
+		{
+			$selectionIndex = $this->getSelectionIndex();
+			$rows = array();
+			foreach ($this->getCameraList() as $camera) {
+				$cameraID = (string)($camera['id'] ?? '');
+				if ($cameraID === '') {
+					continue;
+				}
+				$cameraName = (string)($camera['name'] ?? $cameraID);
+				$rows[] = $this->buildEventSelectionRow($selectionIndex, $cameraName, $cameraID, 'camera', 'cameraMotionEvent');
+				$rows[] = $this->buildEventSelectionRow($selectionIndex, $cameraName, $cameraID, 'camera', 'smartDetectLineEvent');
+				$hasSpeaker = (bool)($camera['featureFlags']['hasSpeaker'] ?? $camera['hasSpeaker'] ?? false);
+				$hasMic = (bool)($camera['featureFlags']['hasMic'] ?? $camera['hasMic'] ?? false);
+				if ($hasSpeaker && $hasMic) {
+					$rows[] = $this->buildEventSelectionRow($selectionIndex, $cameraName, $cameraID, 'camera', 'ringEvent');
+				}
+			}
+			foreach ($this->getLights() as $light) {
+				$lightID = (string)($light['id'] ?? '');
+				if ($lightID === '') {
+					continue;
+				}
+				$lightName = (string)($light['name'] ?? $lightID);
+				$rows[] = $this->buildEventSelectionRow($selectionIndex, $lightName, $lightID, 'light', 'lightMotionEvent');
+			}
+			$sensorEvents = ['sensorExtremeValueEvent', 'sensorWaterLeakEvent', 'sensorTamperEvent', 'sensorBatteryLowEvent', 'sensorAlarmEvent', 'sensorOpenEvent', 'sensorClosedEvent', 'sensorSmokeTestEvent', 'sensorMotionEvent'];
+			foreach ($this->getSensors() as $sensor) {
+				$sensorID = (string)($sensor['id'] ?? '');
+				if ($sensorID === '') {
+					continue;
+				}
+				$sensorName = (string)($sensor['name'] ?? $sensorID);
+				foreach ($sensorEvents as $eventType) {
+					$rows[] = $this->buildEventSelectionRow($selectionIndex, $sensorName, $sensorID, 'sensor', $eventType);
+				}
+			}
+			return array_values(array_filter($rows));
+		}
+
+		private function buildEventSelectionRow(array $selectionIndex, string $deviceName, string $deviceID, string $category, string $eventType): array
+		{
+			$ident = $this->buildEventVariableIdent($deviceID, $eventType);
+			return array(
+				'CameraName' => $deviceName,
+				'CameraID' => $deviceID,
+				'Category' => $category,
+				'DetectType' => $eventType,
+				'NormalizedType' => $this->normalizeEventType($eventType),
+				'Mode' => 'event',
+				'Ident' => $ident,
+				'Enabled' => isset($selectionIndex[$ident]) ? (bool)($selectionIndex[$ident]['Enabled'] ?? false) : false
+			);
+		}
+
+		private function getSmartDetectConfiguratorValues(): array
+		{
+			$storedSelections = $this->getSelectionIndex();
+			$cameras = $this->getCameraList();
+			$values = array();
+			foreach ($cameras as $camera) {
+				$cameraID = (string)($camera['id'] ?? '');
+				if ($cameraID === '') {
+					continue;
+				}
+				$cameraName = (string)($camera['name'] ?? $cameraID);
+				$smartSettings = $camera['smartDetectSettings'] ?? array();
+				$objectTypes = $this->normalizeSmartDetectTypes($smartSettings['objectTypes'] ?? array());
+				$audioTypes = $this->normalizeSmartDetectTypes($smartSettings['audioTypes'] ?? array());
+				foreach ($objectTypes as $type) {
+					$ident = $this->buildSmartDetectTypeIdent($cameraID, 'object', $type);
+					$values[] = array(
+						'CameraName' => $cameraName,
+						'CameraID' => $cameraID,
+						'Category' => 'smart-object',
+						'DetectType' => $type,
+						'NormalizedType' => strtolower($type),
+						'Mode' => 'smart',
+						'Ident' => $ident,
+						'Enabled' => isset($storedSelections[$ident]) ? (bool)($storedSelections[$ident]['Enabled'] ?? false) : false
+					);
+				}
+				foreach ($audioTypes as $type) {
+					$ident = $this->buildSmartDetectTypeIdent($cameraID, 'audio', $type);
+					$values[] = array(
+						'CameraName' => $cameraName,
+						'CameraID' => $cameraID,
+						'Category' => 'smart-audio',
+						'DetectType' => $type,
+						'NormalizedType' => strtolower($type),
+						'Mode' => 'smart',
+						'Ident' => $ident,
+						'Enabled' => isset($storedSelections[$ident]) ? (bool)($storedSelections[$ident]['Enabled'] ?? false) : false
+					);
+				}
+			}
+			return $values;
+		}
+
+		private function getSelectionIndex(): array
+		{
+			$stored = json_decode($this->ReadPropertyString('SmartDetectSelections'), true);
+			if (!is_array($stored)) {
+				return array();
+			}
+			$indexed = array();
+			foreach ($stored as $row) {
+				if (!is_array($row) || !isset($row['Ident'])) {
+					continue;
+				}
+				$indexed[(string)$row['Ident']] = $row;
+			}
+			return $indexed;
+		}
+
+		private function getCameraList(): array
+		{
+			$response = $this->getApiData('/cameras');
+			if (isset($response['cameras']) && is_array($response['cameras'])) {
+				$response = $response['cameras'];
+			}
+			if (!is_array($response)) {
+				return array();
+			}
+			return array_values(array_filter($response, static function ($camera): bool {
+				return is_array($camera) && isset($camera['id']);
+			}));
+		}
+
+		private function getLights(): array
+		{
+			$response = $this->getApiData('/lights');
+			if (isset($response['lights']) && is_array($response['lights'])) {
+				$response = $response['lights'];
+			}
+			if (!is_array($response)) {
+				return array();
+			}
+			return array_values(array_filter($response, static function ($light): bool {
+				return is_array($light) && isset($light['id']);
+			}));
+		}
+
+		private function getSensors(): array
+		{
+			$response = $this->getApiData('/sensors');
+			if (isset($response['sensors']) && is_array($response['sensors'])) {
+				$response = $response['sensors'];
+			}
+			if (!is_array($response)) {
+				return array();
+			}
+			return array_values(array_filter($response, static function ($sensor): bool {
+				return is_array($sensor) && isset($sensor['id']);
+			}));
+		}
+
+		private function normalizeSmartDetectTypes(array $types): array
+		{
+			$normalized = array();
+			foreach ($types as $type) {
+				if (!is_string($type) || $type === '') {
+					continue;
+				}
+				$normalized[] = $type;
+			}
+			return array_values(array_unique($normalized));
+		}
+
+		private function buildSmartDetectTypeIdent(string $cameraID, string $category, string $type): string
+		{
+			$slug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $type));
+			return 'SmartDetect_' . $category . '_' . $cameraID . '_' . $slug;
+		}
+
+		private function buildEventVariableIdent(string $deviceID, string $eventType): string
+		{
+			$slug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $eventType));
+			return 'EventVar_' . $deviceID . '_' . $slug;
+		}
+
+		private function synchronizeConfiguredVariables(): void
+		{
+			$rows = json_decode($this->ReadPropertyString('SmartDetectSelections'), true);
+			if (!is_array($rows)) {
+				$rows = array();
+			}
+			$validIdents = array();
+			foreach ($rows as $row) {
+				if (!is_array($row)) {
+					continue;
+				}
+				$ident = (string)($row['Ident'] ?? '');
+				if ($ident === '') {
+					continue;
+				}
+				$enabled = (bool)($row['Enabled'] ?? false);
+				if (!$enabled) {
+					$this->MaintainVariable($ident, '', 0, '', 0, 0);
+					continue;
+				}
+				$validIdents[] = $ident;
+				$deviceName = (string)($row['CameraName'] ?? ($row['CameraID'] ?? ''));
+				$detectType = (string)($row['DetectType'] ?? '');
+				if ($deviceName === '' || $detectType === '') {
+					continue;
+				}
+				$mode = (string)($row['Mode'] ?? '');
+				if ($mode === '' && strpos($ident, 'SmartDetect_') === 0) {
+					$mode = 'smart';
+				} elseif ($mode === '') {
+					$mode = 'event';
+				}
+				$label = $deviceName . ' - ';
+				if ($mode === 'event') {
+					$label .= $this->formatEventTypeCaption($detectType) . ' ' . $this->Translate('active');
+				} else {
+					$label .= $detectType . ' ' . $this->Translate('active');
+				}
+				$this->MaintainVariable($ident, $label, 0, $this->buildSmartDetectBooleanPresentation(), 0, 1);
+				$existingId = @$this->GetIDForIdent($ident);
+				if ($existingId === false) {
+					$this->SetValue($ident, false);
+				}
+			}
+			$this->cleanupObsoleteConfiguredVariables($validIdents);
+		}
+
+		private function formatEventTypeCaption(string $eventType): string
+		{
+			if ($eventType === '') {
+				return '';
+			}
+			$spaced = preg_replace('/([a-z])([A-Z])/', '$1 $2', $eventType);
+			$spaced = preg_replace('/\s+event$/i', '', $spaced ?? '');
+			return ucwords(trim((string)$spaced));
+		}
+
+		private function cleanupObsoleteConfiguredVariables(array $validIdents): void
+		{
+			$validLookup = array_flip($validIdents);
+			foreach (IPS_GetChildrenIDs($this->InstanceID) as $childID) {
+				$object = IPS_GetObject($childID);
+				if (($object['ObjectType'] ?? 0) !== 2) {
+					continue;
+				}
+				$ident = (string)($object['ObjectIdent'] ?? '');
+				if (strpos($ident, 'SmartDetect_') !== 0 && strpos($ident, 'EventVar_') !== 0) {
+					continue;
+				}
+				if (!isset($validLookup[$ident])) {
+					$this->MaintainVariable($ident, '', 0, '', 0, 0);
+				}
+			}
+		}
+
+		private function buildSmartDetectBooleanPresentation(): array
+		{
+			return array(
+				'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+				'USAGE_TYPE' => 0,
+				'ICON' => 'sensor',
+				'OPTIONS' => json_encode(array(
+					array('ColorDisplay' => 16077123, 'Value' => false, 'Caption' => $this->Translate('no motion'), 'IconValue' => 'sensor', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16077123, 'Color' => -1),
+					array('ColorDisplay' => 1692672, 'Value' => true, 'Caption' => $this->Translate('motion detected'), 'IconValue' => 'sensor-on', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672, 'Color' => -1)
+				), JSON_UNESCAPED_SLASHES)
+			);
+		}
+
+		private function updateSmartDetectSelectionStates(string $deviceID, array $activeEvents): void
+		{
+			$selectionMap = $this->getEnabledSmartDetectSelectionMap();
+			if (!isset($selectionMap[$deviceID])) {
+				return;
+			}
+			$activeTypes = $this->extractActiveSmartDetectTypes($activeEvents, $deviceID);
+			foreach ($selectionMap[$deviceID] as $type => $ident) {
+				if (@$this->GetIDForIdent($ident) === false) {
+					continue;
+				}
+				$this->SetValue($ident, in_array($type, $activeTypes, true));
+			}
+		}
+
+		private function updateStandardEventSelectionStates(string $deviceID, array $activeEvents): void
+		{
+			$selectionMap = $this->getEnabledStandardEventSelectionMap();
+			if (!isset($selectionMap[$deviceID])) {
+				return;
+			}
+			$activeTypes = $this->extractActiveStandardEventTypes($activeEvents, $deviceID);
+			foreach ($selectionMap[$deviceID] as $type => $ident) {
+				if (@$this->GetIDForIdent($ident) === false) {
+					continue;
+				}
+				$this->SetValue($ident, in_array($type, $activeTypes, true));
+			}
+		}
+
+		private function getEnabledSmartDetectSelectionMap(): array
+		{
+			$rows = json_decode($this->ReadPropertyString('SmartDetectSelections'), true);
+			if (!is_array($rows)) {
+				return array();
+			}
+			$map = array();
+			foreach ($rows as $row) {
+				if (!is_array($row)) {
+					continue;
+				}
+				if (!(bool)($row['Enabled'] ?? false)) {
+					continue;
+				}
+				$ident = (string)($row['Ident'] ?? '');
+				$mode = (string)($row['Mode'] ?? '');
+				if ($ident === '') {
+					continue;
+				}
+				if ($mode === 'event' || ($mode === '' && strpos($ident, 'SmartDetect_') !== 0)) {
+					continue;
+				}
+				$cameraID = (string)($row['CameraID'] ?? '');
+				$detectType = strtolower((string)($row['DetectType'] ?? ''));
+				if ($cameraID === '' || $detectType === '') {
+					continue;
+				}
+				if (!isset($map[$cameraID])) {
+					$map[$cameraID] = array();
+				}
+				$map[$cameraID][$detectType] = $ident;
+			}
+			return $map;
+		}
+
+		private function getEnabledStandardEventSelectionMap(): array
+		{
+			$rows = json_decode($this->ReadPropertyString('SmartDetectSelections'), true);
+			if (!is_array($rows)) {
+				return array();
+			}
+			$map = array();
+			foreach ($rows as $row) {
+				if (!is_array($row)) {
+					continue;
+				}
+				if (!(bool)($row['Enabled'] ?? false)) {
+					continue;
+				}
+				$ident = (string)($row['Ident'] ?? '');
+				$mode = (string)($row['Mode'] ?? '');
+				if ($ident === '') {
+					continue;
+				}
+				if ($mode !== 'event' && strpos($ident, 'EventVar_') !== 0) {
+					continue;
+				}
+				$deviceID = (string)($row['CameraID'] ?? '');
+				$normalizedType = (string)($row['NormalizedType'] ?? '');
+				if ($normalizedType === '') {
+					$normalizedType = $this->normalizeEventType((string)($row['DetectType'] ?? ''));
+				}
+				if ($deviceID === '' || $normalizedType === '') {
+					continue;
+				}
+				if (!isset($map[$deviceID])) {
+					$map[$deviceID] = array();
+				}
+				$map[$deviceID][$normalizedType] = $ident;
+			}
+			return $map;
+		}
+
+		private function extractActiveSmartDetectTypes(array $activeEvents, string $deviceID): array
+		{
+			$activeTypes = array();
+			foreach ($activeEvents as $storedEvent) {
+				if (!is_array($storedEvent)) {
+					continue;
+				}
+				foreach ($storedEvent as $details) {
+					if (!is_array($details)) {
+						continue;
+					}
+					if (($details['deviceID'] ?? '') !== $deviceID) {
+						continue;
+					}
+					$types = $details['smartDetectTypes'] ?? array();
+					if (is_string($types)) {
+						$types = array($types);
+					}
+					if (!is_array($types)) {
+						continue;
+					}
+					foreach ($types as $type) {
+						if (!is_string($type) || $type === '') {
+							continue;
+						}
+						$activeTypes[] = strtolower($type);
+					}
+				}
+			}
+			return array_values(array_unique($activeTypes));
+		}
+
+		private function extractActiveStandardEventTypes(array $activeEvents, string $deviceID): array
+		{
+			$activeTypes = array();
+			foreach ($activeEvents as $storedEvent) {
+				if (!is_array($storedEvent)) {
+					continue;
+				}
+				foreach ($storedEvent as $details) {
+					if (!is_array($details)) {
+						continue;
+					}
+					if (($details['deviceID'] ?? '') !== $deviceID) {
+						continue;
+					}
+					$type = (string)($details['type'] ?? '');
+					if ($type === '') {
+						continue;
+					}
+					$activeTypes[] = $type;
+				}
+			}
+			return array_values(array_unique($activeTypes));
+		}
+
+		private function normalizeEventType(string $type): string
+		{
+			$lower = strtolower($type);
+			$map = array(
+				'ringevent' => 'ring',
+				'ring' => 'ring',
+				'smartdetectlineevent' => 'smartDetectLine',
+				'smartdetectline' => 'smartDetectLine',
+				'sensorextremevalueevent' => 'sensorExtremeValues',
+				'sensorextremevalues' => 'sensorExtremeValues',
+				'sensorwaterleakevent' => 'sensorWaterLeak',
+				'sensorwaterleak' => 'sensorWaterLeak',
+				'sensortamperevent' => 'sensorTamper',
+				'sensortamper' => 'sensorTamper',
+				'sensorbatterylowevent' => 'sensorBatteryLow',
+				'sensorbatterylow' => 'sensorBatteryLow',
+				'sensoralarmevent' => 'sensorAlarm',
+				'sensoralarm' => 'sensorAlarm',
+				'sensoropenevent' => 'sensorOpened',
+				'sensoropen' => 'sensorOpened',
+				'sensorclosedevent' => 'sensorClosed',
+				'sensorclosed' => 'sensorClosed',
+				'sensorsmoketestevent' => 'sensorSmokeTest',
+				'sensorsmoketest' => 'sensorSmokeTest',
+				'sensormotionevent' => 'sensorMotion',
+				'sensormotion' => 'sensorMotion',
+				'lightmotionevent' => 'lightMotion',
+				'lightmotion' => 'lightMotion',
+				'cameramotionevent' => 'motion',
+				'motionevent' => 'motion'
+			);
+			return $map[$lower] ?? $type;
+		}
+
 	}
 
 

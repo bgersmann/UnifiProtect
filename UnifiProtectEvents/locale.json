@@ -44,7 +44,15 @@
             "global sensor closed detect":"globale Sensor geschlossen",
             "global light motion detect":"globale Licht Bewegungserkennung",
             "global smart detect loiter zone":"globale Smarte Loiter-Zone",
-            "variable for events":"Variable für Ereignisse"
+            "variable for events":"Variable für Ereignisse",
+            "Device event variables":"Geräteereignis-Variablen",
+            "Device":"Gerät",
+            "Device ID":"Geräte-ID",
+            "Category":"Kategorie",
+            "Event / type":"Ereignis / Typ",
+            "Variable ident":"Variablen-Ident",
+            "Create variable":"Variable erstellen",
+            "No compatible devices found or API connection failed.":"Keine kompatiblen Geräte gefunden oder API-Verbindung fehlgeschlagen."
         }
     }
 }
