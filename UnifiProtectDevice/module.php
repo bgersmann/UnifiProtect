@@ -7,7 +7,6 @@ declare(strict_types=1);
 		{
 			//Never delete this line!
 			parent::Create();
-			//$this->ConnectParent('{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}');
 			$this->RegisterPropertyString( 'DeviceType', 'Camera' );
 			$this->RegisterPropertyString( 'ID', '' );
 			$this->RegisterPropertyBoolean( 'StreamLow', false );

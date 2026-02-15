@@ -13,21 +13,11 @@ class UnifiWebhook extends IPSModuleStrict
     {
         //Never delete this line!
         parent::Create();
-       // $this->ConnectParent('{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}');
         $this->RegisterPropertyString( 'webhooks', '[]' );
         $this->RegisterAttributeString('webhooksOld', '[]'); 
         
     }
 
-    // public function GetCompatibleParents(): string
-    //     {
-    //         return json_encode([
-    //             'type' => 'connect',
-    //             'moduleIDs' => [
-    //                 '{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}'
-    //             ]
-    //         ]);
-    //     }
 
     /**
      * This function is called when deleting the instance during operation and when updating via "Module Control".

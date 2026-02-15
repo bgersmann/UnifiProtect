@@ -7,18 +7,8 @@ declare(strict_types=1);
 		{
 			//Never delete this line!
 			parent::Create();
-			//$this->ConnectParent('{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}');
 		}
 
-		// public function GetCompatibleParents(): string
-        // {
-        //     return json_encode([
-        //         'type' => 'connect',
-        //         'moduleIDs' => [
-        //             '{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}'
-        //         ]
-        //     ]);
-        // }
 
 		public function Destroy():void
 		{
@@ -70,7 +60,6 @@ declare(strict_types=1);
 			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instanz ist aktiv') );
 			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => $this->Translate('Instanz ist inaktiv') );
 			$arraySort = array();
-			#$arraySort = array( 'column' => 'Name', 'direction' => 'ascending' );
 
 			$arrayColumns = array();
 			$arrayColumns[] = array( 'caption' => 'Name', 'name' => 'Name', 'width' => 'auto', 'add' => '' );

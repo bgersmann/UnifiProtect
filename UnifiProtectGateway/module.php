@@ -103,8 +103,6 @@ declare(strict_types=1);
 
 
 
-		#https://192.168.178.1/proxy/protect/v1/cameras
-
 		public function getApiData(string $endpoint = ''): array {
 			$maxRetries = 3;
 			$retry = 0;

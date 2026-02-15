@@ -27,7 +27,6 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'lightMotionGlobal', false );
 			$this->RegisterPropertyBoolean( 'smartDetectLoiterZoneGlobal', false );
 			
-			//$this->RequireParent('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
 		}
 
 		public function GetCompatibleParents(): string
@@ -224,7 +223,6 @@ declare(strict_types=1);
 				]),
 				'Active'		   => $status
 			];
-			#IPS_LogMessage('GetConfigurationForParent', 'URL: ' . json_encode($jsonArray));
 			return json_encode($jsonArray);			
 		}
 
