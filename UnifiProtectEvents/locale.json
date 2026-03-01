@@ -52,7 +52,8 @@
             "Event / type":"Ereignis / Typ",
             "Variable ident":"Variablen-Ident",
             "Create variable":"Variable erstellen",
-            "No compatible devices found or API connection failed.":"Keine kompatiblen Geräte gefunden oder API-Verbindung fehlgeschlagen."
+            "No compatible devices found or API connection failed.":"Keine kompatiblen Geräte gefunden oder API-Verbindung fehlgeschlagen.",
+            "API Error":"API Fehler"
         }
     }
 }

@@ -65,6 +65,17 @@ declare(strict_types=1);
 			$this->MaintainVariable( 'lightMotionGlobal',  $this->Translate('global light motion detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('lightMotionGlobal'));
 			$this->MaintainVariable( 'smartDetectLoiterZoneGlobal',  $this->Translate('global smart detect loiter zone') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'sensor','OPTIONS'=>'[{"ColorDisplay":16077123,"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], 0, $this->ReadPropertyBoolean('smartDetectLoiterZoneGlobal'));
 			$this->synchronizeConfiguredVariables();
+			// Set status
+			$APIKey = $this->ReadPropertyString( 'APIKey' );
+        	if (empty($APIKey))
+			{
+				// instance inactive
+				$this->SetStatus( 104 );
+			} else {
+				// instance active
+				$this->SetStatus( 102 );
+				$this->SetSummary($this->ReadPropertyString("ServerAddress"));        
+			}
 		}
 
 		public function Send():void
@@ -228,7 +239,7 @@ declare(strict_types=1);
 
 
 		public function getApiData(string $endpoint = ''): array {
-			$maxRetries = 3;
+			$maxRetries = 5;
 			$retry = 0;
 			do {
 				if (!IPS_SemaphoreEnter("UnifiProtectAPI", 50)) {
@@ -302,6 +313,7 @@ declare(strict_types=1);
 			$arrayStatus = array();
 			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instance is active') );
 			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is inactive') );
+			$arrayStatus[] = array( 'code' => 201, 'icon' => 'inactive', 'caption' => $this->Translate('API Error') );
 
 
 			$arrayElements = array();
