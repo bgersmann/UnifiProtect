@@ -303,6 +303,7 @@ declare(strict_types=1);
 				$json = json_decode($RawData, true);
 				if (is_array($json) && isset($json['error'])) {
 					$this->SendDebug("UnifiPDevice", "Snapshot error: " . $json['error'], 0);
+					$this->LogMessage("Error getting snapshot: " . $json['error'], KL_ERROR);
 					//$this->SetStatus(201);
 					return false;
 				}
