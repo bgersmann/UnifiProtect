@@ -18,6 +18,7 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'Humidity', false );
 			$this->RegisterPropertyBoolean( 'Illuminance', false );
 			$this->RegisterPropertyBoolean( 'Motion', false );			
+			$this->RegisterAttributeBoolean( 'supportFullHDSnapshot', false );
 			$this->RegisterTimer( 'Collect Data', 0, "UNIFIPDV_getData(\$_IPS['TARGET']);" );
 			
 		}
@@ -228,6 +229,7 @@ declare(strict_types=1);
 						if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 							$this->SetValue('micEnabled', $deviceData['isMicEnabled'] ?? false);
 							$this->SetValue('micVolume', $deviceData['micVolume'] ?? 0);
+							$this->WriteAttributeBoolean('supportFullHDSnapshot', (bool)($deviceData['featureFlags']['supportFullHdSnapshot'] ?? false));
 							$lcdMessageText = '';
                             if (isset($deviceData['lcdMessage']) && is_array($deviceData['lcdMessage'])) {
                                 $lcdMessageText = $deviceData['lcdMessage']['text'] ?? '';
@@ -237,6 +239,7 @@ declare(strict_types=1);
 								$this->MaintainAction('lcdMessage', true);
                                 $this->SetValue('lcdMessage', (string)$lcdMessageText);
                             }
+							
 						} elseif ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 							$this->SetValue('Temperature', $deviceData['stats']['temperature']['value'] ?? 0);
 							$this->SetValue('Humidity', $deviceData['stats']['humidity']['value'] ?? 0);
@@ -279,9 +282,15 @@ declare(strict_types=1);
 			}
 
 			try {
+				$url= $array['url'];
+				$highQuality= $this->ReadAttributeBoolean('supportFullHDSnapshot');
+				if ($highQuality) {
+					$url .= '?highQuality=true';
+				}
+				$this->SendDebug("UnifiPDevice", "Get Snapshot URL: " . $url . " - High Quality: " . ($highQuality ? 'Yes' : 'No'), 0);
 				$starttime=microtime(true);
 				$ch = curl_init();
-				curl_setopt( $ch, CURLOPT_URL, $array['url'] );
+				curl_setopt( $ch, CURLOPT_URL, $url );
 				curl_setopt( $ch, CURLOPT_HTTPGET, true );
 				curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
 				curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );

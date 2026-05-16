@@ -66,7 +66,17 @@ declare(strict_types=1);
 						$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
 						$APIKey = $this->ReadPropertyString( 'APIKey' );
 						$cameraID = $data->ID;
-						$url = 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot?highQuality=true';
+						$highQuality = false;
+						if (!empty($data->Param1)) {
+							$param1 = json_decode($data->Param1, true);
+							if (is_array($param1) && array_key_exists('supportFullHDSnapshot', $param1)) {
+								$highQuality = (bool)$param1['supportFullHDSnapshot'];
+							}
+						}
+						$url = 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot';
+						if ($highQuality) {
+							$url .= '?highQuality=true';
+						}
 						$array = array('apikey' => $APIKey, 'url' => $url);
 						$this->SendDebug("UnifiPGW", "Snapshot: " . json_encode($array), 0);
 						return serialize($array);
