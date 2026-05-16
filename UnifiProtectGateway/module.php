@@ -66,7 +66,7 @@ declare(strict_types=1);
 						$ServerAddress = $this->ReadPropertyString( 'ServerAddress' );
 						$APIKey = $this->ReadPropertyString( 'APIKey' );
 						$cameraID = $data->ID;
-						$url = 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot?forceHighQuality=true';
+						$url = 'https://'.$ServerAddress.'/proxy/protect/integration/v1/cameras/' . $cameraID . '/snapshot';
 						$array = array('apikey' => $APIKey, 'url' => $url);
 						$this->SendDebug("UnifiPGW", "Snapshot: " . json_encode($array), 0);
 						return serialize($array);
