@@ -1,0 +1,20 @@
+{
+    "translations": {
+        "de": {
+            "UniFi Protect Alarm Profiles": "UniFi Protect Alarmprofile",
+            "Arm profiles are only available when using the local alarm manager.": "Alarmprofile sind nur bei Verwendung des lokalen Alarm-Managers verfügbar.",
+            "Update interval (s) -> 0=Off": "Aktualisierungsintervall (s) -> 0=Aus",
+            "Available Alarm Profiles": "Verfügbare Alarmprofile",
+            "Alarm Profile": "Alarmprofil",
+            "Alarm armed": "Alarm scharf",
+            "Read Profiles": "Profile auslesen",
+            "No profiles found": "Keine Profile gefunden",
+            "Disarmed": "Unscharf",
+            "Armed": "Scharf",
+            "Name": "Name",
+            "ID": "ID",
+            "Instance is active": "Instanz ist aktiv",
+            "Instance is inactive": "Instanz ist inaktiv"
+        }
+    }
+}

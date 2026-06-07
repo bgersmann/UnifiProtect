@@ -96,6 +96,18 @@ declare(strict_types=1);
 					case "getDevicesConfig":
 						$config = $this->getDevicesConfig();
 						return serialize($config);
+					case "getAlarmProfiles":
+						$array = $this->getArmProfiles();
+						return serialize($array);
+					case "setCurrentArmProfile":
+						$array = $this->setCurrentArmProfile($data->Param1);
+						return serialize($array);
+					case "enableArmAlarm":
+						$array = $this->enableArmAlarm();
+						return serialize($array);
+					case "disableArmAlarm":
+						$array = $this->disableArmAlarm();
+						return serialize($array);
 					default:
 						$this->SendDebug("UnifiPGW", "Unknown API: " . $data->Api, 0);
 						break;
@@ -541,6 +553,48 @@ declare(strict_types=1);
 			$JSONData = $this->getApiDataPost( '/alarm-manager/webhook/' . $webhookID );
 			$this->SendDebug("UnifiPGW", "setAlarmManager: " . json_encode($JSONData), 0);
 			return $JSONData;
+		}
+
+		public function getArmProfiles():array {
+			$JSONData = $this->getApiData( '/arm-profiles' );
+			$this->SendDebug("UnifiPGW", "getArmProfiles: " . json_encode($JSONData), 0);
+			if ( !is_array( $JSONData ) ) {
+				return [];
+			}
+			// Endpoint liefert ein reines Array von Profilen zurück
+			$value = [];
+			foreach ( $JSONData as $profile ) {
+				if ( !is_array( $profile ) || !isset( $profile['id'] ) ) {
+					continue;
+				}
+				$value[] = [
+					'id'   => $profile['id'],
+					'name' => $profile['name'] ?? $profile['id']
+				];
+			}
+			usort( $value, function ( $a, $b ) {
+				return strcmp( $a['name'], $b['name'] );
+			});
+			return $value;
+		}
+
+		public function setCurrentArmProfile(string $profileID):array {
+			if ( empty( $profileID ) ) {
+				$this->SendDebug("UnifiPGW", "setCurrentArmProfile: empty profile ID", 0);
+				return [];
+			}
+			$this->patchApiData( '/arm-profiles/settings', json_encode( [ 'armProfileId' => $profileID ] ) );
+			return [];
+		}
+
+		public function enableArmAlarm():array {
+			$this->getApiDataPost( '/arm-profiles/enable' );
+			return [];
+		}
+
+		public function disableArmAlarm():array {
+			$this->getApiDataPost( '/arm-profiles/disable' );
+			return [];
 		}
 
 		public function getStreams(string $cameraID):array {
