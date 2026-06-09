@@ -6,6 +6,7 @@
             "Unifi Device IP": "Unifi Geräte-IP",
             "APIKey": "API-Schlüssel",
             "Show Application Version": "Anwendungsversion anzeigen",
+            "Version update interval (s) -> 0=Off": "Versions-Aktualisierungsintervall (s) -> 0=Aus",
             "Protect Application Version: ": "Protect Anwendungsversion: ",
             "Protect Application Version: not found": "Protect Anwendungsversion: nicht gefunden",
             "Instance is active": "Instanz ist aktiv",

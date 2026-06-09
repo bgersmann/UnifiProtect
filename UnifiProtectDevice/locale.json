@@ -9,6 +9,8 @@
             "Stream Low": "Stream Niedrig",
             "Stream Medium": "Stream Mittel",
             "Stream High": "Stream Hoch",
+            "Snapshot Timer active": "Snapshot-Timer aktiv",
+            "Snapshot Timer (s)": "Snapshot-Timer (s)",
             "Temperature": "Temperatur",
             "Humidity": "Luftfeuchtigkeit",
             "Illuminance": "Beleuchtungsstärke",

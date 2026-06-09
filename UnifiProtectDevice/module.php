@@ -13,6 +13,8 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'StreamMedium', false );
 			$this->RegisterPropertyBoolean( 'StreamHigh', false );
 			$this->RegisterPropertyInteger( 'Timer', 0 );
+			$this->RegisterPropertyBoolean( 'SnapshotTimerActive', false );
+			$this->RegisterPropertyInteger( 'SnapshotTimer', 0 );
 			$this->RegisterPropertyBoolean( 'IDAnzeigen', false );
 			$this->RegisterPropertyBoolean( 'Temperature', false );
 			$this->RegisterPropertyBoolean( 'Humidity', false );
@@ -20,7 +22,8 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'Motion', false );			
 			$this->RegisterAttributeBoolean( 'supportFullHDSnapshot', false );
 			$this->RegisterTimer( 'Collect Data', 0, "UNIFIPDV_getData(\$_IPS['TARGET']);" );
-			
+			$this->RegisterTimer( 'Update Snapshot', 0, "UNIFIPDV_updateSnapshot(\$_IPS['TARGET']);" );
+
 		}
 
 		public function Destroy(): void
@@ -93,6 +96,14 @@ declare(strict_types=1);
 			}			
 			$TimerMS = $this->ReadPropertyInteger( 'Timer' ) * 1000;
 			$this->SetTimerInterval( 'Collect Data', $TimerMS );
+
+			// Zweiter Timer: Snapshot regelmaessig aktualisieren (nur Kamera + aktiv)
+			$SnapshotTimerMS = $this->ReadPropertyInteger( 'SnapshotTimer' ) * 1000;
+			if ( $this->ReadPropertyString('DeviceType') == 'Camera' && $this->ReadPropertyBoolean('SnapshotTimerActive') ) {
+				$this->SetTimerInterval( 'Update Snapshot', $SnapshotTimerMS );
+			} else {
+				$this->SetTimerInterval( 'Update Snapshot', 0 );
+			}
 			if ( 0 == $TimerMS )
 			{
 				// instance inactive
@@ -344,6 +355,14 @@ declare(strict_types=1);
 			return "";
 		}
 
+		public function updateSnapshot():void {
+			if ($this->ReadPropertyString('DeviceType') != 'Camera') {
+				return;
+			}
+			$this->SendDebug("UnifiPDevice", "Timer: Update Snapshot", 0);
+			$this->Send('getSnapshot','');
+		}
+
 		public function GetConfigurationForm():string{			
 			if ($this->HasActiveParent()) {
 				$this->Send("getDevices",$this->ReadPropertyString('DeviceType'));
@@ -378,6 +397,11 @@ declare(strict_types=1);
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'StreamMedium','width' => '180px', 'caption' => $this->Translate('Stream Medium') );
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'StreamHigh','width' => '180px', 'caption' => $this->Translate('Stream High') );
 				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
+				unset($arrayOptions);
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'SnapshotTimerActive', 'width' => '180px', 'caption' => $this->Translate('Snapshot Timer active') );
+				$arrayOptions[] = array( 'type' => 'NumberSpinner', 'name' => 'SnapshotTimer', 'width' => '180px', 'caption' => $this->Translate('Snapshot Timer (s)') );
+				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
+				unset($arrayOptions);
 			}
 			if ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Temperature','width' => '180px', 'caption' => $this->Translate('Temperature') );
