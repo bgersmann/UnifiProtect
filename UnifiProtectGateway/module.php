@@ -115,6 +115,9 @@ declare(strict_types=1);
 					case "patchSettingSensor":
 						$setting = $this->patchSettingSensor($data->ID, $data->Param1);
 						return serialize($setting);
+					case "patchSettingSpeaker":
+						$setting = $this->patchSettingSpeaker($data->ID, $data->Param1);
+						return serialize($setting);
 					case "getDevicesConfig":
 						$config = $this->getDevicesConfig();
 						return serialize($config);
@@ -397,6 +400,8 @@ declare(strict_types=1);
 				$JSONData = $this->getChimes();
 			} elseif ($deviceType === 'Lights') {
 				$JSONData = $this->getLights();
+			} elseif ($deviceType === 'Speaker') {
+				$JSONData = $this->getSpeakers();
 			} else {
 				$this->SendDebug("UnifiPGW", "Unknown device type: " . $deviceType, 0);
 				return [];
@@ -486,6 +491,32 @@ declare(strict_types=1);
 
 		public function getLights():array {
 			$JSONData = $this->getApiData( '/lights' );
+			$value = [];
+			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
+				if (isset($JSONData)) {
+					$devices = $JSONData;
+					usort( $devices, function ( $a, $b ) {
+						return strcmp($a['name'], $b['name']);
+					});
+
+					foreach ( $devices as $device ) {
+						$value[] = [
+							'caption'=>$device[ 'name' ],
+							'value'=> $device[ 'id' ]
+						];
+					}
+				} else {
+					$value[] = [
+						'caption'=>'default',
+						'value'=> 'default'
+					];
+				}
+				return $value;
+			}
+		}
+
+		public function getSpeakers():array {
+			$JSONData = $this->getApiData( '/speakers' );
 			$value = [];
 			if ( is_array( $JSONData ) && isset( $JSONData ) ) {
 				if (isset($JSONData)) {
@@ -655,6 +686,11 @@ declare(strict_types=1);
 			$JSONData = $this->patchApiData( '/sensors/' . $sensorID, $setting);
 			return $JSONData;
 		}
+
+		public function patchSettingSpeaker(string $speakerID, string $setting):array {
+			$JSONData = $this->patchApiData( '/speakers/' . $speakerID, $setting);
+			return $JSONData;
+		}
 		public function getDeviceData(string $deviceID,string $deviceType):array {
 			if (empty($deviceID)) {
 				$this->SendDebug("UnifiPGW", "Device ID is empty, returning empty array.", 0);
@@ -668,6 +704,8 @@ declare(strict_types=1);
 				$JSONData = $this->getApiData( '/lights/' . $deviceID );
 			} elseif ($deviceType === 'Chime') {
 				$JSONData = $this->getApiData( '/chimes/' . $deviceID );
+			} elseif ($deviceType === 'Speaker') {
+				$JSONData = $this->getApiData( '/speakers/' . $deviceID );
 			} else {
 				$this->SendDebug("UnifiPGW", "Unknown device type: " . $deviceType, 0);
 				return [];
@@ -846,6 +884,34 @@ declare(strict_types=1);
 									'DeviceType' => 'Light'
 								],
 								'name' => $light[ 'name' ]
+								);
+							}
+						$value[] = $addValue;
+						}
+					}
+				#https://192.168.178.1/proxy/protect/integration/v1/speakers
+				$speakers = $this->getApiData( '/speakers/' );
+				if ( is_array( $speakers ) && isset( $speakers ) ) {
+					usort( $speakers, function ( $a, $b ) {
+					return $a[ 'name' ]>$b[ 'name' ];
+					});
+					foreach ( $speakers as $speaker )
+					{
+					$addValue = array(
+							'Name'	=>$speaker[ 'name' ],
+							'Type'	=>$speaker[ 'modelKey' ],
+							'State' =>$speaker['state'],
+							'ID'		=>isset( $speaker[ 'id' ] ) ? $speaker[ 'id' ] : 'missing' ,
+							'instanceID'	=>$this->getInstanceIDForGuid( $speaker[ 'id' ], '{F78D1159-D735-D23A-0A97-69F07962BB89}' )
+							);
+							if (isset($speaker['id']) && !empty($speaker['id'])) {
+								$addValue['create'] = array(
+								'moduleID'      => '{F78D1159-D735-D23A-0A97-69F07962BB89}',
+								'configuration' => [
+									'ID'	=> isset( $speaker[ 'id' ] ) ? $speaker[ 'id' ] : '',
+									'DeviceType' => 'Speaker'
+								],
+								'name' => $speaker[ 'name' ]
 								);
 							}
 						$value[] = $addValue;

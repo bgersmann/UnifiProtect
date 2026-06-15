@@ -41,15 +41,29 @@ declare(strict_types=1);
 			$this->MaintainVariable( 'ID', $this->Translate( 'ID' ), 3,[ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, $this->ReadPropertyBoolean("IDAnzeigen") );
 			$this->MaintainVariable( 'Model', $this->Translate( 'Model' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, 1 );
 			
-			$this->MaintainVariable( 'micEnabled', $this->Translate( 'Is Microphone enabled' ), 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'microphone-lines', 'OPTIONS' => '[{"ColorDisplay":16077123,"Value":false,"Caption":"Aus","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"An","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
-			$this->MaintainVariable( 'micVolume', $this->Translate( 'Microphone Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>1,'STEP_SIZE'=>1,'USAGE_TYPE'=> 2, 'SUFFIX'=> ' %' , 'ICON'=> 'volume-high'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
+			$hasMic = in_array($this->ReadPropertyString('DeviceType'), ['Camera', 'Speaker']);
+			$isSpeaker = $this->ReadPropertyString('DeviceType') == 'Speaker';
+			$this->MaintainVariable( 'volume', $this->Translate( 'Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>0,'STEP_SIZE'=>1,'USAGE_TYPE'=> 2, 'SUFFIX'=> ' %' , 'ICON'=> 'volume'], $vpos++, $isSpeaker);
+			$this->MaintainVariable( 'micEnabled', $this->Translate( 'Is Microphone enabled' ), 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'microphone-lines', 'OPTIONS' => '[{"ColorDisplay":16077123,"Value":false,"Caption":"Aus","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":16077123,"Color":-1},{"ColorDisplay":1692672,"Value":true,"Caption":"An","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":1692672,"Color":-1}]'], $vpos++, $hasMic);
+			$this->MaintainVariable( 'micVolume', $this->Translate( 'Microphone Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>1,'STEP_SIZE'=>1,'USAGE_TYPE'=> 2, 'SUFFIX'=> ' %' , 'ICON'=> 'volume-high'], $vpos++, $hasMic);
+			$this->MaintainVariable( 'speakerStatus', $this->Translate( 'Speaker Status' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0,
+																				'OPTIONS'=> '[{"Value":"idle","Caption":"'.$this->Translate( 'Idle' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1,"Color":-1,"ColorDisplay":-1},{"Value":"streaming","Caption":"'.$this->Translate( 'Streaming' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":65280,"Color":-1,"ColorDisplay":65280},{"Value":"playing","Caption":"'.$this->Translate( 'Playing' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":65280,"Color":-1,"ColorDisplay":65280},{"Value":"tts_playing","Caption":"'.$this->Translate( 'TTS Playing' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":65280,"Color":-1,"ColorDisplay":65280},{"Value":"uploading","Caption":"'.$this->Translate( 'Uploading' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":16776960,"Color":-1,"ColorDisplay":16776960}]'
+																				,'ICON'=> 'waveform-lines'], $vpos++, $isSpeaker);
+			$this->MaintainVariable( 'speakerMode', $this->Translate( 'Speaker Mode' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0,
+																				'OPTIONS'=> '[{"Value":"listen","Caption":"'.$this->Translate( 'Listen' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1,"Color":-1,"ColorDisplay":-1},{"Value":"talk","Caption":"'.$this->Translate( 'Talk' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1,"Color":-1,"ColorDisplay":-1}]'
+																				,'ICON'=> 'comment'], $vpos++, $isSpeaker);
 			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
 			
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$this->MaintainAction('micVolume', true);
 				$this->SetValue('snapshot', 1);
 				$this->MaintainAction('snapshot', true);
-				
+
+			}
+			if ($isSpeaker) {
+				$this->MaintainAction('volume', true);
+				$this->MaintainAction('micVolume', true);
+				$this->MaintainAction('micEnabled', true);
 			}
 			$MedienID = @$this->GetIDForIdent('Snapshot');			
 			if (!$MedienID) {
@@ -251,6 +265,16 @@ declare(strict_types=1);
                                 $this->SetValue('lcdMessage', (string)$lcdMessageText);
                             }
 							
+						} elseif ($this->ReadPropertyString('DeviceType') == 'Speaker') {
+							$this->SetValue('volume', $deviceData['volume'] ?? 0);
+							$this->SetValue('micVolume', $deviceData['micVolume'] ?? 0);
+							$this->SetValue('micEnabled', (bool)($deviceData['isMicEnabled'] ?? false));
+							if (isset($deviceData['speakerState']['status'])) {
+								$this->SetValue('speakerStatus', $deviceData['speakerState']['status']);
+							}
+							if (isset($deviceData['speakerState']['mode'])) {
+								$this->SetValue('speakerMode', $deviceData['speakerState']['mode']);
+							}
 						} elseif ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 							$this->SetValue('Temperature', $deviceData['stats']['temperature']['value'] ?? 0);
 							$this->SetValue('Humidity', $deviceData['stats']['humidity']['value'] ?? 0);
@@ -378,6 +402,7 @@ declare(strict_types=1);
 			$arrayOptions[] = array( 'caption' => 'All-In-One Sensor', 'value' => 'UP-Sense' );
 			$arrayOptions[] = array( 'caption' => 'Chime', 'value' => 'Chime' );
 			$arrayOptions[] = array( 'caption' => 'Light', 'value' => 'Light' );
+			$arrayOptions[] = array( 'caption' => 'Speaker', 'value' => 'Speaker' );
 			$arrayElements[] = array( 'type' => 'Select', 'name' => 'DeviceType', 'caption' => $this->Translate('Device Type'), 'options' => $arrayOptions );
 
 			unset($arrayOptions);
@@ -430,10 +455,24 @@ declare(strict_types=1);
 					//Ausgaben über 'echo' werden an die Visualisierung zurückgeleitet
 
 					$this->SendDebug("UnifiPDevice", "micVolume: New state is $Value", 0);
-					$this->Send('patchSettingCamera', json_encode(array('micVolume' => $Value)));
+					if ($this->ReadPropertyString('DeviceType') == 'Speaker') {
+						$this->Send('patchSettingSpeaker', json_encode(array('micVolume' => (int)$Value)));
+					} else {
+						$this->Send('patchSettingCamera', json_encode(array('micVolume' => (int)$Value)));
+					}
 
 					//Neuen Wert in die Statusvariable schreiben
 					$this->SetValue($Ident, $Value);
+					break;
+				case "volume":
+					$this->SendDebug("UnifiPDevice", "volume: New state is $Value", 0);
+					$this->Send('patchSettingSpeaker', json_encode(array('volume' => (int)$Value)));
+					$this->SetValue($Ident, $Value);
+					break;
+				case "micEnabled":
+					$this->SendDebug("UnifiPDevice", "micEnabled: New state is $Value", 0);
+					$this->Send('patchSettingSpeaker', json_encode(array('isMicEnabled' => (bool)$Value)));
+					$this->SetValue($Ident, (bool)$Value);
 					break;
 				case 'snapshot':
 					$idIdent=$this->GetIDForIdent($Ident);
