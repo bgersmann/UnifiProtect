@@ -108,8 +108,8 @@ declare(strict_types=1);
 			}
 			$typeRaw = (string)$event['item']['type'];
 			$type = $this->normalizeEventType($typeRaw);
-			$deviceID = $event['item']['device'];
-			$eventID = $event['item']['id'];
+			$deviceID = $event['item']['device'] ?? null;
+			$eventID = $event['item']['id'] ?? null;
 			$eventType=$event['type'];		
 			$smartDetectionEvent = in_array($type, ['smartDetectZone', 'smartDetectLine', 'smartDetectLoiterZone'], true);
 			$Bufferdata = $this->GetBuffer("activeEvents");
@@ -155,6 +155,12 @@ declare(strict_types=1);
 				$this->SendDebug('UNIFIPEV', "Unbekannter Event-Typ: $type", 0);
 				return; // Unbekannter Event-Typ
 			}
+
+			if (empty($deviceID)) {
+				$this->SendDebug('UNIFIPEV', "Event ohne deviceID empfangen", 0);
+				return; // Event ohne deviceID
+			}
+
 			$this->updateSmartDetectSelectionStates($deviceID, $activeEvents);
 			$this->updateStandardEventSelectionStates($deviceID, $activeEvents);
 			
