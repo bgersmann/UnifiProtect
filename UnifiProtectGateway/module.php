@@ -12,6 +12,13 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean('applicationVersion', 0);
 			$this->RegisterPropertyInteger( 'VersionTimer', 0 );
 			$this->RegisterTimer( 'Update Version', 0, "UNIFIPGW_updateVersion(\$_IPS['TARGET']);" );
+			$this->RegisterTimer( 'WS Watchdog', 0, "UNIFIPGW_watchdogWS(\$_IPS['TARGET']);" );
+		}
+
+		// Nur der native WS Client ist als uebergeordnete Instanz zulaessig
+		public function GetCompatibleParents(): string
+		{
+			return json_encode(['type' => 'require', 'moduleIDs' => ['{D68FD31F-0E90-7019-F16C-1949BD3079EF}']]);
 		}
 
 		public function Destroy():void
@@ -44,6 +51,147 @@ declare(strict_types=1);
 					$this->SetTimerInterval( 'Update Version', 0 );
 				}
 			}
+			$this->configureWsClient();
+			$this->SetTimerInterval( 'WS Watchdog', empty($APIKey) ? 0 : 60000 );
+		}
+
+		// Konfiguriert den vorgelagerten WS Client (URL, API-Key-Header) anhand der Gateway-Einstellungen
+		private function configureWsClient(): void
+		{
+			$parentID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
+			if ($parentID <= 0) {
+				// Kein Parent vorhanden (z.B. nach Update von aelterer Version) -> WS Client anlegen
+				if (IPS_GetKernelRunlevel() !== KR_READY) {
+					return;
+				}
+				$parentID = @IPS_CreateInstance('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
+				if (!$parentID) {
+					$this->SendDebug("UnifiPGW", "WS Client konnte nicht angelegt werden", 0);
+					return;
+				}
+				IPS_SetName($parentID, 'UniFi Protect WebSocket');
+				IPS_ConnectInstance($this->InstanceID, $parentID);
+				$this->SendDebug("UnifiPGW", "WS Client angelegt: " . $parentID, 0);
+			}
+			if (IPS_GetInstance($parentID)['ModuleInfo']['ModuleID'] !== '{D68FD31F-0E90-7019-F16C-1949BD3079EF}') {
+				$this->SendDebug("UnifiPGW", "Parent ist kein WS Client - keine Konfiguration", 0);
+				return;
+			}
+			$APIKey = $this->ReadPropertyString('APIKey');
+			$changed = false;
+			if (empty($APIKey)) {
+				if (IPS_GetProperty($parentID, 'Active') !== false) {
+					IPS_SetProperty($parentID, 'Active', false);
+					IPS_ApplyChanges($parentID);
+				}
+				return;
+			}
+			$url = 'wss://' . $this->ReadPropertyString('ServerAddress') . '/proxy/protect/integration/v1/subscribe/devices';
+			$headers = json_encode([['Name' => 'X-API-KEY', 'Value' => $APIKey]]);
+			if (IPS_GetProperty($parentID, 'URL') !== $url) {
+				IPS_SetProperty($parentID, 'URL', $url);
+				$changed = true;
+			}
+			if (IPS_GetProperty($parentID, 'VerifyCertificate') !== false) {
+				IPS_SetProperty($parentID, 'VerifyCertificate', false);
+				$changed = true;
+			}
+			if (IPS_GetProperty($parentID, 'Type') !== 0) {
+				IPS_SetProperty($parentID, 'Type', 0);
+				$changed = true;
+			}
+			if (IPS_GetProperty($parentID, 'Headers') !== $headers) {
+				IPS_SetProperty($parentID, 'Headers', $headers);
+				$changed = true;
+			}
+			if (IPS_GetProperty($parentID, 'Active') !== true) {
+				IPS_SetProperty($parentID, 'Active', true);
+				$changed = true;
+			}
+			if ($changed) {
+				$this->SendDebug("UnifiPGW", "WS Client neu konfiguriert: " . $url, 0);
+				IPS_ApplyChanges($parentID);
+			}
+		}
+
+		// Ueberwacht die WebSocket-Verbindung: stoesst Reconnects an und nach
+		// wiederhergestellter Verbindung einen Vollabgleich der Geraete
+		public function watchdogWS(): void
+		{
+			$parentID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
+			if ($parentID <= 0) {
+				return;
+			}
+			$status = IPS_GetInstance($parentID)['InstanceStatus'];
+			$wasConnected = $this->GetBuffer('WsWasConnected');
+			if ($status === 102) {
+				if ($wasConnected === '0') {
+					$this->SendDebug("UnifiPGW", "WebSocket wieder verbunden - starte Vollabgleich", 0);
+					$this->SendDataToChildren(json_encode([
+						'DataID' => '{C7147748-F01B-E4F9-D11E-72DFA08E7048}',
+						'id' => '',
+						'Api' => 'fullSync',
+						'data' => ''
+					]));
+				}
+				$this->SetBuffer('WsWasConnected', '1');
+			} else {
+				$this->SetBuffer('WsWasConnected', '0');
+				if (!empty($this->ReadPropertyString('APIKey'))) {
+					$this->SendDebug("UnifiPGW", "WebSocket nicht verbunden (Status " . $status . ") - Reconnect", 0);
+					@IPS_ApplyChanges($parentID);
+				}
+			}
+		}
+
+		public function ReceiveData($JSONString): string
+		{
+			$data = json_decode($JSONString);
+			if (!isset($data->Buffer)) {
+				return '';
+			}
+			// Der I/O liefert den Payload hex-kodiert - zurueckwandeln in die Rohdaten
+			$payload = hex2bin($data->Buffer);
+			if ($payload === false) {
+				$this->SendDebug("UnifiPGW", "WS-Payload nicht hex-dekodierbar", 0);
+				return '';
+			}
+			$message = json_decode($payload, true);
+			if (is_array($message)) {
+				$this->SetBuffer('WsFragment', '');
+				$this->processWsMessage($message);
+				return '';
+			}
+			// Unvollstaendige Frames puffern, bis der JSON-Payload komplett ist
+			$buffered = $this->GetBuffer('WsFragment') . $payload;
+			$message = json_decode($buffered, true);
+			if (is_array($message)) {
+				$this->SetBuffer('WsFragment', '');
+				$this->processWsMessage($message);
+				return '';
+			}
+			if (strlen($buffered) > 2097152) {
+				$this->SendDebug("UnifiPGW", "WS-Fragmentpuffer verworfen (>2MB)", 0);
+				$buffered = '';
+			}
+			$this->SetBuffer('WsFragment', $buffered);
+			return '';
+		}
+
+		private function processWsMessage(array $message): void
+		{
+			$deviceID = $message['item']['id'] ?? '';
+			if ($deviceID === '') {
+				$this->SendDebug("UnifiPGW", "WS-Update ohne Geraete-ID: " . json_encode($message), 0);
+				return;
+			}
+			$this->SendDebug("UnifiPGW", "WS-Update (" . ($message['type'] ?? '?') . ") fuer " . $deviceID, 0);
+			$this->SendDataToChildren(json_encode([
+				'DataID' => '{C7147748-F01B-E4F9-D11E-72DFA08E7048}',
+				'id' => $deviceID,
+				'Api' => 'wsUpdate',
+				'data' => json_encode($message)
+			]));
 		}
 
 		public function updateVersion():void
@@ -141,6 +289,7 @@ declare(strict_types=1);
 						break;
 				}
 			}
+			return serialize([]);
 		}
 
 		public function Send( int $id,string $Api, string $Text ):void

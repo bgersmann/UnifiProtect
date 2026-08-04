@@ -3,6 +3,9 @@
 declare(strict_types=1);
 	class UnifiProtectDevice extends IPSModuleStrict
 	{
+		// Fallback-Abfrageintervall in Sekunden: faengt verpasste WebSocket-Updates ab (Downtime etc.)
+		private const FALLBACK_SYNC_SEC = 3600;
+
 		public function Create() : void
 		{
 			//Never delete this line!
@@ -12,7 +15,7 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'StreamLow', false );
 			$this->RegisterPropertyBoolean( 'StreamMedium', false );
 			$this->RegisterPropertyBoolean( 'StreamHigh', false );
-			$this->RegisterPropertyInteger( 'Timer', 0 );
+			$this->RegisterPropertyBoolean( 'Active', true );
 			$this->RegisterPropertyBoolean( 'SnapshotTimerActive', false );
 			$this->RegisterPropertyInteger( 'SnapshotTimer', 0 );
 			$this->RegisterPropertyBoolean( 'IDAnzeigen', false );
@@ -83,9 +86,10 @@ declare(strict_types=1);
 			$this->MaintainVariable( 'Humidity', $this->Translate( 'Humidity' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' % RH' , 'ICON'=> 'droplet-degree'], $vpos++, ($this->ReadPropertyBoolean("Humidity")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
 			$this->MaintainVariable( 'Illuminance', $this->Translate( 'Illuminance' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100000,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' Lux' , 'ICON'=> 'sun'], $vpos++, ($this->ReadPropertyBoolean("Illuminance")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
 			
-			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
+			$active = $this->ReadPropertyBoolean('Active');
+			if ($active && $this->ReadPropertyString('DeviceType') == 'Camera') {
 				$arrayStream = array();
-				$streamQuality = array();			
+				$streamQuality = array();
 				if ($this->ReadPropertyBoolean('StreamLow')) {
 					$streamQuality[] = 'low';
 				}
@@ -99,7 +103,7 @@ declare(strict_types=1);
 				$this->SendDebug("UnifiPDevice", "Stream Qualities: " . json_encode($arrayStream), 0);
 				$this->Send('createStream', json_encode($arrayStream));
 				
-			} elseif ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
+			} elseif ($active && $this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 				$arraySettings = array();
 				$arraySettings['temperatureSettings'] = ['isEnabled'=> $this->ReadPropertyBoolean('Temperature')];
 				$arraySettings['humiditySettings'] = ['isEnabled'=> $this->ReadPropertyBoolean('Humidity')];
@@ -107,18 +111,19 @@ declare(strict_types=1);
 				$arraySettings['motionSettings'] = ['isEnabled'=> $this->ReadPropertyBoolean('Motion')];
 				$this->SendDebug("UnifiPDevice", "Settings: " . json_encode($arraySettings), 0);
 				$this->Send('patchSettingSensor', json_encode($arraySettings));
-			}			
-			$TimerMS = $this->ReadPropertyInteger( 'Timer' ) * 1000;
-			$this->SetTimerInterval( 'Collect Data', $TimerMS );
+			}
+			// Laufende Updates kommen per WebSocket; der interne Timer dient nur als
+			// Fallback-Vollabgleich fuer verpasste WS-Updates (Downtime etc.)
+			$this->SetTimerInterval( 'Collect Data', $active ? self::FALLBACK_SYNC_SEC * 1000 : 0 );
 
 			// Zweiter Timer: Snapshot regelmaessig aktualisieren (nur Kamera + aktiv)
 			$SnapshotTimerMS = $this->ReadPropertyInteger( 'SnapshotTimer' ) * 1000;
-			if ( $this->ReadPropertyString('DeviceType') == 'Camera' && $this->ReadPropertyBoolean('SnapshotTimerActive') ) {
+			if ( $active && $this->ReadPropertyString('DeviceType') == 'Camera' && $this->ReadPropertyBoolean('SnapshotTimerActive') ) {
 				$this->SetTimerInterval( 'Update Snapshot', $SnapshotTimerMS );
 			} else {
 				$this->SetTimerInterval( 'Update Snapshot', 0 );
 			}
-			if ( 0 == $TimerMS )
+			if ( !$active )
 			{
 				// instance inactive
 				$this->SetStatus( 104 );
@@ -251,62 +256,123 @@ declare(strict_types=1);
 					case "getDeviceData":
 						$deviceData = unserialize($data);
 						$this->SendDebug("UnifiPDevice", "Device Data: " . json_encode($deviceData), 0);
-						if ($this->ReadPropertyString('DeviceType') == 'Camera') {
-							$this->SetValue('micEnabled', $deviceData['isMicEnabled'] ?? false);
-							$this->SetValue('micVolume', $deviceData['micVolume'] ?? 0);
-							$this->WriteAttributeBoolean('supportFullHDSnapshot', (bool)($deviceData['featureFlags']['supportFullHdSnapshot'] ?? false));
-							$lcdMessageText = '';
-                            if (isset($deviceData['lcdMessage']) && is_array($deviceData['lcdMessage'])) {
-                                $lcdMessageText = $deviceData['lcdMessage']['text'] ?? '';
-                            }
-                            if ($lcdMessageText !== '') {
-                                $this->MaintainVariable('lcdMessage',$this->Translate('LCD Message'),3,['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,'USAGE_TYPE' => 0,'ICON' => 'text'], 201, true);
-								$this->MaintainAction('lcdMessage', true);
-                                $this->SetValue('lcdMessage', (string)$lcdMessageText);
-                            }
-							
-						} elseif ($this->ReadPropertyString('DeviceType') == 'Speaker') {
-							$this->SetValue('volume', $deviceData['volume'] ?? 0);
-							$this->SetValue('micVolume', $deviceData['micVolume'] ?? 0);
-							$this->SetValue('micEnabled', (bool)($deviceData['isMicEnabled'] ?? false));
-							if (isset($deviceData['speakerState']['status'])) {
-								$this->SetValue('speakerStatus', $deviceData['speakerState']['status']);
-							}
-							if (isset($deviceData['speakerState']['mode'])) {
-								$this->SetValue('speakerMode', $deviceData['speakerState']['mode']);
-							}
-						} elseif ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
-							$this->SetValue('Temperature', $deviceData['stats']['temperature']['value'] ?? 0);
-							$this->SetValue('Humidity', $deviceData['stats']['humidity']['value'] ?? 0);
-							$this->SetValue('Illuminance', $deviceData['stats']['light']['value'] ?? 0);							
-							if (!empty($deviceData['batteryStatus']['percentage'])) {
-								$this->MaintainVariable('batteryStatus', $this->Translate('Battery Status'), 1, ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX' => 100, 'MIN' => 0, 'USAGE_TYPE' => 1, 'DIGITS' => 0, 'SUFFIX' => ' %', 'ICON' => 'battery-bolt'], 200, 1);
-								$this->SetValue('batteryStatus', $deviceData['batteryStatus']['percentage']);
-							}
-						}
-						if (isset($deviceData['name'])) {
-							$this->SetValue('Name',$deviceData['name']);
-							$summary=$deviceData['name'];
-						}
-						if (isset($deviceData['modelKey'])) {
-							$this->SetValue('Model',$deviceData['modelKey']);
-							$summary=$summary.' - ' .$deviceData['modelKey'];
-						}
-						if (!empty($summary)) {
-							$this->SetSummary($summary);
-						}
-						if (isset($deviceData['state'])) {
-							$this->SetValue('State',$deviceData['state']);
-							$summary=$summary.' - ' .$deviceData['modelKey'];
-						}
-						if (isset($deviceData['id']) && $this->ReadPropertyBoolean("IDAnzeigen")) {
-							$this->SetValue('ID',$deviceData['id']);
+						if (is_array($deviceData)) {
+							$this->processDeviceData($deviceData);
 						}
 					break;
 					default:
-						$this->SendDebug("UnifiPDevice", "Unknown API: " . $api, 0);
+						$this->SendDebug("UnifiPDevice", "Keine Antwortverarbeitung noetig fuer API: " . $api, 0);
 						break;
 				}
+			}
+		}
+
+		public function ReceiveData($JSONString): string
+		{
+			$data = json_decode($JSONString, true);
+			if (!is_array($data)) {
+				return '';
+			}
+			$api = $data['Api'] ?? '';
+			if ($api === 'fullSync') {
+				// Gateway meldet wiederhergestellte WebSocket-Verbindung -> Vollabgleich
+				if ($this->ReadPropertyBoolean('Active')) {
+					$this->getData();
+				}
+				return '';
+			}
+			if ($api !== 'wsUpdate') {
+				return '';
+			}
+			$myID = $this->ReadPropertyString('ID');
+			if ($myID === '' || ($data['id'] ?? '') !== $myID) {
+				return '';
+			}
+			if (!$this->ReadPropertyBoolean('Active')) {
+				return '';
+			}
+			$message = json_decode($data['data'] ?? '', true);
+			if (!is_array($message) || !isset($message['item']) || !is_array($message['item'])) {
+				return '';
+			}
+			$this->SendDebug("UnifiPDevice", "WS-Update (" . ($message['type'] ?? '?') . "): " . json_encode($message['item']), 0);
+			if (($message['type'] ?? '') === 'remove') {
+				$this->SetValue('State', 'DISCONNECTED');
+				return '';
+			}
+			$this->processDeviceData($message['item']);
+			return '';
+		}
+
+		// Verarbeitet Geraetedaten aus REST-Abfragen und WebSocket-Updates.
+		// WS-Updates sind partiell - es duerfen nur vorhandene Felder gesetzt werden.
+		private function processDeviceData(array $deviceData): void
+		{
+			$deviceType = $this->ReadPropertyString('DeviceType');
+			if ($deviceType == 'Camera') {
+				if (isset($deviceData['isMicEnabled'])) {
+					$this->SetValue('micEnabled', (bool)$deviceData['isMicEnabled']);
+				}
+				if (isset($deviceData['micVolume'])) {
+					$this->SetValue('micVolume', $deviceData['micVolume']);
+				}
+				if (isset($deviceData['featureFlags']['supportFullHdSnapshot'])) {
+					$this->WriteAttributeBoolean('supportFullHDSnapshot', (bool)$deviceData['featureFlags']['supportFullHdSnapshot']);
+				}
+				$lcdMessageText = '';
+				if (isset($deviceData['lcdMessage']) && is_array($deviceData['lcdMessage'])) {
+					$lcdMessageText = $deviceData['lcdMessage']['text'] ?? '';
+				}
+				if ($lcdMessageText !== '') {
+					$this->MaintainVariable('lcdMessage',$this->Translate('LCD Message'),3,['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,'USAGE_TYPE' => 0,'ICON' => 'text'], 201, true);
+					$this->MaintainAction('lcdMessage', true);
+					$this->SetValue('lcdMessage', (string)$lcdMessageText);
+				}
+			} elseif ($deviceType == 'Speaker') {
+				if (isset($deviceData['volume'])) {
+					$this->SetValue('volume', $deviceData['volume']);
+				}
+				if (isset($deviceData['micVolume'])) {
+					$this->SetValue('micVolume', $deviceData['micVolume']);
+				}
+				if (isset($deviceData['isMicEnabled'])) {
+					$this->SetValue('micEnabled', (bool)$deviceData['isMicEnabled']);
+				}
+				if (isset($deviceData['speakerState']['status'])) {
+					$this->SetValue('speakerStatus', $deviceData['speakerState']['status']);
+				}
+				if (isset($deviceData['speakerState']['mode'])) {
+					$this->SetValue('speakerMode', $deviceData['speakerState']['mode']);
+				}
+			} elseif ($deviceType == 'UP-Sense') {
+				if (isset($deviceData['stats']['temperature']['value'])) {
+					$this->SetValue('Temperature', $deviceData['stats']['temperature']['value']);
+				}
+				if (isset($deviceData['stats']['humidity']['value'])) {
+					$this->SetValue('Humidity', $deviceData['stats']['humidity']['value']);
+				}
+				if (isset($deviceData['stats']['light']['value'])) {
+					$this->SetValue('Illuminance', $deviceData['stats']['light']['value']);
+				}
+				if (!empty($deviceData['batteryStatus']['percentage'])) {
+					$this->MaintainVariable('batteryStatus', $this->Translate('Battery Status'), 1, ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX' => 100, 'MIN' => 0, 'USAGE_TYPE' => 1, 'DIGITS' => 0, 'SUFFIX' => ' %', 'ICON' => 'battery-bolt'], 200, 1);
+					$this->SetValue('batteryStatus', $deviceData['batteryStatus']['percentage']);
+				}
+			}
+			if (isset($deviceData['name'])) {
+				$this->SetValue('Name', $deviceData['name']);
+			}
+			if (isset($deviceData['modelKey'])) {
+				$this->SetValue('Model', $deviceData['modelKey']);
+			}
+			if (isset($deviceData['name']) || isset($deviceData['modelKey'])) {
+				$this->SetSummary($this->GetValue('Name') . ' - ' . $this->GetValue('Model'));
+			}
+			if (isset($deviceData['state'])) {
+				$this->SetValue('State', $deviceData['state']);
+			}
+			if (isset($deviceData['id']) && $this->ReadPropertyBoolean("IDAnzeigen")) {
+				$this->SetValue('ID', $deviceData['id']);
 			}
 		}
 
@@ -396,8 +462,8 @@ declare(strict_types=1);
 			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => $this->Translate('Instanz ist inaktiv') );
 
 			$arrayElements = array();
-			$arrayElements[] = array( 'type' => 'Label','bold' => true, 'label' => $this->Translate('UniFi Protect Device')); 
-			$arrayElements[] = array( 'type' => 'NumberSpinner', 'name' => 'Timer', 'caption' => $this->Translate('Timer (s) -> 0=Off'));
+			$arrayElements[] = array( 'type' => 'Label','bold' => true, 'label' => $this->Translate('UniFi Protect Device'));
+			$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'Active', 'caption' => $this->Translate('Active (updates via WebSocket)'));
 			$arrayOptions[] = array( 'caption' => 'Camera', 'value' => 'Camera' );
 			$arrayOptions[] = array( 'caption' => 'All-In-One Sensor', 'value' => 'UP-Sense' );
 			$arrayOptions[] = array( 'caption' => 'Chime', 'value' => 'Chime' );

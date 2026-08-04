@@ -2,7 +2,7 @@
     "translations": {
         "de": {
             "UniFi Protect Device": "UniFi Protect Gerät",
-            "Timer": "Timer",
+            "Active (updates via WebSocket)": "Aktiv (Updates per WebSocket)",
             "Device Type": "Gerätetyp",            
             "Device ID": "Geräte-ID",            
             "Show ID": "ID anzeigen",

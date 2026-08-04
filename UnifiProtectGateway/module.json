@@ -1,17 +1,20 @@
 {
     "id": "{3F49B3E6-093C-40FA-661C-3D31BE37AEA3}",
     "name": "UnifiProtectGateway",
-    "type": 1,
+    "type": 2,
     "vendor": "Unifi",
     "strict": true,
     "aliases": [],
-    "parentRequirements": [],
+    "parentRequirements": [
+        "{79827379-F36E-4ADA-8A95-5F8D1DC92FA9}"
+    ],
     "childRequirements": [
         "{C7147748-F01B-E4F9-D11E-72DFA08E7048}",
         "{274F6995-89EB-B42C-7E74-ECA4E84DF97F}"
     ],
     "implemented": [
-        "{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}"
+        "{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}",
+        "{018EF6B5-AB94-40C6-AA53-46943E824ACF}"
     ],
     "prefix": "UNIFIPGW",
     "url": "https://github.com/bgersmann/UnifiProtect"
