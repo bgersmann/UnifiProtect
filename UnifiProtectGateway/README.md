@@ -1,5 +1,6 @@
 # UnifiProtectGateway
-Beschreibung des Moduls.
+Die Schnittstelle zwischen IP-Symcon und der lokalen UniFi Protect Integration API.
+Seit Version 2.0 ist das Gateway eine Splitter-Instanz mit vorgelagertem WebSocket Client: Geräte-Updates kommen in Echtzeit per WebSocket, REST wird nur noch für aktive Abfragen (Snapshots, Streams, Einstellungen) und den Fallback-Abgleich genutzt.
 
 ### Inhaltsverzeichnis
 
@@ -13,7 +14,10 @@ Beschreibung des Moduls.
 
 ### 1. Funktionsumfang
 
-*  Die Schnittstelle zwischen Symcon und der Local Unifi Protect API
+*  Die Schnittstelle zwischen Symcon und der lokalen Unifi Protect API
+*  Echtzeit-Geräte-Updates über den WebSocket-Endpunkt `/subscribe/devices` der Protect Integration API
+*  Automatische Einrichtung: Der benötigte native WebSocket Client (übergeordnete Instanz) wird beim Übernehmen der Einstellungen automatisch angelegt und konfiguriert (URL, API-Key-Header, Zertifikatsprüfung)
+*  Watchdog: Überwacht die WebSocket-Verbindung, stößt bei Abriss automatisch einen Reconnect an und löst nach Wiederverbindung einen Vollabgleich aller Geräte aus
 
 ### 2. Voraussetzungen
 
@@ -36,6 +40,10 @@ Name     | Beschreibung
 Unifi Geräte-IP    | IP Adresse der Unifi Protect installation
 API-Schlüssel | API Key "UniFi Protect > Settings > Control Plane > Integrations" erzeugen.
 Anwendungsversion anzeigen |  Erzeugt eine Variable mit der aktuellen Unifi Protect Version.
+
+__Hinweis WebSocket (ab Version 2.0)__:
+
+Das Gateway benötigt als übergeordnete Instanz den nativen "WS Client" von IP-Symcon. Dieser wird beim Übernehmen der Gateway-Einstellungen automatisch angelegt und vollständig konfiguriert — es ist keine manuelle Einrichtung nötig. Beim Update von einer 1.x-Version genügt ein Neustart von IP-Symcon; der WebSocket Client wird danach automatisch erzeugt.
 
 
 ### 5. Statusvariablen und Profile

@@ -1,5 +1,6 @@
 # UnifiProtectDevice
-Beschreibung des Moduls.
+Repräsentiert ein UniFi Protect Gerät (Kamera, Sensor, Chime, Light, Speaker) in IP-Symcon.
+Seit Version 2.0 werden die Gerätedaten in Echtzeit per WebSocket aktualisiert; ein interner Timer gleicht zusätzlich stündlich den kompletten Gerätestand ab, um verpasste Updates (z.B. nach Downtime) abzufangen.
 
 ### Inhaltsverzeichnis
 
@@ -13,7 +14,9 @@ Beschreibung des Moduls.
 
 ### 1. Funktionsumfang
 
-- Integration von UniFi Protect Geräten (Kameras, Sensoren, Chimes, Lights) in IP-Symcon
+- Integration von UniFi Protect Geräten (Kameras, Sensoren, Chimes, Lights, Speaker) in IP-Symcon
+- Geräte-Updates in Echtzeit per WebSocket (kein Polling-Intervall mehr nötig)
+- Interner Fallback-Abgleich alle 60 Minuten für verpasste WebSocket-Updates
 - Abruf und Steuerung von Streams und Snapshots
 - Verwaltung von Geräte-Einstellungen und Status
 - Ereignis- und Bewegungsmeldungen
@@ -36,8 +39,8 @@ __Konfigurationsseite__:
 
 Name     | Beschreibung
 -------- | ------------------
-Timer    | Abfrage intervall
-Gerätetyp | Gerätetyp (Kamera/Sensor/Licht/Gong)
+Aktiv (Updates per WebSocket) | Instanz aktivieren. Daten kommen in Echtzeit per WebSocket; zusätzlich läuft ein interner Fallback-Abgleich alle 60 Minuten.
+Gerätetyp | Gerätetyp (Kamera/Sensor/Licht/Gong/Speaker)
 Geräte-ID | Gerätename aus Unifi
 ID-Anzeigen | ID als Variable anlegen
 Stream Niedrig/Mittel/Hoch | Stream in entsprechender Auflösung anlegen (Schaltet auch Stream in Unifi Protect ein/aus!!)
