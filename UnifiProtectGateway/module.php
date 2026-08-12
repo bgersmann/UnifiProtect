@@ -55,63 +55,45 @@ declare(strict_types=1);
 			$this->SetTimerInterval( 'WS Watchdog', empty($APIKey) ? 0 : 60000 );
 		}
 
-		// Konfiguriert den vorgelagerten WS Client (URL, API-Key-Header) anhand der Gateway-Einstellungen
+		// Stellt sicher, dass ein WS Client als Parent vorhanden ist (z.B. nach Update von aelterer Version).
+		// Die Konfiguration selbst uebernimmt das Framework ueber GetConfigurationForParent().
 		private function configureWsClient(): void
 		{
 			$parentID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
-			if ($parentID <= 0) {
-				// Kein Parent vorhanden (z.B. nach Update von aelterer Version) -> WS Client anlegen
-				if (IPS_GetKernelRunlevel() !== KR_READY) {
-					return;
-				}
-				$parentID = @IPS_CreateInstance('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
-				if (!$parentID) {
-					$this->SendDebug("UnifiPGW", "WS Client konnte nicht angelegt werden", 0);
-					return;
-				}
-				IPS_SetName($parentID, 'UniFi Protect WebSocket');
-				IPS_ConnectInstance($this->InstanceID, $parentID);
-				$this->SendDebug("UnifiPGW", "WS Client angelegt: " . $parentID, 0);
-			}
-			if (IPS_GetInstance($parentID)['ModuleInfo']['ModuleID'] !== '{D68FD31F-0E90-7019-F16C-1949BD3079EF}') {
-				$this->SendDebug("UnifiPGW", "Parent ist kein WS Client - keine Konfiguration", 0);
+			if ($parentID > 0) {
 				return;
 			}
+			if (IPS_GetKernelRunlevel() !== KR_READY) {
+				return;
+			}
+			$parentID = @IPS_CreateInstance('{D68FD31F-0E90-7019-F16C-1949BD3079EF}');
+			if (!$parentID) {
+				$this->SendDebug("UnifiPGW", "WS Client konnte nicht angelegt werden", 0);
+				return;
+			}
+			IPS_SetName($parentID, 'UniFi Protect WebSocket');
+			IPS_ConnectInstance($this->InstanceID, $parentID);
+			// Einmalige Erstkonfiguration der frisch angelegten Instanz;
+			// danach pflegt das Framework die Konfiguration ueber GetConfigurationForParent()
+			IPS_SetConfiguration($parentID, $this->GetConfigurationForParent());
+			IPS_ApplyChanges($parentID);
+			$this->SendDebug("UnifiPGW", "WS Client angelegt: " . $parentID, 0);
+		}
+
+		// Liefert die Konfiguration fuer den vorgelagerten WS Client; wird vom Framework angewendet
+		public function GetConfigurationForParent(): string
+		{
+			$ip = $this->ReadPropertyString('ServerAddress');
 			$APIKey = $this->ReadPropertyString('APIKey');
-			$changed = false;
-			if (empty($APIKey)) {
-				if (IPS_GetProperty($parentID, 'Active') !== false) {
-					IPS_SetProperty($parentID, 'Active', false);
-					IPS_ApplyChanges($parentID);
-				}
-				return;
-			}
-			$url = 'wss://' . $this->ReadPropertyString('ServerAddress') . '/proxy/protect/integration/v1/subscribe/devices';
-			$headers = json_encode([['Name' => 'X-API-KEY', 'Value' => $APIKey]]);
-			if (IPS_GetProperty($parentID, 'URL') !== $url) {
-				IPS_SetProperty($parentID, 'URL', $url);
-				$changed = true;
-			}
-			if (IPS_GetProperty($parentID, 'VerifyCertificate') !== false) {
-				IPS_SetProperty($parentID, 'VerifyCertificate', false);
-				$changed = true;
-			}
-			if (IPS_GetProperty($parentID, 'Type') !== 0) {
-				IPS_SetProperty($parentID, 'Type', 0);
-				$changed = true;
-			}
-			if (IPS_GetProperty($parentID, 'Headers') !== $headers) {
-				IPS_SetProperty($parentID, 'Headers', $headers);
-				$changed = true;
-			}
-			if (IPS_GetProperty($parentID, 'Active') !== true) {
-				IPS_SetProperty($parentID, 'Active', true);
-				$changed = true;
-			}
-			if ($changed) {
-				$this->SendDebug("UnifiPGW", "WS Client neu konfiguriert: " . $url, 0);
-				IPS_ApplyChanges($parentID);
-			}
+			return json_encode([
+				'URL'               => 'wss://' . $ip . '/proxy/protect/integration/v1/subscribe/devices',
+				'VerifyCertificate' => false,
+				'Type'              => 0,
+				'Headers'           => json_encode([
+					['Name' => 'X-API-KEY', 'Value' => $APIKey]
+				]),
+				'Active'            => !empty($ip) && !empty($APIKey)
+			]);
 		}
 
 		// Ueberwacht die WebSocket-Verbindung: stoesst Reconnects an und nach
