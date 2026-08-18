@@ -11,8 +11,29 @@ declare(strict_types=1);
 			$this->RegisterPropertyString( 'APIKey', '' );
 			$this->RegisterPropertyBoolean('applicationVersion', 0);
 			$this->RegisterPropertyInteger( 'VersionTimer', 0 );
+			// true = keine Migration noetig; bei 1.x-Bestandsinstanzen fehlt das Attribut -> Migrate() legt einmalig den WS Client an
+			$this->RegisterAttributeBoolean( 'WsMigrationDone', true );
 			$this->RegisterTimer( 'Update Version', 0, "UNIFIPGW_updateVersion(\$_IPS['TARGET']);" );
 			$this->RegisterTimer( 'WS Watchdog', 0, "UNIFIPGW_watchdogWS(\$_IPS['TARGET']);" );
+		}
+
+		public function Migrate(string $JSONData): string
+		{
+			$data = json_decode($JSONData, true);
+			$done = false;
+			if (is_array($data)) {
+				if (isset($data['attributes']['WsMigrationDone'])) {
+					$done = (bool)$data['attributes']['WsMigrationDone'];
+				} elseif (isset($data['WsMigrationDone'])) {
+					$done = (bool)$data['WsMigrationDone'];
+				}
+			}
+			if (!$done) {
+				// Bestandsinstanz aus einer Version ohne I/O: WS Client einmalig anlegen
+				$this->configureWsClient();
+				$this->WriteAttributeBoolean('WsMigrationDone', true);
+			}
+			return $JSONData;
 		}
 
 		// Nur der native WS Client ist als uebergeordnete Instanz zulaessig
@@ -51,7 +72,6 @@ declare(strict_types=1);
 					$this->SetTimerInterval( 'Update Version', 0 );
 				}
 			}
-			$this->configureWsClient();
 			$this->SetTimerInterval( 'WS Watchdog', empty($APIKey) ? 0 : 60000 );
 		}
 

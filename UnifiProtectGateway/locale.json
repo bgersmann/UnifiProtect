@@ -2,6 +2,7 @@
     "translations": {
         "de": {
             "UniFi Protect Gateway": "UniFi Protect Gateway",
+            "Application Version": "Anwendungsversion",
             "Please create API Key under \"UniFi Network > Settings > Control Plane > Integrations\"": "Bitte API Key unter \"UniFi Network > Einstellungen > Control Plane > Integrationen\" erzeugen",
             "Unifi Device IP": "Unifi Geräte-IP",
             "APIKey": "API-Schlüssel",
