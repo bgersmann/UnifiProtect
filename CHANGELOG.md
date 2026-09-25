@@ -13,6 +13,8 @@ Das Gateway wurde von einer I/O- in eine Splitter-Instanz umgebaut. Geräte-Upda
 - Watchdog im Gateway: überwacht die WebSocket-Verbindung, stößt bei Abriss automatisch einen Reconnect an und löst nach Wiederverbindung einen Vollabgleich aller Geräte aus.
 - Interner Fallback-Abgleich pro Gerät alle 60 Minuten, um verpasste WebSocket-Updates (z.B. nach Downtime) abzufangen.
 
+- Neuer Gerätetyp "Vape/Air Quality Sensor" (UP-AirQuality): Temperatur und Luftfeuchte sowie — sobald die Protect Integration API sie bereitstellt — AQI, Vape-Index, TVOC, VOC, CO2 und Feinstaub (PM1.0/PM2.5/PM4.0/PM10), jeweils per Checkbox aktivierbar. Der Konfigurator erkennt den Sensortyp automatisch.
+
 **Geändert:**
 
 - Geräte-Instanzen: Die Timer-Eingabe (Abfrageintervall) wurde entfernt und durch eine Checkbox "Aktiv (Updates per WebSocket)" ersetzt (Standard: aktiv). Der Snapshot-Timer für Kameras bleibt unverändert.

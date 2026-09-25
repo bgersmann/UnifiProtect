@@ -545,7 +545,7 @@ declare(strict_types=1);
 			}
 			if ($deviceType === 'Camera') {
 				$JSONData = $this->getCameras();
-			} elseif ($deviceType === 'UP-Sense') {
+			} elseif ($deviceType === 'UP-Sense' || $deviceType === 'UP-AirQuality') {
 				$JSONData = $this->getSensors();
 			} elseif ($deviceType === 'Chime') {
 				$JSONData = $this->getChimes();
@@ -849,7 +849,7 @@ declare(strict_types=1);
 			}
 			if ($deviceType === 'Camera') {
 				$JSONData = $this->getApiData( '/cameras/' . $deviceID );
-			} elseif ($deviceType === 'UP-Sense') {
+			} elseif ($deviceType === 'UP-Sense' || $deviceType === 'UP-AirQuality') {
 				$JSONData = $this->getApiData( '/sensors/' . $deviceID );
 			} elseif ($deviceType === 'Light') {
 				$JSONData = $this->getApiData( '/lights/' . $deviceID );
@@ -964,11 +964,13 @@ declare(strict_types=1);
                 });
                 foreach ( $sensors as $sensor )
                 {
+                   // Vape/Air-Quality-Sensor am Geraetetyp erkennen (z.B. "UP-AirQuality"), sonst UP-Sense
+                   $sensorDeviceType = (stripos($sensor['type'] ?? '', 'air') !== false) ? 'UP-AirQuality' : 'UP-Sense';
                    $addValue = array(
                         'Name'	=>$sensor[ 'name' ],
-                        'Type'	=>$sensor[ 'modelKey' ],
+                        'Type'	=>$sensor[ 'type' ] ?? $sensor[ 'modelKey' ],
 						'State' =>$sensor['state'],
-                        'ID'		=>isset( $sensor[ 'id' ] ) ? $sensor[ 'id' ] : 'missing' ,                        
+                        'ID'		=>isset( $sensor[ 'id' ] ) ? $sensor[ 'id' ] : 'missing' ,
                         'instanceID'	=>$this->getInstanceIDForGuid( $sensor[ 'id' ], '{F78D1159-D735-D23A-0A97-69F07962BB89}' )
                         );
                         if (isset($sensor['id']) && !empty($sensor['id'])) {
@@ -976,7 +978,7 @@ declare(strict_types=1);
                             'moduleID'      => '{F78D1159-D735-D23A-0A97-69F07962BB89}',
                             'configuration' => [
                                 'ID'	=> isset( $sensor[ 'id' ] ) ? $sensor[ 'id' ] : '',
-								'DeviceType' => 'UP-Sense'
+								'DeviceType' => $sensorDeviceType
                             ],
                             'name' => $sensor[ 'name' ]
                             );

@@ -14,7 +14,7 @@ Seit Version 2.0 werden die Gerätedaten in Echtzeit per WebSocket aktualisiert;
 
 ### 1. Funktionsumfang
 
-- Integration von UniFi Protect Geräten (Kameras, Sensoren, Chimes, Lights, Speaker) in IP-Symcon
+- Integration von UniFi Protect Geräten (Kameras, Sensoren, Vape-/Luftqualitätssensoren, Chimes, Lights, Speaker) in IP-Symcon
 - Geräte-Updates in Echtzeit per WebSocket (kein Polling-Intervall mehr nötig)
 - Interner Fallback-Abgleich alle 60 Minuten für verpasste WebSocket-Updates
 - Abruf und Steuerung von Streams und Snapshots
@@ -40,7 +40,7 @@ __Konfigurationsseite__:
 Name     | Beschreibung
 -------- | ------------------
 Aktiv (Updates per WebSocket) | Instanz aktivieren. Daten kommen in Echtzeit per WebSocket; zusätzlich läuft ein interner Fallback-Abgleich alle 60 Minuten.
-Gerätetyp | Gerätetyp (Kamera/Sensor/Licht/Gong/Speaker)
+Gerätetyp | Gerätetyp (Kamera/Sensor/Vape-/Luftqualitätssensor/Licht/Gong/Speaker)
 Geräte-ID | Gerätename aus Unifi
 ID-Anzeigen | ID als Variable anlegen
 Stream Niedrig/Mittel/Hoch | Stream in entsprechender Auflösung anlegen (Schaltet auch Stream in Unifi Protect ein/aus!!)
@@ -59,6 +59,7 @@ Die Statusvariablen/Kategorien werden automatisch angelegt. Das Löschen einzeln
 | State        | String   | Verbindungsstatus           |
 | Is Microphone enabled  | Boolean      | Status Mikrofon |
 | Microphone Volume | Integer | Mikrofon Lautstärke |
+| Air Quality Index / Vape Index / TVOC / VOC / CO2 / PM1.0 / PM2.5 / PM4.0 / PM10 | Integer/Float | Luftqualitätswerte des UP-AirQuality (sofern die Protect Integration API diese bereitstellt) |
 
 #### Profile
 

@@ -22,7 +22,17 @@ declare(strict_types=1);
 			$this->RegisterPropertyBoolean( 'Temperature', false );
 			$this->RegisterPropertyBoolean( 'Humidity', false );
 			$this->RegisterPropertyBoolean( 'Illuminance', false );
-			$this->RegisterPropertyBoolean( 'Motion', false );			
+			$this->RegisterPropertyBoolean( 'Motion', false );
+			// UP-AirQuality (Vape Detection & Air Quality Sensor)
+			$this->RegisterPropertyBoolean( 'AQI', false );
+			$this->RegisterPropertyBoolean( 'Vape', false );
+			$this->RegisterPropertyBoolean( 'TVOC', false );
+			$this->RegisterPropertyBoolean( 'VOC', false );
+			$this->RegisterPropertyBoolean( 'CO2', false );
+			$this->RegisterPropertyBoolean( 'PM1', false );
+			$this->RegisterPropertyBoolean( 'PM25', false );
+			$this->RegisterPropertyBoolean( 'PM4', false );
+			$this->RegisterPropertyBoolean( 'PM10', false );
 			$this->RegisterAttributeBoolean( 'supportFullHDSnapshot', false );
 			$this->RegisterTimer( 'Collect Data', 0, "UNIFIPDV_getData(\$_IPS['TARGET']);" );
 			$this->RegisterTimer( 'Update Snapshot', 0, "UNIFIPDV_updateSnapshot(\$_IPS['TARGET']);" );
@@ -82,9 +92,21 @@ declare(strict_types=1);
 				}
 			}
 
-			$this->MaintainVariable( 'Temperature', $this->Translate( 'Temperature' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>-50,'USAGE_TYPE'=> 1,'DIGITS'=> 2, 'SUFFIX'=> ' °C' , 'ICON'=> 'temperature-list'], $vpos++, ($this->ReadPropertyBoolean("Temperature")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
-			$this->MaintainVariable( 'Humidity', $this->Translate( 'Humidity' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' % RH' , 'ICON'=> 'droplet-degree'], $vpos++, ($this->ReadPropertyBoolean("Humidity")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
+			$isEnvSensor = in_array($this->ReadPropertyString('DeviceType'), ['UP-Sense', 'UP-AirQuality']);
+			$isAirQuality = $this->ReadPropertyString('DeviceType') == 'UP-AirQuality';
+			$this->MaintainVariable( 'Temperature', $this->Translate( 'Temperature' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>-50,'USAGE_TYPE'=> 1,'DIGITS'=> 2, 'SUFFIX'=> ' °C' , 'ICON'=> 'temperature-list'], $vpos++, ($this->ReadPropertyBoolean("Temperature") && $isEnvSensor) );
+			$this->MaintainVariable( 'Humidity', $this->Translate( 'Humidity' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' % RH' , 'ICON'=> 'droplet-degree'], $vpos++, ($this->ReadPropertyBoolean("Humidity") && $isEnvSensor) );
 			$this->MaintainVariable( 'Illuminance', $this->Translate( 'Illuminance' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100000,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' Lux' , 'ICON'=> 'sun'], $vpos++, ($this->ReadPropertyBoolean("Illuminance")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
+			// UP-AirQuality: Luftqualitaetswerte
+			$this->MaintainVariable( 'AQI', $this->Translate( 'Air Quality Index' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>500,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'ICON'=> 'wind'], $vpos++, ($this->ReadPropertyBoolean('AQI') && $isAirQuality) );
+			$this->MaintainVariable( 'Vape', $this->Translate( 'Vape Index' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'ICON'=> 'smoke'], $vpos++, ($this->ReadPropertyBoolean('Vape') && $isAirQuality) );
+			$this->MaintainVariable( 'TVOC', $this->Translate( 'TVOC' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' ppb', 'ICON'=> 'wind'], $vpos++, ($this->ReadPropertyBoolean('TVOC') && $isAirQuality) );
+			$this->MaintainVariable( 'VOC', $this->Translate( 'VOC' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'ICON'=> 'wind'], $vpos++, ($this->ReadPropertyBoolean('VOC') && $isAirQuality) );
+			$this->MaintainVariable( 'CO2', $this->Translate( 'CO2' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' ppm', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('CO2') && $isAirQuality) );
+			$this->MaintainVariable( 'PM1', $this->Translate( 'PM1.0' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM1') && $isAirQuality) );
+			$this->MaintainVariable( 'PM25', $this->Translate( 'PM2.5' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM25') && $isAirQuality) );
+			$this->MaintainVariable( 'PM4', $this->Translate( 'PM4.0' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM4') && $isAirQuality) );
+			$this->MaintainVariable( 'PM10', $this->Translate( 'PM10' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM10') && $isAirQuality) );
 			
 			$active = $this->ReadPropertyBoolean('Active');
 			if ($active && $this->ReadPropertyString('DeviceType') == 'Camera') {
@@ -345,18 +367,52 @@ declare(strict_types=1);
 					$this->SetValue('speakerMode', $deviceData['speakerState']['mode']);
 				}
 			} elseif ($deviceType == 'UP-Sense') {
-				if (isset($deviceData['stats']['temperature']['value'])) {
+				// Nur schreiben, wenn die Variable per Property auch aktiviert ist
+				if ($this->ReadPropertyBoolean('Temperature') && isset($deviceData['stats']['temperature']['value'])) {
 					$this->SetValue('Temperature', $deviceData['stats']['temperature']['value']);
 				}
-				if (isset($deviceData['stats']['humidity']['value'])) {
+				if ($this->ReadPropertyBoolean('Humidity') && isset($deviceData['stats']['humidity']['value'])) {
 					$this->SetValue('Humidity', $deviceData['stats']['humidity']['value']);
 				}
-				if (isset($deviceData['stats']['light']['value'])) {
+				if ($this->ReadPropertyBoolean('Illuminance') && isset($deviceData['stats']['light']['value'])) {
 					$this->SetValue('Illuminance', $deviceData['stats']['light']['value']);
 				}
 				if (!empty($deviceData['batteryStatus']['percentage'])) {
 					$this->MaintainVariable('batteryStatus', $this->Translate('Battery Status'), 1, ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX' => 100, 'MIN' => 0, 'USAGE_TYPE' => 1, 'DIGITS' => 0, 'SUFFIX' => ' %', 'ICON' => 'battery-bolt'], 200, 1);
 					$this->SetValue('batteryStatus', $deviceData['batteryStatus']['percentage']);
+				}
+			} elseif ($deviceType == 'UP-AirQuality') {
+				// Temperatur/Feuchte liefert der Sensor je nach Protect-Version unter stats oder airQuality
+				if ($this->ReadPropertyBoolean('Temperature')) {
+					if (isset($deviceData['airQuality']['temperature']['value'])) {
+						$this->SetValue('Temperature', $deviceData['airQuality']['temperature']['value']);
+					} elseif (isset($deviceData['stats']['temperature']['value'])) {
+						$this->SetValue('Temperature', $deviceData['stats']['temperature']['value']);
+					}
+				}
+				if ($this->ReadPropertyBoolean('Humidity')) {
+					if (isset($deviceData['airQuality']['humidity']['value'])) {
+						$this->SetValue('Humidity', $deviceData['airQuality']['humidity']['value']);
+					} elseif (isset($deviceData['stats']['humidity']['value'])) {
+						$this->SetValue('Humidity', $deviceData['stats']['humidity']['value']);
+					}
+				}
+				// Luftqualitaetswerte: Ident -> Feld im airQuality-Objekt
+				$airQualityMap = [
+					'AQI'  => 'aqi',
+					'Vape' => 'vape',
+					'TVOC' => 'tvoc',
+					'VOC'  => 'voc',
+					'CO2'  => 'co2',
+					'PM1'  => 'pm1p0',
+					'PM25' => 'pm2p5',
+					'PM4'  => 'pm4p0',
+					'PM10' => 'pm10p0'
+				];
+				foreach ($airQualityMap as $ident => $field) {
+					if ($this->ReadPropertyBoolean($ident) && isset($deviceData['airQuality'][$field]['value'])) {
+						$this->SetValue($ident, $deviceData['airQuality'][$field]['value']);
+					}
 				}
 			}
 			if (isset($deviceData['name'])) {
@@ -466,6 +522,7 @@ declare(strict_types=1);
 			$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'Active', 'caption' => $this->Translate('Active (updates via WebSocket)'));
 			$arrayOptions[] = array( 'caption' => 'Camera', 'value' => 'Camera' );
 			$arrayOptions[] = array( 'caption' => 'All-In-One Sensor', 'value' => 'UP-Sense' );
+			$arrayOptions[] = array( 'caption' => 'Vape/Air Quality Sensor', 'value' => 'UP-AirQuality' );
 			$arrayOptions[] = array( 'caption' => 'Chime', 'value' => 'Chime' );
 			$arrayOptions[] = array( 'caption' => 'Light', 'value' => 'Light' );
 			$arrayOptions[] = array( 'caption' => 'Speaker', 'value' => 'Speaker' );
@@ -497,9 +554,31 @@ declare(strict_types=1);
 			if ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Temperature','width' => '180px', 'caption' => $this->Translate('Temperature') );
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Humidity','width' => '180px', 'caption' => $this->Translate('Humidity') );
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Illuminance','width' => '180px', 'caption' => $this->Translate('Illuminance') );				
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Illuminance','width' => '180px', 'caption' => $this->Translate('Illuminance') );
 				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'Motion','width' => 'auto', 'caption' => $this->Translate('Motion (Motion shows up in Protect Events)') );
+			}
+			if ($this->ReadPropertyString('DeviceType') == 'UP-AirQuality') {
+				unset($arrayOptions);
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Temperature','width' => '180px', 'caption' => $this->Translate('Temperature') );
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Humidity','width' => '180px', 'caption' => $this->Translate('Humidity') );
+				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
+				unset($arrayOptions);
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'AQI','width' => '180px', 'caption' => $this->Translate('Air Quality Index') );
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Vape','width' => '180px', 'caption' => $this->Translate('Vape Index') );
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'CO2','width' => '180px', 'caption' => 'CO2' );
+				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
+				unset($arrayOptions);
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'TVOC','width' => '180px', 'caption' => 'TVOC' );
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'VOC','width' => '180px', 'caption' => 'VOC' );
+				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
+				unset($arrayOptions);
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'PM1','width' => '180px', 'caption' => 'PM1.0' );
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'PM25','width' => '180px', 'caption' => 'PM2.5' );
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'PM4','width' => '180px', 'caption' => 'PM4.0' );
+				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'PM10','width' => '180px', 'caption' => 'PM10' );
+				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
+				$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Note: Air quality values require a Protect version that exposes them via the Integration API.') );
 			}
 
 			$arrayActions = array();
