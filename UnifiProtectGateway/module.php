@@ -19,21 +19,22 @@ declare(strict_types=1);
 
 		public function Migrate(string $JSONData): string
 		{
+			// Diese Zeile nicht entfernen
+			parent::Migrate($JSONData);
+
 			$data = json_decode($JSONData, true);
-			$done = false;
-			if (is_array($data)) {
-				if (isset($data['attributes']['WsMigrationDone'])) {
-					$done = (bool)$data['attributes']['WsMigrationDone'];
-				} elseif (isset($data['WsMigrationDone'])) {
-					$done = (bool)$data['WsMigrationDone'];
-				}
+			$done = (bool)($data['attributes']['WsMigrationDone'] ?? false);
+			// Nur konfigurierte Bestandsinstanzen aus einer Version ohne I/O migrieren -
+			// bei Neuerstellungen laeuft der regulaere Erstellprozess (Benutzer-Hoheit)
+			$isLegacyInstance = !empty($data['configuration']['APIKey'] ?? '');
+			if ($done || !$isLegacyInstance) {
+				// keine Aenderungen notwendig
+				return '';
 			}
-			if (!$done) {
-				// Bestandsinstanz aus einer Version ohne I/O: WS Client einmalig anlegen
-				$this->configureWsClient();
-				$this->WriteAttributeBoolean('WsMigrationDone', true);
-			}
-			return $JSONData;
+			// Bestandsinstanz: WS Client einmalig anlegen und Migration als erledigt markieren
+			$this->configureWsClient();
+			$data['attributes']['WsMigrationDone'] = true;
+			return json_encode($data);
 		}
 
 		// Nur der native WS Client ist als uebergeordnete Instanz zulaessig

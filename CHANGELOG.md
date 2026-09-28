@@ -19,6 +19,7 @@ Das Gateway wurde von einer I/O- in eine Splitter-Instanz umgebaut. Geräte-Upda
 
 - Geräte-Instanzen: Die Timer-Eingabe (Abfrageintervall) wurde entfernt und durch eine Checkbox "Aktiv (Updates per WebSocket)" ersetzt (Standard: aktiv). Der Snapshot-Timer für Kameras bleibt unverändert.
 - Durch den Wegfall des Pollings sinkt die Last auf der Protect-API deutlich (Rate-Limit-Probleme bei vielen Geräten entfallen).
+- Geräte-Instanzen filtern eingehende Gateway-Broadcasts per ReceiveDataFilter bereits im Kernel auf die eigene Geräte-ID (weniger Overhead bei vielen Geräten).
 
 **Update-Hinweis:**
 

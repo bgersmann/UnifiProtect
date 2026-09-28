@@ -49,6 +49,14 @@ declare(strict_types=1);
 		{
 			//Never delete this line!
 			parent::ApplyChanges();
+			// Broadcasts vom Gateway schon im Kernel vorfiltern:
+			// nur Pakete mit eigener Geraete-ID oder fullSync erreichen ReceiveData
+			$filterID = $this->ReadPropertyString('ID');
+			if ($filterID !== '') {
+				$this->SetReceiveDataFilter('.*("Api":"fullSync"|"id":"' . preg_quote($filterID, '/') . '").*');
+			} else {
+				$this->SetReceiveDataFilter('.*"Api":"fullSync".*');
+			}
 			$vpos = 100;
 			$this->MaintainVariable( 'Name', $this->Translate( 'Name' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, 1 );
 			$this->MaintainVariable( 'ID', $this->Translate( 'ID' ), 3,[ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, $this->ReadPropertyBoolean("IDAnzeigen") );

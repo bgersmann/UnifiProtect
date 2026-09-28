@@ -20,6 +20,9 @@ declare(strict_types=1);
 		{
 			//Never delete this line!
 			parent::ApplyChanges();
+			// Der Konfigurator verarbeitet keine Gateway-Broadcasts:
+			// Filter, der nie matcht, verhindert unnoetige ReceiveData-Aufrufe
+			$this->SetReceiveDataFilter('[^\s\S]');
 		}
 
 		public function Send(string $api, string $param1):void
