@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 2.1 (2026-10-25)
+
+**Behoben:**
+
+- Warnung "Entry in parameter OPTIONS includes unknown sub-parameters" beim Anlegen von Instanzen über den Konfigurator: Die Variablen-Darstellungen (Value Presentation) in UnifiProtectDevice, UnifiProtectEvents und UnifiProtectAlarmProfiles enthielten die ungültigen Unterparameter "Color" und "ColorDisplay". Gültig sind dort nur Value, Caption, IconActive, IconValue, ColorActive und ColorValue.
+
 ## Version 2.0 (2026-08-04)
 
 ### Echtzeit-Updates per WebSocket (Breaking Change)

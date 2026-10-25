@@ -291,8 +291,7 @@ declare(strict_types=1);
 					'Caption'     => (string)( $profile['name'] ?? $profile['id'] ),
 					'Value'       => (string)$profile['id'],
 					'IconValue'   => '',
-					'IconActive'  => false,
-					'Color'       => -1
+					'IconActive'  => false
 				);
 			}
 			if ( empty( $options ) ) {
@@ -300,8 +299,7 @@ declare(strict_types=1);
 					'Caption'     => $this->Translate( 'No profiles found' ),
 					'Value'       => '',
 					'IconValue'   => '',
-					'IconActive'  => false,
-					'Color'       => -1
+					'IconActive'  => false
 				);
 			}
 			return array(
@@ -319,8 +317,8 @@ declare(strict_types=1);
 				'USAGE_TYPE'   => 2,
 				'ICON'         => 'shield',
 				'OPTIONS'      => json_encode( array(
-					array( 'ColorDisplay' => 16077123, 'Value' => false, 'Caption' => $this->Translate( 'Disarmed' ), 'IconValue' => 'shield', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16077123, 'Color' => -1 ),
-					array( 'ColorDisplay' => 1692672, 'Value' => true, 'Caption' => $this->Translate( 'Armed' ), 'IconValue' => 'shield-check', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672, 'Color' => -1 )
+					array( 'Value' => false, 'Caption' => $this->Translate( 'Disarmed' ), 'IconValue' => 'shield', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16077123 ),
+					array( 'Value' => true, 'Caption' => $this->Translate( 'Armed' ), 'IconValue' => 'shield-check', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672 )
 				) )
 			);
 		}
@@ -332,11 +330,11 @@ declare(strict_types=1);
 				'USAGE_TYPE'   => 0,
 				'ICON'         => 'shield',
 				'OPTIONS'      => json_encode( array(
-					array( 'ColorDisplay' => 8421504,  'Value' => 'disabled',  'Caption' => $this->Translate( 'Disabled' ),  'IconValue' => 'shield',       'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 8421504,  'Color' => -1 ),
-					array( 'ColorDisplay' => 16766720, 'Value' => 'arming',    'Caption' => $this->Translate( 'Arming' ),    'IconValue' => 'shield-halved','IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16766720, 'Color' => -1 ),
-					array( 'ColorDisplay' => 1692672,  'Value' => 'armed',     'Caption' => $this->Translate( 'Armed' ),     'IconValue' => 'shield-check', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672,  'Color' => -1 ),
-					array( 'ColorDisplay' => 16766720, 'Value' => 'disarming', 'Caption' => $this->Translate( 'Disarming' ), 'IconValue' => 'shield-halved','IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16766720, 'Color' => -1 ),
-					array( 'ColorDisplay' => 16711680, 'Value' => 'breach',    'Caption' => $this->Translate( 'Breach' ),    'IconValue' => 'shield-xmark', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16711680, 'Color' => -1 )
+					array( 'Value' => 'disabled',  'Caption' => $this->Translate( 'Disabled' ),  'IconValue' => 'shield',       'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 8421504 ),
+					array( 'Value' => 'arming',    'Caption' => $this->Translate( 'Arming' ),    'IconValue' => 'shield-halved','IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16766720 ),
+					array( 'Value' => 'armed',     'Caption' => $this->Translate( 'Armed' ),     'IconValue' => 'shield-check', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672 ),
+					array( 'Value' => 'disarming', 'Caption' => $this->Translate( 'Disarming' ), 'IconValue' => 'shield-halved','IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16766720 ),
+					array( 'Value' => 'breach',    'Caption' => $this->Translate( 'Breach' ),    'IconValue' => 'shield-xmark', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16711680 )
 				) )
 			);
 		}
@@ -348,8 +346,8 @@ declare(strict_types=1);
 				'USAGE_TYPE'   => 0,
 				'ICON'         => 'triangle-exclamation',
 				'OPTIONS'      => json_encode( array(
-					array( 'ColorDisplay' => 16077123, 'Value' => false, 'Caption' => $this->Translate( 'No breach' ), 'IconValue' => 'shield-check', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672,  'Color' => -1 ),
-					array( 'ColorDisplay' => 16711680, 'Value' => true,  'Caption' => $this->Translate( 'Breach' ),    'IconValue' => 'triangle-exclamation', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16711680, 'Color' => -1 )
+					array( 'Value' => false, 'Caption' => $this->Translate( 'No breach' ), 'IconValue' => 'shield-check', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672 ),
+					array( 'Value' => true,  'Caption' => $this->Translate( 'Breach' ),    'IconValue' => 'triangle-exclamation', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16711680 )
 				) )
 			);
 		}
