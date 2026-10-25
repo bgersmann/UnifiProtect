@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 			// Anzeige (ArmMode aus /nvrs)
 			$this->MaintainVariable( 'ArmStatus', $this->Translate( 'Arm Status' ), 3, $this->buildArmStatusPresentation(), $vpos++, true );
-			$this->MaintainVariable( 'ActiveProfile', $this->Translate( 'Active Profile' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE' => 0, 'ICON' => 'shield-halved' ], $vpos++, true );
+			$this->MaintainVariable( 'ActiveProfile', $this->Translate( 'Active Profile' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON' => 'shield-halved' ], $vpos++, true );
 			$this->MaintainVariable( 'ArmedAt', $this->Translate( 'Armed At' ), 1, '~UnixTimestamp', $vpos++, true );
 			$this->MaintainVariable( 'Breach', $this->Translate( 'Breach detected' ), 0, $this->buildBreachPresentation(), $vpos++, true );
 
@@ -304,7 +304,6 @@ declare(strict_types=1);
 			}
 			return array(
 				'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
-				'USAGE_TYPE'   => 2,
 				'ICON'         => 'shield-halved',
 				'OPTIONS'      => json_encode( $options )
 			);
@@ -314,7 +313,6 @@ declare(strict_types=1);
 		{
 			return array(
 				'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-				'USAGE_TYPE'   => 2,
 				'ICON'         => 'shield',
 				'OPTIONS'      => json_encode( array(
 					array( 'Value' => false, 'Caption' => $this->Translate( 'Disarmed' ), 'IconValue' => 'shield', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 16077123 ),
@@ -327,7 +325,6 @@ declare(strict_types=1);
 		{
 			return array(
 				'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-				'USAGE_TYPE'   => 0,
 				'ICON'         => 'shield',
 				'OPTIONS'      => json_encode( array(
 					array( 'Value' => 'disabled',  'Caption' => $this->Translate( 'Disabled' ),  'IconValue' => 'shield',       'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 8421504 ),
@@ -343,7 +340,6 @@ declare(strict_types=1);
 		{
 			return array(
 				'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-				'USAGE_TYPE'   => 0,
 				'ICON'         => 'triangle-exclamation',
 				'OPTIONS'      => json_encode( array(
 					array( 'Value' => false, 'Caption' => $this->Translate( 'No breach' ), 'IconValue' => 'shield-check', 'IconActive' => true, 'ColorActive' => true, 'ColorValue' => 1692672 ),

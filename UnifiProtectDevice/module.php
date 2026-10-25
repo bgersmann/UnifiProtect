@@ -58,19 +58,19 @@ declare(strict_types=1);
 				$this->SetReceiveDataFilter('.*"Api":"fullSync".*');
 			}
 			$vpos = 100;
-			$this->MaintainVariable( 'Name', $this->Translate( 'Name' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, 1 );
-			$this->MaintainVariable( 'ID', $this->Translate( 'ID' ), 3,[ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, $this->ReadPropertyBoolean("IDAnzeigen") );
-			$this->MaintainVariable( 'Model', $this->Translate( 'Model' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'circle-info'], $vpos++, 1 );
+			$this->MaintainVariable( 'Name', $this->Translate( 'Name' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON'=> 'circle-info'], $vpos++, 1 );
+			$this->MaintainVariable( 'ID', $this->Translate( 'ID' ), 3,[ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON'=> 'circle-info'], $vpos++, $this->ReadPropertyBoolean("IDAnzeigen") );
+			$this->MaintainVariable( 'Model', $this->Translate( 'Model' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON'=> 'circle-info'], $vpos++, 1 );
 			
 			$hasMic = in_array($this->ReadPropertyString('DeviceType'), ['Camera', 'Speaker']);
 			$isSpeaker = $this->ReadPropertyString('DeviceType') == 'Speaker';
-			$this->MaintainVariable( 'volume', $this->Translate( 'Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>0,'STEP_SIZE'=>1,'USAGE_TYPE'=> 2, 'SUFFIX'=> ' %' , 'ICON'=> 'volume'], $vpos++, $isSpeaker);
-			$this->MaintainVariable( 'micEnabled', $this->Translate( 'Is Microphone enabled' ), 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0 ,'ICON'=> 'microphone-lines', 'OPTIONS' => '[{"Value":false,"Caption":"Aus","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":16077123},{"Value":true,"Caption":"An","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":1692672}]'], $vpos++, $hasMic);
-			$this->MaintainVariable( 'micVolume', $this->Translate( 'Microphone Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>1,'STEP_SIZE'=>1,'USAGE_TYPE'=> 2, 'SUFFIX'=> ' %' , 'ICON'=> 'volume-high'], $vpos++, $hasMic);
-			$this->MaintainVariable( 'speakerStatus', $this->Translate( 'Speaker Status' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0,
+			$this->MaintainVariable( 'volume', $this->Translate( 'Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>0,'STEP_SIZE'=>1,'USAGE_TYPE'=> 3, 'SUFFIX'=> ' %' , 'ICON'=> 'volume'], $vpos++, $isSpeaker);
+			$this->MaintainVariable( 'micEnabled', $this->Translate( 'Is Microphone enabled' ), 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON'=> 'microphone-lines', 'OPTIONS' => '[{"Value":false,"Caption":"Aus","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":16077123},{"Value":true,"Caption":"An","IconValue":"","IconActive":false,"ColorActive":true,"ColorValue":1692672}]'], $vpos++, $hasMic);
+			$this->MaintainVariable( 'micVolume', $this->Translate( 'Microphone Volume' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER, 'MAX'=>100,'MIN'=>1,'STEP_SIZE'=>1,'USAGE_TYPE'=> 3, 'SUFFIX'=> ' %' , 'ICON'=> 'volume-high'], $vpos++, $hasMic);
+			$this->MaintainVariable( 'speakerStatus', $this->Translate( 'Speaker Status' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
 																				'OPTIONS'=> '[{"Value":"idle","Caption":"'.$this->Translate( 'Idle' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1},{"Value":"streaming","Caption":"'.$this->Translate( 'Streaming' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":65280},{"Value":"playing","Caption":"'.$this->Translate( 'Playing' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":65280},{"Value":"tts_playing","Caption":"'.$this->Translate( 'TTS Playing' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":65280},{"Value":"uploading","Caption":"'.$this->Translate( 'Uploading' ).'","IconActive":false,"IconValue":"","ColorActive":true,"ColorValue":16776960}]'
 																				,'ICON'=> 'waveform-lines'], $vpos++, $isSpeaker);
-			$this->MaintainVariable( 'speakerMode', $this->Translate( 'Speaker Mode' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'USAGE_TYPE'=> 0,
+			$this->MaintainVariable( 'speakerMode', $this->Translate( 'Speaker Mode' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
 																				'OPTIONS'=> '[{"Value":"listen","Caption":"'.$this->Translate( 'Listen' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1},{"Value":"talk","Caption":"'.$this->Translate( 'Talk' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1}]'
 																				,'ICON'=> 'comment'], $vpos++, $isSpeaker);
 			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
@@ -103,18 +103,18 @@ declare(strict_types=1);
 			$isEnvSensor = in_array($this->ReadPropertyString('DeviceType'), ['UP-Sense', 'UP-AirQuality']);
 			$isAirQuality = $this->ReadPropertyString('DeviceType') == 'UP-AirQuality';
 			$this->MaintainVariable( 'Temperature', $this->Translate( 'Temperature' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>-50,'USAGE_TYPE'=> 1,'DIGITS'=> 2, 'SUFFIX'=> ' °C' , 'ICON'=> 'temperature-list'], $vpos++, ($this->ReadPropertyBoolean("Temperature") && $isEnvSensor) );
-			$this->MaintainVariable( 'Humidity', $this->Translate( 'Humidity' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' % RH' , 'ICON'=> 'droplet-degree'], $vpos++, ($this->ReadPropertyBoolean("Humidity") && $isEnvSensor) );
-			$this->MaintainVariable( 'Illuminance', $this->Translate( 'Illuminance' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100000,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' Lux' , 'ICON'=> 'sun'], $vpos++, ($this->ReadPropertyBoolean("Illuminance")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
+			$this->MaintainVariable( 'Humidity', $this->Translate( 'Humidity' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100,'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 0, 'SUFFIX'=> ' % RH' , 'ICON'=> 'droplet-degree'], $vpos++, ($this->ReadPropertyBoolean("Humidity") && $isEnvSensor) );
+			$this->MaintainVariable( 'Illuminance', $this->Translate( 'Illuminance' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>100000,'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 0, 'SUFFIX'=> ' Lux' , 'ICON'=> 'sun'], $vpos++, ($this->ReadPropertyBoolean("Illuminance")&& $this->ReadPropertyString('DeviceType') == 'UP-Sense') );
 			// UP-AirQuality: Luftqualitaetswerte
-			$this->MaintainVariable( 'AQI', $this->Translate( 'Air Quality Index' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>500,'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'ICON'=> 'wind'], $vpos++, ($this->ReadPropertyBoolean('AQI') && $isAirQuality) );
-			$this->MaintainVariable( 'Vape', $this->Translate( 'Vape Index' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'ICON'=> 'smoke'], $vpos++, ($this->ReadPropertyBoolean('Vape') && $isAirQuality) );
-			$this->MaintainVariable( 'TVOC', $this->Translate( 'TVOC' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' ppb', 'ICON'=> 'wind'], $vpos++, ($this->ReadPropertyBoolean('TVOC') && $isAirQuality) );
-			$this->MaintainVariable( 'VOC', $this->Translate( 'VOC' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'ICON'=> 'wind'], $vpos++, ($this->ReadPropertyBoolean('VOC') && $isAirQuality) );
-			$this->MaintainVariable( 'CO2', $this->Translate( 'CO2' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 0, 'SUFFIX'=> ' ppm', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('CO2') && $isAirQuality) );
-			$this->MaintainVariable( 'PM1', $this->Translate( 'PM1.0' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM1') && $isAirQuality) );
-			$this->MaintainVariable( 'PM25', $this->Translate( 'PM2.5' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM25') && $isAirQuality) );
-			$this->MaintainVariable( 'PM4', $this->Translate( 'PM4.0' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM4') && $isAirQuality) );
-			$this->MaintainVariable( 'PM10', $this->Translate( 'PM10' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 1,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM10') && $isAirQuality) );
+			$this->MaintainVariable( 'AQI', $this->Translate( 'Air Quality Index' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX'=>500,'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 0, 'ICON'=> 'wind'], $vpos++, ($this->ReadPropertyBoolean('AQI') && $isAirQuality) );
+			$this->MaintainVariable( 'Vape', $this->Translate( 'Vape Index' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 0, 'ICON'=> 'smoke'], $vpos++, ($this->ReadPropertyBoolean('Vape') && $isAirQuality) );
+			$this->MaintainVariable( 'TVOC', $this->Translate( 'TVOC' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 0, 'SUFFIX'=> ' ppb', 'ICON'=> 'wind'], $vpos++, ($this->ReadPropertyBoolean('TVOC') && $isAirQuality) );
+			$this->MaintainVariable( 'VOC', $this->Translate( 'VOC' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 0, 'ICON'=> 'wind'], $vpos++, ($this->ReadPropertyBoolean('VOC') && $isAirQuality) );
+			$this->MaintainVariable( 'CO2', $this->Translate( 'CO2' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 0, 'SUFFIX'=> ' ppm', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('CO2') && $isAirQuality) );
+			$this->MaintainVariable( 'PM1', $this->Translate( 'PM1.0' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM1') && $isAirQuality) );
+			$this->MaintainVariable( 'PM25', $this->Translate( 'PM2.5' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM25') && $isAirQuality) );
+			$this->MaintainVariable( 'PM4', $this->Translate( 'PM4.0' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM4') && $isAirQuality) );
+			$this->MaintainVariable( 'PM10', $this->Translate( 'PM10' ), 2, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MIN'=>0,'USAGE_TYPE'=> 0,'DIGITS'=> 1, 'SUFFIX'=> ' µg/m³', 'ICON'=> 'smog'], $vpos++, ($this->ReadPropertyBoolean('PM10') && $isAirQuality) );
 			
 			$active = $this->ReadPropertyBoolean('Active');
 			if ($active && $this->ReadPropertyString('DeviceType') == 'Camera') {
@@ -354,7 +354,7 @@ declare(strict_types=1);
 					$lcdMessageText = $deviceData['lcdMessage']['text'] ?? '';
 				}
 				if ($lcdMessageText !== '') {
-					$this->MaintainVariable('lcdMessage',$this->Translate('LCD Message'),3,['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,'USAGE_TYPE' => 0,'ICON' => 'text'], 201, true);
+					$this->MaintainVariable('lcdMessage',$this->Translate('LCD Message'),3,['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,'ICON' => 'text'], 201, true);
 					$this->MaintainAction('lcdMessage', true);
 					$this->SetValue('lcdMessage', (string)$lcdMessageText);
 				}
@@ -386,7 +386,7 @@ declare(strict_types=1);
 					$this->SetValue('Illuminance', $deviceData['stats']['light']['value']);
 				}
 				if (!empty($deviceData['batteryStatus']['percentage'])) {
-					$this->MaintainVariable('batteryStatus', $this->Translate('Battery Status'), 1, ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX' => 100, 'MIN' => 0, 'USAGE_TYPE' => 1, 'DIGITS' => 0, 'SUFFIX' => ' %', 'ICON' => 'battery-bolt'], 200, 1);
+					$this->MaintainVariable('batteryStatus', $this->Translate('Battery Status'), 1, ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'MAX' => 100, 'MIN' => 0, 'USAGE_TYPE' => 0, 'DIGITS' => 0, 'SUFFIX' => ' %', 'ICON' => 'battery-bolt'], 200, 1);
 					$this->SetValue('batteryStatus', $deviceData['batteryStatus']['percentage']);
 				}
 			} elseif ($deviceType == 'UP-AirQuality') {

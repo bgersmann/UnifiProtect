@@ -5,6 +5,7 @@
 **Behoben:**
 
 - Warnung "Entry in parameter OPTIONS includes unknown sub-parameters" beim Anlegen von Instanzen über den Konfigurator: Die Variablen-Darstellungen (Value Presentation) in UnifiProtectDevice, UnifiProtectEvents und UnifiProtectAlarmProfiles enthielten die ungültigen Unterparameter "Color" und "ColorDisplay". Gültig sind dort nur Value, Caption, IconActive, IconValue, ColorActive und ColorValue.
+- Warnungen "Parameter USAGE_TYPE is not defined for this presentation" / "has invalid value" sowie "Parameter DIGITS ist für diese Darstellung nicht definiert": USAGE_TYPE und DIGITS sind bei der Value Presentation nur für Integer-/Float-Variablen definiert (USAGE_TYPE dort nur 0=Keine, 1=Temperatur) — bei Bool-/String-Variablen und in Enumerationen entfernt; fälschlich als "Temperatur" (1) deklarierte Messwerte (Luftfeuchte, Beleuchtung, Luftqualität, Batterie) auf 0 korrigiert. Die Lautstärke-Slider nutzen jetzt USAGE_TYPE 3 (Lautstärke).
 
 ## Version 2.0 (2026-08-04)
 
