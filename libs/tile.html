@@ -1,0 +1,447 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/icons.js"></script>
+<style>
+    :root {
+        /* --accent-color, --content-color und --card-color liefert das HTML-SDK. */
+        --on-accent: #101114;
+        --ok: #19d400;
+        --warn: #f5b800;
+        --err: #f55143;
+        --muted: rgba(128, 128, 128, .95);
+        --muted: color-mix(in srgb, var(--content-color) 62%, transparent);
+        --track: rgba(128, 128, 128, .22);
+        --track: color-mix(in srgb, var(--content-color) 14%, transparent);
+        --line: rgba(128, 128, 128, .18);
+        --line: color-mix(in srgb, var(--content-color) 10%, transparent);
+        --ok-text: var(--ok);
+        --ok-text: color-mix(in srgb, var(--ok) 78%, var(--content-color));
+        --warn-text: var(--warn);
+        --warn-text: color-mix(in srgb, var(--warn) 72%, var(--content-color));
+        --err-text: var(--err);
+        --err-text: color-mix(in srgb, var(--err) 85%, var(--content-color));
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+    /* Die Raender des HTML-SDK werden zu Padding, damit die Hoehe der Kachel bekannt ist. */
+    body { margin: 0 !important; }
+    #t { height: 100%; display: flex; flex-direction: column; gap: .6em; overflow: hidden; }
+    .hid { display: none !important; }
+    .narrow .wide-only { display: none !important; }
+    .off > * { opacity: .55; }
+    .off > .head { opacity: 1; }
+
+    .head { display: flex; align-items: center; gap: .7em; min-width: 0; padding-right: 1.6em; flex: none; }
+    .ic { position: relative; font-size: 1.3em; width: 1.3em; text-align: center; flex: none; line-height: 1; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+    .ic .dot { position: absolute; right: -4px; bottom: -3px; box-shadow: 0 0 0 2px var(--card-color); }
+    .ok { background: var(--ok); }
+    .warn { background: var(--warn); }
+    .err { background: var(--err); }
+    .ht { min-width: 0; line-height: 1.25; }
+    .ht div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sub { font-size: .78em; color: var(--muted); }
+    /* Symcon zeichnet Icon und Name selbst, wenn die Kachel eine Titelzeile hat. */
+    .head .inline-dot { display: none; }
+    .titled .head { gap: .45em; }
+    .titled .head .ic, .titled .head .name { display: none; }
+    .titled .head .inline-dot { display: inline-block; }
+    .narrow:not(.titled) .sub { display: none; }
+
+    .kpis { display: flex; gap: .55em; flex: none; }
+    .kpi { flex: 1 1 0; min-width: 0; line-height: 1.15; }
+    .kpi .v { font-size: 1.55em; white-space: nowrap; }
+    .kpi .v small { font-size: .55em; color: var(--muted); }
+    .kpi .l { font-size: .74em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .txtok { color: var(--ok-text); }
+    .txtwarn { color: var(--warn-text); }
+    .txterr { color: var(--err-text); }
+
+    .bars { display: flex; gap: 1em; flex: none; }
+    .narrow .bars { flex-direction: column; gap: .35em; }
+    .barx { flex: 1 1 0; min-width: 0; }
+    #t > .barx { flex: none; }
+    .barx .r { display: flex; justify-content: space-between; gap: .5em; font-size: .76em; line-height: 1.35; color: var(--muted); }
+    .barx .r span { white-space: nowrap; }
+    .barx .r span:last-child { color: var(--content-color); }
+    .track { height: 5px; border-radius: 3px; background: var(--track); overflow: hidden; margin-top: 2px; }
+    .track i { display: block; height: 100%; background: var(--accent-color); border-radius: 3px; }
+    .track i.warn { background: var(--warn); }
+    .track i.err { background: var(--err); }
+
+    .rings { display: flex; gap: 1em; align-items: center; flex: none; }
+    .ring { position: relative; width: 62px; height: 62px; flex: none; }
+    .ring svg { transform: rotate(-90deg); display: block; }
+    .ring .bg { stroke: var(--track); }
+    .ring .fg { stroke: var(--accent-color); }
+    .ring .fg.warn { stroke: var(--warn); background: none; }
+    .ring .fg.err { stroke: var(--err); background: none; }
+    .ring div { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; font-size: .86em; }
+    .ring small { font-size: .72em; color: var(--muted); }
+    .short .for-tall { display: none !important; }
+    body:not(.short) .for-short { display: none !important; }
+
+    .rows { display: flex; flex-direction: column; flex: none; }
+    .row { display: flex; justify-content: space-between; gap: .85em; padding: .28em 0; border-top: 1px solid var(--line); font-size: .85em; line-height: 1.3; }
+    .row.first { border-top: 0; }
+    .row span:first-child { color: var(--muted); white-space: nowrap; }
+    .row span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .state { display: flex; align-items: center; justify-content: space-between; gap: .7em; flex: none; line-height: 1.2; }
+    .state .big { font-size: 1.5em; }
+    .toggle { width: 42px; height: 24px; border-radius: 12px; border: 0; background: var(--track); position: relative; cursor: pointer; flex: none; padding: 0; }
+    .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--content-color); transition: left .15s; }
+    .toggle[aria-checked=true] { background: var(--accent-color); }
+    .toggle[aria-checked=true]::after { left: 21px; background: var(--on-accent); }
+    .toggle.armed { outline: 2px solid var(--err); outline-offset: 2px; }
+    .chips { display: flex; gap: 5px; flex-wrap: wrap; flex: none; }
+    .chip { font-size: .74em; padding: 2px 7px; border-radius: 10px; background: var(--track); white-space: nowrap; border: 0; color: var(--content-color); font-family: inherit; }
+    .chip.on { background: var(--accent-color); color: var(--on-accent); }
+    .chip.warn { background: var(--warn); color: #1a1400; }
+    button.chip { cursor: pointer; }
+
+    .btn { border: 0; border-radius: 8px; padding: .5em .8em; font: inherit; font-size: .85em; background: var(--track); color: var(--content-color); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: .5em; min-width: 0; }
+    .btn i { color: var(--accent-color); }
+    .btn.busy { opacity: .6; }
+    .btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hooks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex: none; }
+    .narrow .hooks { grid-template-columns: 1fr; }
+
+    .evs { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; overflow: hidden; }
+    .ev { display: flex; align-items: center; gap: .55em; padding: .28em 0; border-top: 1px solid var(--line); font-size: .85em; line-height: 1.3; min-width: 0; }
+    .ev.first { border-top: 0; }
+    .ev .d { min-width: 0; flex: 1; }
+    .ev .d div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ev .d .s { font-size: .78em; color: var(--muted); }
+    .ev .rt { font-size: .78em; color: var(--muted); white-space: nowrap; }
+
+    .foot { margin-top: auto; display: flex; gap: .85em; align-items: center; font-size: .76em; color: var(--muted); white-space: nowrap; overflow: hidden; flex: none; }
+    .foot span { display: inline-flex; align-items: center; gap: 4px; }
+    .foot .ell { display: block; overflow: hidden; text-overflow: ellipsis; }
+    .empty { margin: auto; text-align: center; color: var(--muted); font-size: .9em; }
+</style>
+
+<div id="t"></div>
+
+<script>
+    // Initialer Zustand der Instanz; danach pusht das Modul den kompletten Zustand als JSON.
+    let state = /*INITIAL_STATE*/null;
+
+    const params = new URLSearchParams(window.location.search);
+    const px = (name, fallback) => {
+        const value = parseFloat(params.get(name));
+        return isNaN(value) ? fallback : value;
+    };
+    const padTop = px('margintop', 15), padSide = px('marginside', 15), padBottom = px('marginbottom', 15);
+    const box = document.getElementById('t');
+    box.style.padding = `${padTop}px ${padSide}px ${padBottom}px`;
+    // Die Visualisierung reserviert einen groesseren oberen Rand, wenn sie selbst eine Titelzeile zeichnet.
+    if (padTop >= 40) {
+        document.body.classList.add('titled');
+    }
+    const accent = (params.get('accentcolor') || '00cdab').padStart(6, '0');
+    const accentValue = parseInt(accent, 16);
+    const luminance = (.299 * (accentValue >> 16) + .587 * (accentValue >> 8 & 255) + .114 * (accentValue & 255)) / 255;
+    document.documentElement.style.setProperty('--on-accent', luminance > .5 ? '#101114' : '#ffffff');
+
+    const T = (text) => (typeof translate === 'function' ? translate(text) : text);
+    // Namen kommen vom Controller (Geraetenamen etc.) und duerfen nie als Markup interpretiert werden.
+    const E = (text) => String(text ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = (value, digits = 0) => Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    const icon = (name) => `<i class="fa-light fa-${name}"></i>`;
+    const has = (value) => value !== undefined && value !== null && value !== '';
+    const clamp = (value) => Math.max(0, Math.min(100, Number(value) || 0));
+
+    function duration(seconds) {
+        const s = Math.max(0, Math.floor(seconds)), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+        if (d > 0) {
+            return `${d} ${T('d')} ${h} ${T('h')}`;
+        }
+        return h > 0 ? `${h} ${T('h')} ${m} ${T('min')}` : `${m} ${T('min')}`;
+    }
+    const since = (seconds) => T('since %s').replace('%s', duration(seconds));
+
+    const head = (iconName, name, sub, status = 'ok') => `<div class="head">
+        <div class="ic">${icon(iconName)}<span class="dot ${status}"></span></div>
+        <div class="ht"><div class="name">${E(name)}</div><div class="sub"><span class="dot inline-dot ${status}"></span> ${E(sub)}</div></div>
+    </div>`;
+    const kpis = (items) => `<div class="kpis">${items.map(([value, label, cls = '']) => `<div class="kpi ${cls}"><div class="v">${value}</div><div class="l">${E(label)}</div></div>`).join('')}</div>`;
+    const bar = (label, percent, text, cls) => `<div class="barx"><div class="r"><span>${E(label)}</span><span>${E(text ?? `${num(percent)} %`)}</span></div><div class="track"><i class="${cls ?? ''}" style="width:${clamp(percent)}%"></i></div></div>`;
+    function ring(label, text, percent, cls = '') {
+        const c = 2 * Math.PI * 26;
+        return `<div class="ring"><svg width="62" height="62"><circle class="bg" cx="31" cy="31" r="26" fill="none" stroke-width="5"/><circle class="fg ${cls}" cx="31" cy="31" r="26" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c * clamp(percent) / 100} ${c}"/></svg><div>${E(text)}<small>${E(label)}</small></div></div>`;
+    }
+    // Zeilen ohne Wert entfallen; die erste sichtbare Zeile hat keine Trennlinie.
+    const rows = (items) => `<div class="rows">${items.filter((r) => has(r[1])).map(([key, value, p], i) => `<div class="row ${i === 0 ? 'first' : ''}" ${p ? `data-p="${p}"` : ''}><span>${E(key)}</span><span>${value}</span></div>`).join('')}</div>`;
+    const onOff = (value) => (value === undefined || value === null ? '' : `<span class="${value ? 'txtok' : ''}">${E(T(value ? 'On' : 'Off'))}</span>`);
+
+    // Verbindungsstatus der Protect-Geraete
+    const connState = (s) => ({ CONNECTED: 'ok', CONNECTING: 'warn' }[s] || 'err');
+    const connLabel = (s) => T({ CONNECTED: 'Connected', CONNECTING: 'Connecting', DISCONNECTED: 'Disconnected' }[s] || (s || 'Disconnected'));
+
+    const deviceIcons = {
+        'Camera': 'camera-cctv', 'UP-Sense': 'sensor', 'UP-AirQuality': 'wind',
+        'Chime': 'bell', 'Light': 'lightbulb', 'Speaker': 'speaker', 'Viewer': 'display'
+    };
+
+    function renderDevice(d) {
+        const type = d.type || 'Camera';
+        const sub = [d.model, connLabel(d.state)].filter(has).join(' · ');
+        let body = '';
+        if (type === 'Camera') {
+            const items = [];
+            if (has(d.micVolume)) {
+                items.push([`${num(d.micVolume)}<small> %</small>`, T('Microphone Volume')]);
+            }
+            if (d.micEnabled !== undefined && d.micEnabled !== null) {
+                items.push([`<span class="${d.micEnabled ? 'txtok' : ''}">${E(T(d.micEnabled ? 'On' : 'Off'))}</span>`, T('Microphone'), 'wide-only']);
+            }
+            if (items.length) {
+                body += kpis(items);
+            }
+            body += rows([[T('LCD Message'), has(d.lcdMessage) ? E(d.lcdMessage) : '', 3]]);
+            body += `<div data-p="2"><button class="btn" data-snapshot>${icon('camera-polaroid')}<span>${E(T('Create snapshot'))}</span></button></div>`;
+        } else if (type === 'Speaker') {
+            const statusLabels = { idle: 'Idle', streaming: 'Streaming', playing: 'Playing', tts_playing: 'TTS Playing', uploading: 'Uploading' };
+            body += `<div class="state"><span class="big ${['streaming', 'playing', 'tts_playing'].includes(d.speakerStatus) ? 'txtok' : ''}">${E(T(statusLabels[d.speakerStatus] || d.speakerStatus || 'Idle'))}</span></div>`;
+            const items = [];
+            if (has(d.volume)) {
+                items.push([`${num(d.volume)}<small> %</small>`, T('Volume')]);
+            }
+            if (has(d.micVolume)) {
+                items.push([`${num(d.micVolume)}<small> %</small>`, T('Microphone Volume'), 'wide-only']);
+            }
+            if (items.length) {
+                body += `<div data-p="2">${kpis(items)}</div>`;
+            }
+            body += rows([
+                [T('Microphone'), onOff(d.micEnabled), 3],
+                [T('Speaker Mode'), has(d.speakerMode) ? E(T(d.speakerMode === 'talk' ? 'Talk' : 'Listen')) : '', 4]
+            ]);
+        } else if (type === 'UP-Sense') {
+            const items = [];
+            if (has(d.temperature)) {
+                items.push([`${num(d.temperature, 1)}<small> °C</small>`, T('Temperature')]);
+            }
+            if (has(d.humidity)) {
+                items.push([`${num(d.humidity)}<small> %</small>`, T('Humidity')]);
+            }
+            if (has(d.illuminance)) {
+                items.push([`${num(d.illuminance)}<small> lx</small>`, T('Illuminance'), 'wide-only']);
+            }
+            if (items.length) {
+                body += kpis(items);
+            }
+            if (has(d.battery)) {
+                body += bar(T('Battery'), d.battery, `${num(d.battery)} %`, d.battery <= 15 ? 'err' : (d.battery <= 30 ? 'warn' : ''));
+            }
+        } else if (type === 'UP-AirQuality') {
+            const aqiCls = d.aqi >= 150 ? 'err' : (d.aqi >= 100 ? 'warn' : '');
+            const items = [];
+            if (has(d.co2)) {
+                items.push([`${num(d.co2)}<small> ppm</small>`, 'CO2']);
+            }
+            if (has(d.pm25)) {
+                items.push([`${num(d.pm25, 1)}<small> µg/m³</small>`, 'PM2.5', 'wide-only']);
+            }
+            if (has(d.aqi)) {
+                body += `<div class="rings">${ring(T('Air Quality Index'), num(d.aqi), d.aqi / 500 * 100, aqiCls)}${items.length ? kpis(items) : ''}</div>`;
+            } else if (items.length) {
+                body += kpis(items);
+            }
+            const climate = [];
+            if (has(d.temperature)) {
+                climate.push([`${num(d.temperature, 1)}<small> °C</small>`, T('Temperature')]);
+            }
+            if (has(d.humidity)) {
+                climate.push([`${num(d.humidity)}<small> %</small>`, T('Humidity')]);
+            }
+            if (climate.length) {
+                body += `<div data-p="2">${kpis(climate)}</div>`;
+            }
+            body += rows([
+                [T('Vape Index'), has(d.vape) ? num(d.vape) : '', 3],
+                ['TVOC', has(d.tvoc) ? `${num(d.tvoc)} ppb` : '', 4],
+                ['VOC', has(d.voc) ? num(d.voc) : '', 5],
+                ['PM1.0', has(d.pm1) ? `${num(d.pm1, 1)} µg/m³` : '', 5],
+                ['PM4.0', has(d.pm4) ? `${num(d.pm4, 1)} µg/m³` : '', 6],
+                ['PM10', has(d.pm10) ? `${num(d.pm10, 1)} µg/m³` : '', 6]
+            ]);
+        } else {
+            // Chime, Light, ...
+            body += `<div class="state"><span class="big ${connState(d.state) === 'ok' ? 'txtok' : 'txterr'}">${E(connLabel(d.state))}</span></div>`;
+        }
+        return head(deviceIcons[type] || 'circle-nodes', d.name || type, sub, connState(d.state)) + body + '<div class="foot"></div>';
+    }
+
+    const eventLabels = {
+        motion: 'Motion', smartDetectZone: 'Smart Detection', smartDetectLine: 'Line crossing',
+        smartDetectLoiterZone: 'Loitering', smartAudioDetect: 'Audio detection', ring: 'Ring',
+        sensorMotion: 'Sensor motion', sensorExtremeValues: 'Extreme values', sensorWaterLeak: 'Water leak',
+        sensorTamper: 'Tamper', sensorBatteryLow: 'Battery low', sensorAlarm: 'Alarm',
+        sensorOpened: 'Opened', sensorClosed: 'Closed', sensorSmokeTest: 'Smoke test', lightMotion: 'Light motion'
+    };
+    const eventLabel = (type) => T(eventLabels[type] || type);
+
+    function renderEvents(s) {
+        const events = s.events || [];
+        const active = events.length > 0;
+        const sub = active ? `${num(events.length)} ${T(events.length === 1 ? 'active event' : 'active events')}` : T('No active events');
+        let body = kpis([[`<span class="${active ? 'txtwarn' : ''}">${num(events.length)}</span>`, T('Active events')]]);
+        if (active) {
+            const now = Date.now() / 1000;
+            body += `<div class="evs">${events.slice(0, 8).map((ev, i) => `<div class="ev ${i === 0 ? 'first' : ''}">
+                <span class="dot warn"></span>
+                <div class="d"><div>${E(eventLabel(ev.type))}</div><div class="s">${E(ev.device || '')}</div></div>
+                ${ev.start > 0 ? `<span class="rt">${E(since(now - ev.start))}</span>` : ''}</div>`).join('')}</div>`;
+        }
+        const globals = (s.globals || []);
+        if (globals.length) {
+            body += `<div class="chips wide-only" data-p="3">${globals.map((g) => `<span class="chip ${g.active ? 'warn' : ''}">${E(eventLabel(g.type))}</span>`).join('')}</div>`;
+        }
+        return head('sensor', s.name || 'UniFi Protect', sub, active ? 'warn' : 'ok') + body + '<div class="foot"></div>';
+    }
+
+    function renderAlarm(a) {
+        const status = String(a.status || '').toLowerCase();
+        const statusMap = {
+            disabled: ['Disarmed', '', 'err'],
+            arming: ['Arming', 'txtwarn', 'warn'],
+            armed: ['Armed', 'txtok', 'ok'],
+            disarming: ['Disarming', 'txtwarn', 'warn'],
+            breach: ['Breach', 'txterr', 'err']
+        };
+        const [label, cls, dot] = statusMap[status] || [a.status || '—', '', 'err'];
+        const armed = a.armed === true;
+        let body = `<div class="state"><div><span class="big ${cls}" id="alarmState">${E(T(label))}</span>
+            ${a.armedAt > 0 && armed ? `<div class="sub">${E(since(Date.now() / 1000 - a.armedAt))}</div>` : ''}</div>
+            <button class="toggle" role="switch" aria-checked="${armed}" aria-label="Alarm"></button></div>`;
+        if (a.breach) {
+            body += `<div class="state"><span class="txterr">${icon('triangle-exclamation')} ${E(T('Breach detected'))}</span></div>`;
+        }
+        const profiles = a.profiles || [];
+        if (profiles.length) {
+            // Profilwechsel nur im unscharfen Zustand anbieten
+            body += `<div class="chips" data-p="2">${profiles.map((p) => `<button class="chip ${p.id === a.currentProfile ? 'on' : ''}" data-profile="${E(p.id)}" ${armed ? 'disabled' : ''}>${E(p.name)}</button>`).join('')}</div>`;
+        }
+        body += rows([[T('Active Profile'), has(a.profile) ? E(a.profile) : '', 3]]);
+        return head('shield-halved', a.name || 'Alarm', [T('Alarm Profile'), has(a.profile) ? a.profile : ''].filter(has).join(': '), dot) + body + '<div class="foot"></div>';
+    }
+
+    function renderWebhooks(w) {
+        const hooks = w.hooks || [];
+        const sub = `${num(hooks.length)} ${T(hooks.length === 1 ? 'webhook' : 'webhooks')}`;
+        let body;
+        if (hooks.length) {
+            body = `<div class="hooks">${hooks.map((h) => `<button class="btn" data-hook="${E(h.ident)}">${icon('bell-ring')}<span>${E(h.name)}</span></button>`).join('')}</div>`;
+        } else {
+            body = `<div class="empty">${E(T('No webhooks configured'))}</div>`;
+        }
+        return head('bell-ring', w.name || 'Webhooks', sub, hooks.length ? 'ok' : 'warn') + body + '<div class="foot"></div>';
+    }
+
+    const renderers = { device: renderDevice, events: renderEvents, alarm: renderAlarm, webhooks: renderWebhooks };
+
+    function render() {
+        if (!state || !state.kind || !renderers[state.kind]) {
+            return;
+        }
+        if (state.inactive) {
+            box.innerHTML = `<div class="empty">${E(T('Instance inactive'))}</div>`;
+            return;
+        }
+        if (state.kind === 'device' && !state.name && !state.model) {
+            box.innerHTML = `<div class="empty">${E(T('No data yet'))}</div>`;
+            return;
+        }
+        box.innerHTML = renderers[state.kind](state);
+        box.classList.toggle('off', state.kind === 'device' && connState(state.state) === 'err');
+        fit();
+    }
+
+    // Passt den Inhalt in die Kachel ein: erst die Groessenklassen, dann wird alles,
+    // was mit data-p markiert ist, ausgeblendet (hoechste Zahl zuerst), bis nichts mehr ueberlaeuft.
+    function fit() {
+        const width = box.clientWidth - padSide * 2, height = box.clientHeight - padTop - padBottom;
+        document.body.classList.toggle('narrow', width < 200);
+        document.body.classList.toggle('short', height < 200);
+        box.querySelectorAll('.hid').forEach((e) => e.classList.remove('hid'));
+        const overflow = () => box.scrollHeight > box.clientHeight + 1;
+        const steps = [...new Set([...box.querySelectorAll('[data-p]')].map((e) => Number(e.dataset.p)))].sort((a, b) => b - a);
+        for (const step of steps) {
+            if (!overflow()) {
+                break;
+            }
+            const items = [...box.querySelectorAll(`[data-p="${step}"]`)].reverse();
+            for (const item of items) {
+                if (!overflow()) {
+                    break;
+                }
+                item.classList.add('hid');
+            }
+        }
+    }
+
+    window.handleMessage = (data) => {
+        state = typeof data === 'string' ? JSON.parse(data) : data;
+        render();
+    };
+
+    let armTimer = null;
+    box.addEventListener('click', (event) => {
+        const snapshotButton = event.target.closest('[data-snapshot]');
+        if (snapshotButton) {
+            if (!snapshotButton.classList.contains('busy')) {
+                snapshotButton.classList.add('busy');
+                snapshotButton.querySelector('span').textContent = T('Creating snapshot...');
+                requestAction('snapshot', 1);
+                setTimeout(render, 8000);
+            }
+            return;
+        }
+        const hookButton = event.target.closest('[data-hook]');
+        if (hookButton) {
+            if (!hookButton.classList.contains('busy')) {
+                hookButton.classList.add('busy');
+                requestAction(hookButton.dataset.hook, 1);
+                setTimeout(() => hookButton.classList.remove('busy'), 3000);
+            }
+            return;
+        }
+        const profileChip = event.target.closest('[data-profile]');
+        if (profileChip && !profileChip.disabled) {
+            box.querySelectorAll('[data-profile]').forEach((c) => c.classList.toggle('on', c === profileChip));
+            requestAction('CurrentProfile', profileChip.dataset.profile);
+            return;
+        }
+        const toggle = event.target.closest('.toggle');
+        if (toggle) {
+            const armed = toggle.getAttribute('aria-checked') === 'true';
+            // Scharf-/Unscharfschalten ist sicherheitsrelevant: einmal bestaetigen lassen.
+            if (!toggle.classList.contains('armed')) {
+                toggle.classList.add('armed');
+                document.getElementById('alarmState').textContent = T(armed ? 'Tap again to disarm' : 'Tap again to arm');
+                fit();
+                clearTimeout(armTimer);
+                armTimer = setTimeout(render, 4000);
+                return;
+            }
+            clearTimeout(armTimer);
+            toggle.classList.remove('armed');
+            toggle.setAttribute('aria-checked', String(!armed));
+            document.getElementById('alarmState').textContent = T(armed ? 'Disarming' : 'Arming');
+            requestAction('Armed', !armed);
+        }
+    });
+
+    window.addEventListener('resize', fit);
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(fit);
+    }
+    // Laufzeiten (Events aktiv seit, Alarm scharf seit) laufen zwischen zwei Updates weiter.
+    setInterval(() => {
+        if (state && (state.kind === 'events' || state.kind === 'alarm')) {
+            render();
+        }
+    }, 60000);
+    render();
+</script>

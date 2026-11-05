@@ -1,13 +1,19 @@
 <?php
 
 declare(strict_types=1);
+
+require_once __DIR__ . '/../libs/UnifiProtectTile.php';
+
 	class UnifiProtectEvents extends IPSModuleStrict
 	{
+		use UnifiProtectTile;
+
 		public const DEFAULT_WS_URL = '192.168.1.1';
 		public function Create():void
 		{
 			//Never delete this line!
-			parent::Create();		
+			parent::Create();
+			$this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
 			$this->RegisterPropertyString( 'ServerAddress', '192.168.178.1' );
 			$this->RegisterPropertyString( 'APIKey', '' );
 			$this->RegisterPropertyString( 'SmartDetectSelections', '[]' );
@@ -48,6 +54,7 @@ declare(strict_types=1);
 		{
 			//Never delete this line!
 			parent::ApplyChanges();
+			$this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
 			$this->SetSummary($this->ReadPropertyString('ServerAddress'));
 			$this->MaintainVariable( 'motionGlobal',  $this->Translate('global motion detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON'=> 'sensor','OPTIONS'=>'[{"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123},{"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672}]'], 0, $this->ReadPropertyBoolean('motionGlobal'));
 			$this->MaintainVariable( 'smartGlobal',  $this->Translate('global smart detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON'=> 'sensor','OPTIONS'=>'[{"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123},{"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672}]'], 0, $this->ReadPropertyBoolean('smartGlobal'));
@@ -149,6 +156,8 @@ declare(strict_types=1);
 			}
 			$this->SetBuffer("activeEvents", json_encode($activeEvents));
 			$this->SendDebug('UNIFIPEV',json_encode($activeEvents),0);
+			// Kachel (HTML-SDK) mit der aktuellen Ereignisliste aktualisieren
+			$this->TileUpdate($this->TileFromEvents($activeEvents));
 			// Logik für Smart Detection Events
 			$allowedTypes = ['smartDetectZone', 'motion', 'sensorMotion', 'smartDetectLine', 'smartAudioDetect', 'ring', 'sensorExtremeValues', 'sensorWaterLeak', 'sensorTamper', 'sensorBatteryLow', 'sensorAlarm', 'sensorOpened', 'sensorClosed', 'sensorSmokeTest', 'lightMotion', 'smartDetectLoiterZone'];
 			if (!in_array($type, $allowedTypes, true)) {
@@ -827,6 +836,82 @@ declare(strict_types=1);
 				}
 			}
 			return array_values(array_unique($activeTypes));
+		}
+
+		private function TileKind(): string
+		{
+			return 'events';
+		}
+
+		private function TileRefresh(): void
+		{
+			$this->TileUpdate($this->TileFromEvents());
+		}
+
+		// Baut den Kachel-Zustand aus den aktiven Events und den aktivierten globalen Typen.
+		private function TileFromEvents(?array $activeEvents = null): array
+		{
+			if ($activeEvents === null) {
+				$activeEvents = json_decode($this->GetBuffer('activeEvents'), true);
+				if (!is_array($activeEvents)) {
+					$activeEvents = [];
+				}
+			}
+			$names = $this->getTileDeviceNameMap();
+			$events = [];
+			foreach ($activeEvents as $storedEvent) {
+				if (!is_array($storedEvent)) {
+					continue;
+				}
+				foreach ($storedEvent as $details) {
+					if (!is_array($details)) {
+						continue;
+					}
+					$deviceID = (string)($details['deviceID'] ?? '');
+					$events[] = [
+						'type'   => (string)($details['type'] ?? ''),
+						'device' => $names[$deviceID] ?? '',
+						// Protect liefert Millisekunden
+						'start'  => isset($details['Start']) ? intdiv((int)$details['Start'], 1000) : 0
+					];
+				}
+			}
+			$globalMap = [
+				'motionGlobal' => 'motion', 'smartGlobal' => 'smartDetectZone', 'sensorGlobal' => 'sensorMotion',
+				'lineGlobal' => 'smartDetectLine', 'smartAudioGlobal' => 'smartAudioDetect', 'ringGlobal' => 'ring',
+				'sensorExtremeValuesGlobal' => 'sensorExtremeValues', 'sensorWaterLeakGlobal' => 'sensorWaterLeak',
+				'sensorTamperGlobal' => 'sensorTamper', 'sensorBatteryLowGlobal' => 'sensorBatteryLow',
+				'sensorAlarmGlobal' => 'sensorAlarm', 'sensorOpenedGlobal' => 'sensorOpened',
+				'sensorClosedGlobal' => 'sensorClosed', 'lightMotionGlobal' => 'lightMotion',
+				'smartDetectLoiterZoneGlobal' => 'smartDetectLoiterZone'
+			];
+			$activeTypes = array_column($events, 'type');
+			$globals = [];
+			foreach ($globalMap as $property => $type) {
+				if ($this->ReadPropertyBoolean($property)) {
+					$globals[] = ['type' => $type, 'active' => in_array($type, $activeTypes, true)];
+				}
+			}
+			return [
+				'name'    => IPS_GetName($this->InstanceID),
+				'events'  => $events,
+				'globals' => $globals
+			];
+		}
+
+		// Geraete-IDs -> Namen aus der konfigurierten Event-Auswahl (fuer die Anzeige in der Kachel)
+		private function getTileDeviceNameMap(): array
+		{
+			$rows = json_decode($this->ReadPropertyString('SmartDetectSelections'), true);
+			$map = [];
+			if (is_array($rows)) {
+				foreach ($rows as $row) {
+					if (is_array($row) && isset($row['CameraID'], $row['CameraName'])) {
+						$map[(string)$row['CameraID']] = (string)$row['CameraName'];
+					}
+				}
+			}
+			return $map;
 		}
 
 		private function normalizeEventType(string $type): string

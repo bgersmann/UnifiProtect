@@ -8,7 +8,12 @@
             "Webhook ID": "Webhook-ID",
             "Ausführen...": "Ausführen...",
             "Wird ausgeführt...": "Wird ausgeführt...",
-            "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!": "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!"
+            "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!": "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!",
+            "webhook": "Webhook",
+            "webhooks": "Webhooks",
+            "No webhooks configured": "Keine Webhooks konfiguriert",
+            "Instance inactive": "Instanz inaktiv",
+            "No data yet": "Noch keine Daten"
         },
         "en": {
             "UniFi Protect Webhooks": "UniFi Protect Webhooks",

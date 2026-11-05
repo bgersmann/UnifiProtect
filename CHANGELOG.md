@@ -1,5 +1,18 @@
 # Changelog
 
+## Version 2.2 (2026-11-05)
+
+### HTML-Kacheln für die Kachel-Visualisierung
+
+Alle Geräteinstanzen liefern jetzt eine eigene HTML-Kachel (HTML-SDK, `GetVisualizationTile`), im Design an die Symcon-Kachelvisualisierung angelehnt (gleicher Ansatz wie im UnifiNet-Modul). Gemeinsame Basis: `libs/tile.html` + Trait `libs/UnifiProtectTile.php`; Updates werden per `UpdateVisualizationValue` live an offene Visualisierungen gepusht.
+
+**Neu:**
+
+- **UnifiProtectDevice:** Kachel je nach Gerätetyp — Kamera (Verbindungsstatus, Mikrofon, LCD-Nachricht, Schnappschuss-Button), Speaker (Status, Lautstärken, Modus), UP-Sense (Temperatur, Luftfeuchte, Beleuchtung, Batterie-Balken), UP-AirQuality (AQI-Ring, CO2, PM2.5, weitere Messwerte), Chime/Light (Verbindungsstatus). Datenquelle sind die ohnehin eintreffenden WebSocket-/REST-Updates.
+- **UnifiProtectEvents:** Kachel mit Anzahl und Liste der aktiven Ereignisse (Typ, Gerät, Dauer) sowie Chips für die aktivierten globalen Ereignistypen.
+- **UnifiProtectAlarmProfiles:** Kachel mit Alarm-Status (Unscharf/Scharf/Auslösung …), Schalter zum Scharf-/Unscharfschalten (mit Bestätigung durch zweites Tippen), Profil-Auswahl per Chips und "scharf seit".
+- **UnifiWebhook:** Kachel mit einem Button je konfiguriertem Webhook zum direkten Auslösen.
+
 ## Version 2.1 (2026-10-25)
 
 **Behoben:**

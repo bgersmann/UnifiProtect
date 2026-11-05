@@ -53,7 +53,32 @@
             "Variable ident":"Variablen-Ident",
             "Create variable":"Variable erstellen",
             "No compatible devices found or API connection failed.":"Keine kompatiblen Geräte gefunden oder API-Verbindung fehlgeschlagen.",
-            "API Error":"API Fehler"
+            "API Error":"API Fehler",
+            "Active events": "Aktive Ereignisse",
+            "active event": "aktives Ereignis",
+            "active events": "aktive Ereignisse",
+            "No active events": "Keine aktiven Ereignisse",
+            "Motion": "Bewegung",
+            "Line crossing": "Linienüberschreitung",
+            "Loitering": "Verweilen",
+            "Audio detection": "Audioerkennung",
+            "Ring": "Klingel",
+            "Sensor motion": "Sensor-Bewegung",
+            "Extreme values": "Grenzwerte",
+            "Water leak": "Wasseralarm",
+            "Tamper": "Sabotage",
+            "Battery low": "Batterie schwach",
+            "Alarm": "Alarm",
+            "Opened": "Geöffnet",
+            "Closed": "Geschlossen",
+            "Smoke test": "Rauchtest",
+            "Light motion": "Licht-Bewegung",
+            "Instance inactive": "Instanz inaktiv",
+            "No data yet": "Noch keine Daten",
+            "d": "T",
+            "h": "Std",
+            "min": "Min",
+            "since %s": "seit %s"
         }
     }
 }

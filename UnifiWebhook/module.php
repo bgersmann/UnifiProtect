@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libs/UnifiProtectTile.php';
+
 // CLASS UnifiWebhook
 class UnifiWebhook extends IPSModuleStrict
 {
+    use UnifiProtectTile;
+
     /**
      * In contrast to Construct, this function is called only once when creating the instance and starting IP-Symcon.
      * Therefore, status variables and module properties which the module requires permanently should be created here.
@@ -13,6 +17,7 @@ class UnifiWebhook extends IPSModuleStrict
     {
         //Never delete this line!
         parent::Create();
+        $this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
         $this->RegisterPropertyString( 'webhooks', '[]' );
         $this->RegisterAttributeString('webhooksOld', '[]'); 
         
@@ -47,8 +52,9 @@ class UnifiWebhook extends IPSModuleStrict
      * Is executed when "Apply" is pressed on the configuration page and immediately after the instance has been created.
      */
     public function ApplyChanges():void
-    {       
+    {
         parent::ApplyChanges();
+        $this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
         $webhooksOldArr = json_decode($this->ReadAttributeString('webhooksOld'), true);
         if (!is_array($webhooksOldArr)) {
             $webhooksOldArr = [];
@@ -92,8 +98,42 @@ class UnifiWebhook extends IPSModuleStrict
         $this->WriteAttributeString('webhooksOld', $this->ReadPropertyString('webhooks'));
         $this->SendDebug(__FUNCTION__, $this->ReadPropertyString('webhooks'), 0);
 
+        // Kachel (HTML-SDK) mit der aktuellen Webhook-Liste aktualisieren
+        $this->TileUpdate($this->TileFromConfig());
+
         // Set status
         $this->SetStatus(102);
+    }
+
+    private function TileKind(): string
+    {
+        return 'webhooks';
+    }
+
+    private function TileRefresh(): void
+    {
+        $this->TileUpdate($this->TileFromConfig());
+    }
+
+    private function TileFromConfig(): array
+    {
+        $hooks = [];
+        $webhooksArr = json_decode($this->ReadPropertyString('webhooks'), true);
+        if (is_array($webhooksArr)) {
+            foreach ($webhooksArr as $webhook) {
+                if (!isset($webhook['Name'], $webhook['WebhookID'])) {
+                    continue;
+                }
+                $hooks[] = [
+                    'ident' => $webhook['Name'] . str_replace('-', '_', $webhook['WebhookID']),
+                    'name'  => $webhook['Name']
+                ];
+            }
+        }
+        return [
+            'name'  => IPS_GetName($this->InstanceID),
+            'hooks' => $hooks
+        ];
     }
 
 

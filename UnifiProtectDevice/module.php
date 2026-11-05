@@ -1,8 +1,13 @@
 <?php
 
 declare(strict_types=1);
+
+require_once __DIR__ . '/../libs/UnifiProtectTile.php';
+
 	class UnifiProtectDevice extends IPSModuleStrict
 	{
+		use UnifiProtectTile;
+
 		// Fallback-Abfrageintervall in Sekunden: faengt verpasste WebSocket-Updates ab (Downtime etc.)
 		private const FALLBACK_SYNC_SEC = 3600;
 
@@ -10,6 +15,7 @@ declare(strict_types=1);
 		{
 			//Never delete this line!
 			parent::Create();
+			$this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
 			$this->RegisterPropertyString( 'DeviceType', 'Camera' );
 			$this->RegisterPropertyString( 'ID', '' );
 			$this->RegisterPropertyBoolean( 'StreamLow', false );
@@ -49,6 +55,7 @@ declare(strict_types=1);
 		{
 			//Never delete this line!
 			parent::ApplyChanges();
+			$this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
 			// Broadcasts vom Gateway schon im Kernel vorfiltern:
 			// nur Pakete mit eigener Geraete-ID oder fullSync erreichen ReceiveData
 			$filterID = $this->ReadPropertyString('ID');
@@ -328,6 +335,7 @@ declare(strict_types=1);
 			$this->SendDebug("UnifiPDevice", "WS-Update (" . ($message['type'] ?? '?') . "): " . json_encode($message['item']), 0);
 			if (($message['type'] ?? '') === 'remove') {
 				$this->SetValue('State', 'DISCONNECTED');
+				$this->TileUpdate(['state' => 'DISCONNECTED']);
 				return '';
 			}
 			$this->processDeviceData($message['item']);
@@ -438,6 +446,105 @@ declare(strict_types=1);
 			if (isset($deviceData['id']) && $this->ReadPropertyBoolean("IDAnzeigen")) {
 				$this->SetValue('ID', $deviceData['id']);
 			}
+			// Kachel (HTML-SDK) mit den Anzeige-Feldern aktualisieren
+			$this->TileUpdate($this->TileFromDeviceData($deviceData));
+		}
+
+		private function TileKind(): string
+		{
+			return 'device';
+		}
+
+		private function TileRefresh(): void
+		{
+			$this->TileUpdate(['type' => $this->ReadPropertyString('DeviceType')]);
+			if ($this->ReadPropertyBoolean('Active') && $this->HasActiveParent()) {
+				$this->getData();
+			}
+		}
+
+		// Extrahiert aus (auch partiellen) Geraetedaten nur die Felder, die die Kachel anzeigt.
+		private function TileFromDeviceData(array $d): array
+		{
+			$type = $this->ReadPropertyString('DeviceType');
+			$tile = ['type' => $type];
+			if (isset($d['name'])) {
+				$tile['name'] = (string)$d['name'];
+			}
+			if (isset($d['modelKey'])) {
+				$tile['model'] = (string)$d['modelKey'];
+			}
+			if (isset($d['state'])) {
+				$tile['state'] = (string)$d['state'];
+			}
+			if ($type == 'Camera' || $type == 'Speaker') {
+				if (isset($d['isMicEnabled'])) {
+					$tile['micEnabled'] = (bool)$d['isMicEnabled'];
+				}
+				if (isset($d['micVolume'])) {
+					$tile['micVolume'] = $d['micVolume'];
+				}
+			}
+			if ($type == 'Camera' && isset($d['lcdMessage']['text'])) {
+				$tile['lcdMessage'] = (string)$d['lcdMessage']['text'];
+			}
+			if ($type == 'Speaker') {
+				if (isset($d['volume'])) {
+					$tile['volume'] = $d['volume'];
+				}
+				if (isset($d['speakerState']['status'])) {
+					$tile['speakerStatus'] = (string)$d['speakerState']['status'];
+				}
+				if (isset($d['speakerState']['mode'])) {
+					$tile['speakerMode'] = (string)$d['speakerState']['mode'];
+				}
+			}
+			if ($type == 'UP-Sense') {
+				if ($this->ReadPropertyBoolean('Temperature') && isset($d['stats']['temperature']['value'])) {
+					$tile['temperature'] = $d['stats']['temperature']['value'];
+				}
+				if ($this->ReadPropertyBoolean('Humidity') && isset($d['stats']['humidity']['value'])) {
+					$tile['humidity'] = $d['stats']['humidity']['value'];
+				}
+				if ($this->ReadPropertyBoolean('Illuminance') && isset($d['stats']['light']['value'])) {
+					$tile['illuminance'] = $d['stats']['light']['value'];
+				}
+				if (!empty($d['batteryStatus']['percentage'])) {
+					$tile['battery'] = $d['batteryStatus']['percentage'];
+				}
+			}
+			if ($type == 'UP-AirQuality') {
+				if ($this->ReadPropertyBoolean('Temperature')) {
+					$value = $d['airQuality']['temperature']['value'] ?? $d['stats']['temperature']['value'] ?? null;
+					if ($value !== null) {
+						$tile['temperature'] = $value;
+					}
+				}
+				if ($this->ReadPropertyBoolean('Humidity')) {
+					$value = $d['airQuality']['humidity']['value'] ?? $d['stats']['humidity']['value'] ?? null;
+					if ($value !== null) {
+						$tile['humidity'] = $value;
+					}
+				}
+				// Property => [API-Feld, Kachel-Feld]
+				$airQualityMap = [
+					'AQI'  => ['aqi', 'aqi'],
+					'Vape' => ['vape', 'vape'],
+					'TVOC' => ['tvoc', 'tvoc'],
+					'VOC'  => ['voc', 'voc'],
+					'CO2'  => ['co2', 'co2'],
+					'PM1'  => ['pm1p0', 'pm1'],
+					'PM25' => ['pm2p5', 'pm25'],
+					'PM4'  => ['pm4p0', 'pm4'],
+					'PM10' => ['pm10p0', 'pm10']
+				];
+				foreach ($airQualityMap as $property => [$field, $tileKey]) {
+					if ($this->ReadPropertyBoolean($property) && isset($d['airQuality'][$field]['value'])) {
+						$tile[$tileKey] = $d['airQuality'][$field]['value'];
+					}
+				}
+			}
+			return $tile;
 		}
 
 		private function getSnapshot(array $array):bool {

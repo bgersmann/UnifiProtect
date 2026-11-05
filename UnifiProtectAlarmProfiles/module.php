@@ -1,14 +1,20 @@
 <?php
 
 declare(strict_types=1);
+
+require_once __DIR__ . '/../libs/UnifiProtectTile.php';
+
 	class UnifiProtectAlarmProfiles extends IPSModuleStrict
 	{
+		use UnifiProtectTile;
+
 		private const PARENT_DATAID = '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}';
 
 		public function Create():void
 		{
 			//Never delete this line!
 			parent::Create();
+			$this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
 			$this->RegisterPropertyInteger( 'Timer', 0 );
 			$this->RegisterAttributeString( 'Profiles', '[]' );
 			$this->RegisterTimer( 'Update Data', 0, "UNIFIPAP_getData(\$_IPS['TARGET']);" );
@@ -24,6 +30,7 @@ declare(strict_types=1);
 		{
 			//Never delete this line!
 			parent::ApplyChanges();
+			$this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
 			$vpos = 100;
 
 			$profiles = $this->getCachedProfiles();
@@ -82,6 +89,14 @@ declare(strict_types=1);
 					$this->MaintainAction( 'CurrentProfile', true );
 					// Konfigurations-Formular aktualisieren
 					$this->UpdateFormField( 'ProfileList', 'values', json_encode( $this->buildProfileListValues( $profiles ) ) );
+					// Kachel: Profil-Auswahl aktualisieren
+					$tileProfiles = array();
+					foreach ( $profiles as $profile ) {
+						if ( is_array( $profile ) && isset( $profile['id'] ) ) {
+							$tileProfiles[] = [ 'id' => (string)$profile['id'], 'name' => (string)( $profile['name'] ?? $profile['id'] ) ];
+						}
+					}
+					$this->TileUpdate( [ 'profiles' => $tileProfiles ] );
 					break;
 				default:
 					break;
@@ -241,6 +256,31 @@ declare(strict_types=1);
 			if ( $summary !== '' ) {
 				$this->SetSummary( $summary );
 			}
+
+			// Kachel (HTML-SDK) mit dem aktuellen Alarm-Zustand aktualisieren
+			$this->TileUpdate( [
+				'name'           => IPS_GetName( $this->InstanceID ),
+				'status'         => $status,
+				'profile'        => $this->resolveProfileName( $profileID ),
+				'currentProfile' => $profileID,
+				'armedAt'        => $armedAtMs > 0 ? intdiv( $armedAtMs, 1000 ) : 0,
+				'breach'         => $breachAt > 0 || strtolower( $status ) === 'breach',
+				'armed'          => $status !== '' && strtolower( $status ) !== 'disabled'
+			] );
+		}
+
+		private function TileKind(): string
+		{
+			return 'alarm';
+		}
+
+		private function TileRefresh(): void
+		{
+			if ( !$this->HasActiveParent() ) {
+				return;
+			}
+			$this->Send( 'getAlarmProfiles', '' );
+			$this->getData();
 		}
 
 		private function resolveProfileName(string $profileID): string

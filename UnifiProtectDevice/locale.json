@@ -55,7 +55,19 @@
             "Instanz ist inaktiv": "Instanz ist inaktiv",
             "Connected": "Verbunden",
             "Connecting": "Verbinde...",
-            "Disconnected": "Nicht verbunden"
+            "Disconnected": "Nicht verbunden",
+            "Microphone": "Mikrofon",
+            "Create snapshot": "Schnappschuss erstellen",
+            "Creating snapshot...": "Erstelle Schnappschuss...",
+            "Battery": "Batterie",
+            "On": "An",
+            "Off": "Aus",
+            "Instance inactive": "Instanz inaktiv",
+            "No data yet": "Noch keine Daten",
+            "d": "T",
+            "h": "Std",
+            "min": "Min",
+            "since %s": "seit %s"
         }
     }
 }

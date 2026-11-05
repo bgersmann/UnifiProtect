@@ -25,7 +25,15 @@
             "Name": "Name",
             "ID": "ID",
             "Instance is active": "Instanz ist aktiv",
-            "Instance is inactive": "Instanz ist inaktiv"
+            "Instance is inactive": "Instanz ist inaktiv",
+            "Tap again to arm": "Erneut tippen zum Scharfschalten",
+            "Tap again to disarm": "Erneut tippen zum Unscharfschalten",
+            "Instance inactive": "Instanz inaktiv",
+            "No data yet": "Noch keine Daten",
+            "d": "T",
+            "h": "Std",
+            "min": "Min",
+            "since %s": "seit %s"
         }
     }
 }
