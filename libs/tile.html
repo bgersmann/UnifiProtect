@@ -101,7 +101,6 @@
 
     .btn { border: 0; border-radius: 8px; padding: .5em .8em; font: inherit; font-size: .85em; background: var(--track); color: var(--content-color); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: .5em; min-width: 0; }
     .btnrow { display: flex; gap: 6px; flex: none; min-width: 0; }
-    .btnrow .grow { flex: 0 1 auto; }
     .btn i { color: var(--accent-color); }
     .btn.busy { opacity: .6; }
     .btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -203,10 +202,11 @@
             body += rows([[T('LCD Message'), has(d.lcdMessage) ? E(d.lcdMessage) : '', 3]]);
             // Spruenge zu Stream/Schnappschuss nur, wenn die Visualisierung openObject kann (ab Symcon 8.2)
             const canOpen = typeof openObject === 'function';
-            let actions = `<button class="btn grow" data-snapshot>${icon('camera-polaroid')}<span>${E(T('Create snapshot'))}</span></button>`;
+            let actions = '';
             if (canOpen && d.streamId > 0) {
                 actions += `<button class="btn" data-open="${Number(d.streamId)}" title="${E(T('Open stream'))}" aria-label="${E(T('Open stream'))}">${icon('circle-play')}</button>`;
             }
+            actions += `<button class="btn" data-snapshot title="${E(T('Create snapshot'))}" aria-label="${E(T('Create snapshot'))}">${icon('camera-polaroid')}</button>`;
             if (canOpen && d.snapshotId > 0) {
                 actions += `<button class="btn" data-open="${Number(d.snapshotId)}" title="${E(T('Open snapshot'))}" aria-label="${E(T('Open snapshot'))}">${icon('image')}</button>`;
             }
@@ -403,7 +403,7 @@
         if (snapshotButton) {
             if (!snapshotButton.classList.contains('busy')) {
                 snapshotButton.classList.add('busy');
-                snapshotButton.querySelector('span').textContent = T('Creating snapshot...');
+                snapshotButton.title = T('Creating snapshot...');
                 requestAction('snapshot', 1);
                 setTimeout(render, 8000);
             }
