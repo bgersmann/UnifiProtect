@@ -100,6 +100,8 @@
     button.chip { cursor: pointer; }
 
     .btn { border: 0; border-radius: 8px; padding: .5em .8em; font: inherit; font-size: .85em; background: var(--track); color: var(--content-color); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: .5em; min-width: 0; }
+    .btnrow { display: flex; gap: 6px; flex: none; min-width: 0; }
+    .btnrow .grow { flex: 0 1 auto; }
     .btn i { color: var(--accent-color); }
     .btn.busy { opacity: .6; }
     .btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -199,7 +201,16 @@
                 body += kpis(items);
             }
             body += rows([[T('LCD Message'), has(d.lcdMessage) ? E(d.lcdMessage) : '', 3]]);
-            body += `<div data-p="2"><button class="btn" data-snapshot>${icon('camera-polaroid')}<span>${E(T('Create snapshot'))}</span></button></div>`;
+            // Spruenge zu Stream/Schnappschuss nur, wenn die Visualisierung openObject kann (ab Symcon 8.2)
+            const canOpen = typeof openObject === 'function';
+            let actions = `<button class="btn grow" data-snapshot>${icon('camera-polaroid')}<span>${E(T('Create snapshot'))}</span></button>`;
+            if (canOpen && d.streamId > 0) {
+                actions += `<button class="btn" data-open="${Number(d.streamId)}" title="${E(T('Open stream'))}" aria-label="${E(T('Open stream'))}">${icon('circle-play')}</button>`;
+            }
+            if (canOpen && d.snapshotId > 0) {
+                actions += `<button class="btn" data-open="${Number(d.snapshotId)}" title="${E(T('Open snapshot'))}" aria-label="${E(T('Open snapshot'))}">${icon('image')}</button>`;
+            }
+            body += `<div class="btnrow" data-p="2">${actions}</div>`;
         } else if (type === 'Speaker') {
             const statusLabels = { idle: 'Idle', streaming: 'Streaming', playing: 'Playing', tts_playing: 'TTS Playing', uploading: 'Uploading' };
             body += `<div class="state"><span class="big ${['streaming', 'playing', 'tts_playing'].includes(d.speakerStatus) ? 'txtok' : ''}">${E(T(statusLabels[d.speakerStatus] || d.speakerStatus || 'Idle'))}</span></div>`;
@@ -395,6 +406,13 @@
                 snapshotButton.querySelector('span').textContent = T('Creating snapshot...');
                 requestAction('snapshot', 1);
                 setTimeout(render, 8000);
+            }
+            return;
+        }
+        const openButton = event.target.closest('[data-open]');
+        if (openButton) {
+            if (typeof openObject === 'function') {
+                openObject(Number(openButton.dataset.open));
             }
             return;
         }

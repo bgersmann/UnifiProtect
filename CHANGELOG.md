@@ -8,7 +8,7 @@ Alle Geräteinstanzen liefern jetzt eine eigene HTML-Kachel (HTML-SDK, `GetVisua
 
 **Neu:**
 
-- **UnifiProtectDevice:** Kachel je nach Gerätetyp — Kamera (Verbindungsstatus, Mikrofon, LCD-Nachricht, Schnappschuss-Button), Speaker (Status, Lautstärken, Modus), UP-Sense (Temperatur, Luftfeuchte, Beleuchtung, Batterie-Balken), UP-AirQuality (AQI-Ring, CO2, PM2.5, weitere Messwerte), Chime/Light (Verbindungsstatus). Datenquelle sind die ohnehin eintreffenden WebSocket-/REST-Updates.
+- **UnifiProtectDevice:** Kachel je nach Gerätetyp — Kamera (Verbindungsstatus, Mikrofon, LCD-Nachricht, Schnappschuss-Button sowie Buttons zum Öffnen von Kamera-Stream und Schnappschuss-Bild; die Öffnen-Buttons erscheinen nur in Visualisierungen ab Symcon 8.2, da sie `openObject` aus dem HTML-SDK nutzen), Speaker (Status, Lautstärken, Modus), UP-Sense (Temperatur, Luftfeuchte, Beleuchtung, Batterie-Balken), UP-AirQuality (AQI-Ring, CO2, PM2.5, weitere Messwerte), Chime/Light (Verbindungsstatus). Datenquelle sind die ohnehin eintreffenden WebSocket-/REST-Updates.
 - **UnifiProtectEvents:** Kachel mit Anzahl und Liste der aktiven Ereignisse (Typ, Gerät, Dauer) sowie Chips für die aktivierten globalen Ereignistypen.
 - **UnifiProtectAlarmProfiles:** Kachel mit Alarm-Status (Unscharf/Scharf/Auslösung …), Schalter zum Scharf-/Unscharfschalten (mit Bestätigung durch zweites Tippen), Profil-Auswahl per Chips und "scharf seit".
 - **UnifiWebhook:** Kachel mit einem Button je konfiguriertem Webhook zum direkten Auslösen.

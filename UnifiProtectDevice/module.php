@@ -457,10 +457,32 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 
 		private function TileRefresh(): void
 		{
-			$this->TileUpdate(['type' => $this->ReadPropertyString('DeviceType')]);
+			$tile = ['type' => $this->ReadPropertyString('DeviceType')];
+			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
+				$tile = array_merge($tile, $this->TileCameraMedia());
+			}
+			$this->TileUpdate($tile);
 			if ($this->ReadPropertyBoolean('Active') && $this->HasActiveParent()) {
 				$this->getData();
 			}
+		}
+
+		// IDs der Medienobjekte (Stream bevorzugt in hoechster Qualitaet) fuer die Kachel-Buttons
+		private function TileCameraMedia(): array
+		{
+			$snapshotID = @$this->GetIDForIdent('Snapshot');
+			$streamID = 0;
+			foreach (['Stream_High', 'Stream_Medium', 'Stream_Low'] as $ident) {
+				$id = @$this->GetIDForIdent($ident);
+				if ($id !== false && $id > 0) {
+					$streamID = $id;
+					break;
+				}
+			}
+			return [
+				'snapshotId' => ($snapshotID !== false && $snapshotID > 0) ? $snapshotID : 0,
+				'streamId'   => $streamID
+			];
 		}
 
 		// Extrahiert aus (auch partiellen) Geraetedaten nur die Felder, die die Kachel anzeigt.
@@ -487,6 +509,9 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			}
 			if ($type == 'Camera' && isset($d['lcdMessage']['text'])) {
 				$tile['lcdMessage'] = (string)$d['lcdMessage']['text'];
+			}
+			if ($type == 'Camera') {
+				$tile = array_merge($tile, $this->TileCameraMedia());
 			}
 			if ($type == 'Speaker') {
 				if (isset($d['volume'])) {
