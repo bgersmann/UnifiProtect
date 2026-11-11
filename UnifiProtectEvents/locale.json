@@ -54,6 +54,7 @@
             "Create variable":"Variable erstellen",
             "No compatible devices found or API connection failed.":"Keine kompatiblen Geräte gefunden oder API-Verbindung fehlgeschlagen.",
             "API Error":"API Fehler",
+            "Tile display name (optional)": "Anzeigename der Kachel (optional)",
             "Active events": "Aktive Ereignisse",
             "active event": "aktives Ereignis",
             "active events": "aktive Ereignisse",

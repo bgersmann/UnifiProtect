@@ -16,6 +16,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			parent::Create();
 			$this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
 			$this->RegisterPropertyInteger( 'Timer', 0 );
+			$this->RegisterPropertyString( 'TileName', '' );
 			$this->RegisterAttributeString( 'Profiles', '[]' );
 			$this->RegisterTimer( 'Update Data', 0, "UNIFIPAP_getData(\$_IPS['TARGET']);" );
 		}
@@ -179,6 +180,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$arrayElements[] = array( 'type' => 'Label', 'bold' => true, 'label' => $this->Translate( 'UniFi Protect Alarm Profiles' ) );
 			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate( 'Arm profiles are only available when using the local alarm manager.' ) );
 			$arrayElements[] = array( 'type' => 'NumberSpinner', 'name' => 'Timer', 'caption' => $this->Translate( 'Update interval (s) -> 0=Off' ) );
+			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'TileName', 'caption' => $this->Translate( 'Tile display name (optional)' ) );
 
 			$arrayElements[] = array( 'type' => 'Label', 'bold' => true, 'label' => $this->Translate( 'Available Alarm Profiles' ) );
 			$arrayElements[] = array(
@@ -259,7 +261,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 
 			// Kachel (HTML-SDK) mit dem aktuellen Alarm-Zustand aktualisieren
 			$this->TileUpdate( [
-				'name'           => IPS_GetName( $this->InstanceID ),
+				'name'           => $this->TileDisplayName(),
 				'status'         => $status,
 				'profile'        => $this->resolveProfileName( $profileID ),
 				'currentProfile' => $profileID,

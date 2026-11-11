@@ -16,6 +16,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
 			$this->RegisterPropertyString( 'ServerAddress', '192.168.178.1' );
 			$this->RegisterPropertyString( 'APIKey', '' );
+			$this->RegisterPropertyString( 'TileName', '' );
 			$this->RegisterPropertyString( 'SmartDetectSelections', '[]' );
 			$this->RegisterPropertyBoolean( 'motionGlobal', false );
 			$this->RegisterPropertyBoolean( 'smartGlobal', false );
@@ -81,7 +82,9 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			} else {
 				// instance active
 				$this->SetStatus( 102 );
-				$this->SetSummary($this->ReadPropertyString("ServerAddress"));        
+				$this->SetSummary($this->ReadPropertyString("ServerAddress"));
+				// Kachel aktualisieren (z.B. geaenderter Anzeigename)
+				$this->TileUpdate($this->TileFromEvents());
 			}
 		}
 
@@ -336,6 +339,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Please create API Key under "UniFi Network > Settings > Control Plane > Integrations"'));
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'ServerAddress', 'caption' => $this->Translate('Unifi Protect Host IP'), 'validate' => "^(([a-zA-Z0-9\\.\\-\\_]+(\\.[a-zA-Z]{2,3})+)|(\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b))$" );
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => $this->Translate('APIKey') );
+			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'TileName', 'caption' => $this->Translate('Tile display name (optional)') );
 
 			unset($arrayOptions);#Variable for Global 
 			$arrayElements[] = array('type' => 'Label', 'bold' => true, 'label' => $this->Translate('Variable for global events'));
@@ -893,7 +897,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				}
 			}
 			return [
-				'name'    => IPS_GetName($this->InstanceID),
+				'name'    => $this->TileDisplayName(),
 				'events'  => $events,
 				'globals' => $globals
 			];

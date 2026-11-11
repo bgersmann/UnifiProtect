@@ -12,6 +12,7 @@ Alle Geräteinstanzen liefern jetzt eine eigene HTML-Kachel (HTML-SDK, `GetVisua
 - **UnifiProtectEvents:** Kachel mit Anzahl und Liste der aktiven Ereignisse (Typ, Gerät, Dauer) sowie Chips für die aktivierten globalen Ereignistypen.
 - **UnifiProtectAlarmProfiles:** Kachel mit Alarm-Status (Unscharf/Scharf/Auslösung …), Schalter zum Scharf-/Unscharfschalten (mit Bestätigung durch zweites Tippen), Profil-Auswahl per Chips und "scharf seit".
 - **UnifiWebhook:** Kachel mit einem Button je konfiguriertem Webhook zum direkten Auslösen.
+- Alle vier Instanztypen: optionales Feld "Anzeigename der Kachel" — überschreibt nur den Titel in der HTML-Kachel, ohne die Instanz oder das Gerät umzubenennen.
 
 ## Version 2.1 (2026-10-25)
 

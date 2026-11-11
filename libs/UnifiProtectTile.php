@@ -43,4 +43,18 @@ trait UnifiProtectTile
         $state = json_decode($this->GetBuffer('TileState'), true);
         return is_array($state) ? $state : [];
     }
+
+    /**
+     * Anzeigename der Kachel: das optionale Property 'TileName' (muss im Modul registriert
+     * sein), sonst der Fallback, sonst der Instanzname. Benennt nur die Kachel um,
+     * niemals die Instanz.
+     */
+    private function TileDisplayName(string $fallback = ''): string
+    {
+        $name = trim($this->ReadPropertyString('TileName'));
+        if ($name !== '') {
+            return $name;
+        }
+        return $fallback !== '' ? $fallback : IPS_GetName($this->InstanceID);
+    }
 }

@@ -37,6 +37,11 @@
             "width": ""
         },
         {
+            "type": "ValidationTextBox",
+            "name": "TileName",
+            "caption": "Tile display name (optional)"
+        },
+        {
             "type": "List",
             "add": true,
             "caption": "Webhooks:",

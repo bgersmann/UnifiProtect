@@ -18,6 +18,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
 			$this->RegisterPropertyString( 'DeviceType', 'Camera' );
 			$this->RegisterPropertyString( 'ID', '' );
+			$this->RegisterPropertyString( 'TileName', '' );
 			$this->RegisterPropertyBoolean( 'StreamLow', false );
 			$this->RegisterPropertyBoolean( 'StreamMedium', false );
 			$this->RegisterPropertyBoolean( 'StreamHigh', false );
@@ -458,6 +459,9 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		private function TileRefresh(): void
 		{
 			$tile = ['type' => $this->ReadPropertyString('DeviceType')];
+			if (trim($this->ReadPropertyString('TileName')) !== '') {
+				$tile['name'] = $this->TileDisplayName();
+			}
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$tile = array_merge($tile, $this->TileCameraMedia());
 			}
@@ -490,7 +494,10 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		{
 			$type = $this->ReadPropertyString('DeviceType');
 			$tile = ['type' => $type];
-			if (isset($d['name'])) {
+			// Optionaler Anzeigename nur fuer die Kachel; sonst der Name vom Controller
+			if (trim($this->ReadPropertyString('TileName')) !== '') {
+				$tile['name'] = $this->TileDisplayName();
+			} elseif (isset($d['name'])) {
 				$tile['name'] = (string)$d['name'];
 			}
 			if (isset($d['modelKey'])) {
@@ -676,6 +683,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$arrayOptions=json_decode($Bufferdata);
 			}		
 			$arrayElements[] = array( 'type' => 'Select', 'name' => 'ID', 'caption' => $this->Translate('Device ID'), 'options' => $arrayOptions );
+			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'TileName', 'caption' => $this->Translate('Tile display name (optional)') );
 			unset($arrayOptions);
 			$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'IDAnzeigen', 'width' => '220px','caption' => $this->Translate('Show ID') );			
 			$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );

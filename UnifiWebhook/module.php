@@ -19,7 +19,8 @@ class UnifiWebhook extends IPSModuleStrict
         parent::Create();
         $this->SetVisualizationType(defined('INSTANCE_VISUALIZATION_TYPE_HTML') ? constant('INSTANCE_VISUALIZATION_TYPE_HTML') : 1);
         $this->RegisterPropertyString( 'webhooks', '[]' );
-        $this->RegisterAttributeString('webhooksOld', '[]'); 
+        $this->RegisterPropertyString( 'TileName', '' );
+        $this->RegisterAttributeString('webhooksOld', '[]');
         
     }
 
@@ -131,7 +132,7 @@ class UnifiWebhook extends IPSModuleStrict
             }
         }
         return [
-            'name'  => IPS_GetName($this->InstanceID),
+            'name'  => $this->TileDisplayName(),
             'hooks' => $hooks
         ];
     }

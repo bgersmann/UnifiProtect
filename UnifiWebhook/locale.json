@@ -9,6 +9,7 @@
             "Ausführen...": "Ausführen...",
             "Wird ausgeführt...": "Wird ausgeführt...",
             "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!": "Achtung, Bei Namens oder ID Änderung werden die Variablen neu angelegt! Dabei ändern sich die VariablenIDs!",
+            "Tile display name (optional)": "Anzeigename der Kachel (optional)",
             "webhook": "Webhook",
             "webhooks": "Webhooks",
             "No webhooks configured": "Keine Webhooks konfiguriert",
