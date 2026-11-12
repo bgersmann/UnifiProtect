@@ -17,6 +17,10 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->RegisterPropertyString( 'ServerAddress', '192.168.178.1' );
 			$this->RegisterPropertyString( 'APIKey', '' );
 			$this->RegisterPropertyString( 'TileName', '' );
+			// Sicherheitsnetz: Events ohne Endemeldung (z.B. Update/Neustart des Controllers
+			// waehrend eines Events) nach dieser Zeit automatisch beenden
+			$this->RegisterPropertyInteger( 'EventTimeout', 300 );
+			$this->RegisterTimer( 'Cleanup Events', 0, "UNIFIPEV_cleanupEvents(\$_IPS['TARGET']);" );
 			$this->RegisterPropertyString( 'SmartDetectSelections', '[]' );
 			$this->RegisterPropertyBoolean( 'motionGlobal', false );
 			$this->RegisterPropertyBoolean( 'smartGlobal', false );
@@ -73,18 +77,25 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->MaintainVariable( 'lightMotionGlobal',  $this->Translate('global light motion detect') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON'=> 'sensor','OPTIONS'=>'[{"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123},{"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672}]'], 0, $this->ReadPropertyBoolean('lightMotionGlobal'));
 			$this->MaintainVariable( 'smartDetectLoiterZoneGlobal',  $this->Translate('global smart detect loiter zone') , 0, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON'=> 'sensor','OPTIONS'=>'[{"Value":false,"Caption":"Keine Bewegung","IconValue":"sensor","IconActive":true,"ColorActive":true,"ColorValue":16077123},{"Value":true,"Caption":"Bewegung erkannt","IconValue":"sensor-on","IconActive":true,"ColorActive":true,"ColorValue":1692672}]'], 0, $this->ReadPropertyBoolean('smartDetectLoiterZoneGlobal'));
 			$this->synchronizeConfiguredVariables();
+			// Variablen mit dem Event-Buffer abgleichen: der Buffer ist nach einem Neustart leer,
+			// die Variablen sind persistiert - haengengebliebene "aktiv"-Zustaende werden so
+			// zurueckgesetzt und Kachel und Variablen zeigen wieder dasselbe
+			$this->syncEventVariables($this->readActiveEvents());
 			// Set status
 			$APIKey = $this->ReadPropertyString( 'APIKey' );
         	if (empty($APIKey))
 			{
 				// instance inactive
 				$this->SetStatus( 104 );
+				$this->SetTimerInterval( 'Cleanup Events', 0 );
 			} else {
 				// instance active
 				$this->SetStatus( 102 );
 				$this->SetSummary($this->ReadPropertyString("ServerAddress"));
 				// Kachel aktualisieren (z.B. geaenderter Anzeigename)
 				$this->TileUpdate($this->TileFromEvents());
+				// Bereinigung haengender Events: einmal pro Minute pruefen
+				$this->SetTimerInterval( 'Cleanup Events', $this->ReadPropertyInteger('EventTimeout') > 0 ? 60000 : 0 );
 			}
 		}
 
@@ -340,6 +351,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'ServerAddress', 'caption' => $this->Translate('Unifi Protect Host IP'), 'validate' => "^(([a-zA-Z0-9\\.\\-\\_]+(\\.[a-zA-Z]{2,3})+)|(\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b))$" );
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => $this->Translate('APIKey') );
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'TileName', 'caption' => $this->Translate('Tile display name (optional)') );
+			$arrayElements[] = array( 'type' => 'NumberSpinner', 'name' => 'EventTimeout', 'suffix' => 's', 'caption' => $this->Translate('Auto-end events without end message after (s) -> 0=Off') );
 
 			unset($arrayOptions);#Variable for Global 
 			$arrayElements[] = array('type' => 'Label', 'bold' => true, 'label' => $this->Translate('Variable for global events'));
@@ -840,6 +852,91 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				}
 			}
 			return array_values(array_unique($activeTypes));
+		}
+
+		private function readActiveEvents(): array
+		{
+			$activeEvents = json_decode($this->GetBuffer('activeEvents'), true);
+			return is_array($activeEvents) ? $activeEvents : [];
+		}
+
+		/**
+		 * Entfernt Events, deren Endemeldung ausgeblieben ist (z.B. Controller-Update oder
+		 * WebSocket-Abriss waehrend eines laufenden Events), nach Ablauf von 'EventTimeout'
+		 * und setzt Variablen und Kachel auf den bereinigten Stand. Laeuft per Timer jede Minute.
+		 */
+		public function cleanupEvents(): void
+		{
+			$timeout = $this->ReadPropertyInteger('EventTimeout');
+			if ($timeout <= 0) {
+				return;
+			}
+			$activeEvents = $this->readActiveEvents();
+			if ($activeEvents === []) {
+				return;
+			}
+			$limit = (time() - $timeout) * 1000; // 'Start' ist in Millisekunden
+			$remaining = [];
+			$removed = 0;
+			foreach ($activeEvents as $storedEvent) {
+				if (!is_array($storedEvent)) {
+					$removed++;
+					continue;
+				}
+				$expired = false;
+				foreach ($storedEvent as $details) {
+					if ((int)(is_array($details) ? ($details['Start'] ?? 0) : 0) < $limit) {
+						$expired = true;
+					}
+				}
+				if ($expired) {
+					$removed++;
+				} else {
+					$remaining[] = $storedEvent;
+				}
+			}
+			if ($removed === 0) {
+				return;
+			}
+			$this->SetBuffer('activeEvents', json_encode($remaining));
+			$this->SendDebug('UNIFIPEV', 'Cleanup: ' . $removed . ' abgelaufene(s) Event(s) ohne Endemeldung entfernt, verbleibend: ' . count($remaining), 0);
+			$this->syncEventVariables($remaining);
+			$this->TileUpdate($this->TileFromEvents($remaining));
+		}
+
+		// Setzt alle aktivierten Event-Variablen (global und je Geraet) passend zur Event-Liste -
+		// die gemeinsame Quelle fuer Variablen UND Kachel, damit beide immer dasselbe zeigen.
+		private function syncEventVariables(array $activeEvents): void
+		{
+			$globalMap = [
+				'motionGlobal' => 'motion', 'smartGlobal' => 'smartDetectZone', 'sensorGlobal' => 'sensorMotion',
+				'lineGlobal' => 'smartDetectLine', 'smartAudioGlobal' => 'smartAudioDetect', 'ringGlobal' => 'ring',
+				'sensorExtremeValuesGlobal' => 'sensorExtremeValues', 'sensorWaterLeakGlobal' => 'sensorWaterLeak',
+				'sensorTamperGlobal' => 'sensorTamper', 'sensorBatteryLowGlobal' => 'sensorBatteryLow',
+				'sensorAlarmGlobal' => 'sensorAlarm', 'sensorOpenedGlobal' => 'sensorOpened',
+				'sensorClosedGlobal' => 'sensorClosed', 'lightMotionGlobal' => 'lightMotion',
+				'smartDetectLoiterZoneGlobal' => 'smartDetectLoiterZone'
+			];
+			$activeTypes = [];
+			foreach ($activeEvents as $storedEvent) {
+				if (!is_array($storedEvent)) {
+					continue;
+				}
+				foreach ($storedEvent as $details) {
+					if (is_array($details) && isset($details['type'])) {
+						$activeTypes[] = (string)$details['type'];
+					}
+				}
+			}
+			foreach ($globalMap as $property => $type) {
+				if ($this->ReadPropertyBoolean($property) && @$this->GetIDForIdent($property) !== false) {
+					$this->SetValue($property, in_array($type, $activeTypes, true));
+				}
+			}
+			foreach (array_keys($this->getEnabledSmartDetectSelectionMap() + $this->getEnabledStandardEventSelectionMap()) as $deviceID) {
+				$this->updateSmartDetectSelectionStates((string)$deviceID, $activeEvents);
+				$this->updateStandardEventSelectionStates((string)$deviceID, $activeEvents);
+			}
 		}
 
 		private function TileKind(): string

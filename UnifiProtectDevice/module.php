@@ -462,6 +462,19 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			if (trim($this->ReadPropertyString('TileName')) !== '') {
 				$tile['name'] = $this->TileDisplayName();
 			}
+			// Der Buffer ist nach einem Neustart leer: Kopfdaten aus den persistierten Variablen
+			// vorbelegen, damit die Kachel nicht ohne Status (= grauer Punkt) oder gar mit
+			// veralteten Daten startet, falls der Abgleich unten fehlschlaegt (Gateway noch
+			// nicht verbunden, Rate-Limit bei vielen Geraeten).
+			foreach (['Name' => 'name', 'Model' => 'model', 'State' => 'state'] as $ident => $key) {
+				$varID = @$this->GetIDForIdent($ident);
+				if ($varID !== false && $varID > 0 && !isset($tile[$key])) {
+					$value = (string)GetValue($varID);
+					if ($value !== '') {
+						$tile[$key] = $value;
+					}
+				}
+			}
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$tile = array_merge($tile, $this->TileCameraMedia());
 			}

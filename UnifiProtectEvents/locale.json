@@ -55,6 +55,7 @@
             "No compatible devices found or API connection failed.":"Keine kompatiblen Geräte gefunden oder API-Verbindung fehlgeschlagen.",
             "API Error":"API Fehler",
             "Tile display name (optional)": "Anzeigename der Kachel (optional)",
+            "Auto-end events without end message after (s) -> 0=Off": "Events ohne Endemeldung automatisch beenden nach (s) -> 0=Aus",
             "Active events": "Aktive Ereignisse",
             "active event": "aktives Ereignis",
             "active events": "aktive Ereignisse",

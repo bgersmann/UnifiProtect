@@ -37,6 +37,7 @@
     .ok { background: var(--ok); }
     .warn { background: var(--warn); }
     .err { background: var(--err); }
+    .unknown { background: var(--muted); }
     .ht { min-width: 0; line-height: 1.25; }
     .ht div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sub { font-size: .78em; color: var(--muted); }
@@ -176,8 +177,10 @@
     const onOff = (value) => (value === undefined || value === null ? '' : `<span class="${value ? 'txtok' : ''}">${E(T(value ? 'On' : 'Off'))}</span>`);
 
     // Verbindungsstatus der Protect-Geraete
-    const connState = (s) => ({ CONNECTED: 'ok', CONNECTING: 'warn' }[s] || 'err');
-    const connLabel = (s) => T({ CONNECTED: 'Connected', CONNECTING: 'Connecting', DISCONNECTED: 'Disconnected' }[s] || (s || 'Disconnected'));
+    // Fehlender Zustand (z.B. Abgleich nach Neustart noch nicht moeglich) ist unbekannt,
+    // nicht "getrennt" - sonst zeigt die Kachel rot, obwohl das Geraet normal laeuft.
+    const connState = (s) => (!has(s) ? 'unknown' : ({ CONNECTED: 'ok', CONNECTING: 'warn' }[s] || 'err'));
+    const connLabel = (s) => (!has(s) ? '' : T({ CONNECTED: 'Connected', CONNECTING: 'Connecting', DISCONNECTED: 'Disconnected' }[s] || s));
 
     const deviceIcons = {
         'Camera': 'camera-cctv', 'UP-Sense': 'sensor', 'UP-AirQuality': 'wind',
@@ -279,7 +282,8 @@
             ]);
         } else {
             // Chime, Light, ...
-            body += `<div class="state"><span class="big ${connState(d.state) === 'ok' ? 'txtok' : 'txterr'}">${E(connLabel(d.state))}</span></div>`;
+            const cls = { ok: 'txtok', err: 'txterr' }[connState(d.state)] || '';
+            body += `<div class="state"><span class="big ${cls}">${E(connLabel(d.state) || '–')}</span></div>`;
         }
         return head(deviceIcons[type] || 'circle-nodes', d.name || type, sub, connState(d.state)) + body + '<div class="foot"></div>';
     }
