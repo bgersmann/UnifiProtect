@@ -44,6 +44,9 @@ Gerätetyp | Gerätetyp (Kamera/Sensor/Vape-/Luftqualitätssensor/Licht/Gong/Spe
 Geräte-ID | Gerätename aus Unifi
 ID-Anzeigen | ID als Variable anlegen
 Stream Niedrig/Mittel/Hoch | Stream in entsprechender Auflösung anlegen (Schaltet auch Stream in Unifi Protect ein/aus!!)
+Snapshot-Timer aktiv / Snapshot-Timer (s) | Snapshot der Kamera zyklisch aktualisieren
+Anzeigename der Kachel (optional) | Überschreibt nur den Titel der HTML-Kachel; Instanz und Gerät werden nicht umbenannt
+Temperatur/Luftfeuchtigkeit/… | Je nach Gerätetyp (UP-Sense, UP-AirQuality): Messwert-Variablen per Checkbox aktivieren
 
 ### 5. Statusvariablen und Profile
 
@@ -70,11 +73,23 @@ keine vorhanden
 - Anzeige von Live-Streams und Snapshots
 - Steuerung von Geräten und Anzeige von Ereignissen
 - Visualisierung von Status und Sensorwerten
+- Eigene HTML-Kachel für die Kachel-Visualisierung (ab IP-Symcon 8.2), je nach Gerätetyp:
+  - Kamera: Verbindungsstatus, Mikrofon, LCD-Nachricht, Snapshot erstellen sowie Buttons zum Öffnen von Stream und Snapshot (Öffnen-Buttons ab Symcon 8.2-Visualisierung)
+  - Speaker: Status, Lautstärken, Modus
+  - UP-Sense: Temperatur, Luftfeuchte, Beleuchtung, Batterie
+  - UP-AirQuality: Luftqualitätsindex, CO2, Feinstaub und weitere Messwerte
+  - Chime/Light: Verbindungsstatus
 
 ### 7. PHP-Befehlsreferenz
 
-`boolean UNIFIPDV_BeispielFunktion(integer $InstanzID);`
-Erklärung der Funktion.
+`string UNIFIPDV_getData(integer $InstanzID);`
+Fordert die aktuellen Gerätedaten vom Controller an und aktualisiert Variablen und Kachel.
+
+`void UNIFIPDV_updateSnapshot(integer $InstanzID);`
+Erstellt einen neuen Snapshot der Kamera (nur Gerätetyp Kamera).
+
+`void UNIFIPDV_Send(integer $InstanzID, string $Api, string $Param1);`
+Interne Sende-Funktion zum Gateway (z.B. `getStreams`, `getSnapshot`); wird von den Formular-Buttons verwendet.
 
 Beispiel:
-`UNIFIPDV_BeispielFunktion(12345);`
+`UNIFIPDV_getData(12345);`

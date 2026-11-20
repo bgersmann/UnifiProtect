@@ -16,6 +16,7 @@ Alle Geräteinstanzen liefern jetzt eine eigene HTML-Kachel (HTML-SDK, `GetVisua
 
 **Behoben:**
 
+- Die Snapshot-Mediendatei wird jetzt konventionsgemäß im media-Verzeichnis von IP-Symcon abgelegt (bisher im Hauptverzeichnis). Eine vorhandene Altdatei `Snapshot_<InstanzID>.jpeg` im Hauptverzeichnis wird beim Übernehmen der Einstellungen automatisch entfernt.
 - Event-Variablen konnten auf "aktiv" hängen bleiben, wenn die Endemeldung eines Events ausblieb (z.B. Controller-Update oder WebSocket-Abriss während eines laufenden Events) oder Symcon neu gestartet wurde (Event-Buffer leer, Variablen persistiert — Kachel und Variablen zeigten dann Unterschiedliches). Neu: Beim Übernehmen der Einstellungen und beim Start werden die Variablen mit dem Event-Buffer abgeglichen, und ein Timeout (einstellbar, Standard 300 s, 0 = aus) beendet Events ohne Endemeldung automatisch — Variablen und Kachel werden dabei gemeinsam aktualisiert.
 - Gerätekachel zeigte einen roten Status-Punkt, obwohl das Gerät verbunden war: Konnte der Erstabgleich nach einem Symcon-Neustart nicht laufen (Gateway noch nicht verbunden, Protect-Rate-Limit bei vielen Geräten), fehlte der Verbindungsstatus im Kachel-Zustand und wurde als "getrennt" gewertet. Die Kachel belegt Name/Modell/Status jetzt aus den persistierten Variablen vor, und ein unbekannter Status wird neutral (grauer Punkt) statt rot dargestellt.
 
