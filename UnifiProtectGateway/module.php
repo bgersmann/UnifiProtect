@@ -11,8 +11,13 @@ declare(strict_types=1);
 			$this->RegisterPropertyString( 'APIKey', '' );
 			$this->RegisterPropertyBoolean('applicationVersion', 0);
 			$this->RegisterPropertyInteger( 'VersionTimer', 0 );
+			$this->RegisterPropertyString( 'localUser', '' );
+			$this->RegisterPropertyString( 'localPassword', '' );
+
 			// true = keine Migration noetig; bei 1.x-Bestandsinstanzen fehlt das Attribut -> Migrate() legt einmalig den WS Client an
 			$this->RegisterAttributeBoolean( 'WsMigrationDone', true );
+			$this->RegisterAttributeString( 'localToken', '' );
+
 			$this->RegisterTimer( 'Update Version', 0, "UNIFIPGW_updateVersion(\$_IPS['TARGET']);" );
 			$this->RegisterTimer( 'WS Watchdog', 0, "UNIFIPGW_watchdogWS(\$_IPS['TARGET']);" );
 		}
@@ -890,10 +895,15 @@ declare(strict_types=1);
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => $this->Translate('APIKey') );
 			$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'applicationVersion', 'caption' => $this->Translate('Show Application Version') );
 			$arrayElements[] = array( 'type' => 'NumberSpinner', 'name' => 'VersionTimer', 'caption' => $this->Translate('Version update interval (s) -> 0=Off') );
+
+			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'localUser', 'caption' => $this->Translate('Local UniFi user') );
+			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'localPassword', 'caption' => $this->Translate('Password of local user') );
+
 			if ( !empty( $APIKey && $this->GetStatus() === 102)) {
 				if ($this->ReadPropertyBoolean("applicationVersion")) {
 					$this->SetValue('applicationVersion', $this->getProtectVersion());
 				}
+
 				$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Protect Application Version: ').$this->getProtectVersion() );           
 			} else {
 				$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Protect Application Version: not found') );
@@ -904,7 +914,6 @@ declare(strict_types=1);
 			$arrayActions = array();
 
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
-
     	}
 
 		public function getDevicesConfig():array {

@@ -6,6 +6,8 @@
             "Please create API Key under \"UniFi Network > Settings > Control Plane > Integrations\"": "Bitte API Key unter \"UniFi Network > Einstellungen > Control Plane > Integrationen\" erzeugen",
             "Unifi Device IP": "Unifi Geräte-IP",
             "APIKey": "API-Schlüssel",
+			"Local UniFi user": "Lokaler UniFi-Benutzer",
+			"Password of local user": "Passwort des lokalen Benutzers",
             "Show Application Version": "Anwendungsversion anzeigen",
             "Version update interval (s) -> 0=Off": "Versions-Aktualisierungsintervall (s) -> 0=Aus",
             "Protect Application Version: ": "Protect Anwendungsversion: ",
