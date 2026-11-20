@@ -78,6 +78,11 @@ declare(strict_types=1);
 
 		// Stellt sicher, dass ein WS Client als Parent vorhanden ist (z.B. nach Update von aelterer Version).
 		// Die Konfiguration selbst uebernimmt das Framework ueber GetConfigurationForParent().
+		// Begruendete Abweichung von den Store-Richtlinien (Anlage/Konfiguration einer Instanz):
+		// Hier wird ausschliesslich die eigene Datenflusskette vervollstaendigt (erlaubte Ausnahme),
+		// und nur EINMALIG aus Migrate() heraus beim Update von Version <2.0, bei der das Gateway
+		// selbst noch der I/O war - der Nutzer hat den Parent also nie selbst angelegt.
+		// IPS_SetConfiguration/IPS_ApplyChanges betreffen nur diese frisch erzeugte Instanz.
 		private function configureWsClient(): void
 		{
 			$parentID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
@@ -142,6 +147,10 @@ declare(strict_types=1);
 				$this->SetBuffer('WsWasConnected', '0');
 				if (!empty($this->ReadPropertyString('APIKey'))) {
 					$this->SendDebug("UnifiPGW", "WebSocket nicht verbunden (Status " . $status . ") - Reconnect", 0);
+					// Begruendete Abweichung von den Store-Richtlinien: IPS_ApplyChanges auf dem
+					// eigenen Datenfluss-Parent stoesst nur einen Reconnect des WS Clients an -
+					// es wird KEINE Konfiguration geaendert (der native WS Client bietet keine
+					// eigene Reconnect-Funktion an).
 					@IPS_ApplyChanges($parentID);
 				}
 			}

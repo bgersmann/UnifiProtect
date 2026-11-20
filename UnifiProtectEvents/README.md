@@ -1,5 +1,5 @@
 # UnifiProtectEvents
-Beschreibung des Moduls.
+Empfängt Ereignisse von UniFi Protect in Echtzeit per WebSocket (z.B. Bewegung, smarte Erkennung, Klingel, Sensor-Events) und bildet sie als Boolean-Variablen in IP-Symcon ab — global je Ereignistyp und optional je Gerät.
 
 ### Inhaltsverzeichnis
 
@@ -15,7 +15,8 @@ Beschreibung des Moduls.
 
 * Empfang und Verarbeitung von Ereignissen aus UniFi Protect (z.B. Bewegung, smarte Erkennung, Sensor-Events)
 * Automatische Statusvariablen für globale und gerätespezifische Events
-* Visualisierung von Ereignissen im WebFront
+* Konfigurierbares Timeout als Sicherheitsnetz: Events ohne Endemeldung (z.B. Controller-Update während eines laufenden Events) werden automatisch beendet
+* HTML-Kachel für die Kachel-Visualisierung: Anzahl und Liste der aktiven Ereignisse sowie Chips der aktivierten globalen Ereignistypen
 
 ### 2. Voraussetzungen
 
@@ -33,8 +34,14 @@ Beschreibung des Moduls.
 
 __Konfigurationsseite__:
 
+Name     | Beschreibung
+-------- | ------------------
 Unifi Protect Host IP | IP-Adresse der UniFi Protect Installation
 API-Schlüssel         | API Key unter „UniFi Network > Settings > Control Plane > Integrations“ erzeugen
+Anzeigename der Kachel (optional) | Überschreibt nur den Titel der HTML-Kachel; die Instanz wird nicht umbenannt
+Events ohne Endemeldung automatisch beenden nach (s) | Sicherheitsnetz gegen hängende Event-Variablen, Standard 300 s (0 = aus)
+Variable für globale Ereignisse | Je Ereignistyp (Bewegung, smarte Erkennung, Klingel, Sensor-Events, …) eine globale Boolean-Variable anlegen
+Geräteereignis-Variablen | Liste aller von der API gemeldeten Geräte/Ereignistypen; per Checkbox wird je Eintrag eine eigene Boolean-Variable angelegt
 
 ### 5. Statusvariablen und Profile
 

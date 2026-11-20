@@ -43,5 +43,12 @@ offizielle UniFi Protect Integration API (`/proxy/protect/integration/v1`) zu:
 ## Konfiguration
 
 - **Aktualisierungsintervall (s):** Intervall, in dem der ArmMode-Status (`/nvrs`) neu eingelesen wird (0 = aus).
+- **Anzeigename der Kachel (optional):** Überschreibt nur den Titel der HTML-Kachel; die Instanz wird nicht umbenannt.
 - **Profile auslesen:** Liest die verfügbaren Alarmprofile vom Controller und aktualisiert die Auswahl.
 - **Status aktualisieren:** Liest den aktuellen ArmMode-Status sofort neu ein.
+
+## Visualisierung
+
+Die Instanz bringt eine HTML-Kachel für die Kachel-Visualisierung mit (ab IP-Symcon 8.2): großer Arm-Status,
+Schalter zum Scharf-/Unscharfschalten (mit Bestätigung durch zweites Tippen), Profil-Auswahl per Chips
+(nur im unscharfen Zustand) und "scharf seit"-Anzeige.

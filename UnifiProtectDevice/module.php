@@ -94,15 +94,23 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$this->MaintainAction('micVolume', true);
 				$this->MaintainAction('micEnabled', true);
 			}
-			$MedienID = @$this->GetIDForIdent('Snapshot');			
+			$MedienID = @$this->GetIDForIdent('Snapshot');
 			if (!$MedienID) {
 				if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 					$MediaID = IPS_CreateMedia(1);
 					IPS_SetParent($MediaID, $this->InstanceID);
 					IPS_SetName($MediaID, $this->Translate('Snapshot'));
 					IPS_SetIdent($MediaID, 'Snapshot');
-				} 
+				}
 			} else {
+				// Migration: fruehere Versionen legten die Snapshot-Datei direkt im
+				// IP-Symcon-Hauptverzeichnis ab statt im media-Verzeichnis (Konvention).
+				// Die eigene Altdatei einmalig entfernen; der neue Pfad wird beim
+				// naechsten Snapshot in getSnapshot() gesetzt.
+				$alteDatei = IPS_GetKernelDir() . 'Snapshot_' . $this->InstanceID . '.jpeg';
+				if (file_exists($alteDatei)) {
+					@unlink($alteDatei);
+				}
 				if ($this->ReadPropertyString('DeviceType') !== 'Camera') {
 					IPS_DeleteMedia($MedienID,true);
 				}
@@ -638,7 +646,8 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$this->SendDebug("UnifiPDevice", "Snapshot media file: " . $MedienID, 0);
 				if ($MedienID && $MedienID > 0) {
 					if (isset($RawData) && !empty($RawData)) {
-						IPS_SetMediaFile($MedienID, 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
+						// Konvention: Mediendateien gehoeren in das media-Verzeichnis von IP-Symcon
+					IPS_SetMediaFile($MedienID, 'media' . DIRECTORY_SEPARATOR . 'Snapshot_'.$this->InstanceID.'.jpeg', FALSE);
 						IPS_SetMediaContent($MedienID, base64_encode($RawData));
 					} else {
 						return false;

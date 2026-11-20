@@ -116,8 +116,8 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		}
 
 		/**
-		 * Verarbeitet Events aus events.php und setzt je nach Event-Typ eine Variable auf true/false.
-		 * @param string $eventJson JSON-String eines Events (wie bsp1-4)
+		 * Verarbeitet ein Protect-Event und setzt je nach Event-Typ eine Variable auf true/false.
+		 * @param string $eventJson JSON-String eines Events ({"type":"add|update|remove","item":{...}})
 		 */
 		public function HandleEvent(string $eventJson):void
 		{
