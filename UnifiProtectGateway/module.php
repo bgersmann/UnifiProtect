@@ -1521,7 +1521,7 @@ declare(strict_types=1);
         return $body;
     }
 
-    private static $privApi_privacy_zone_name = 'symcon_privacy_zone';
+    private static $privApi_privacy_zone_name = 'symcon_privacy';
 
     private function privApi_getCamera(string $deviceId)
     {
