@@ -94,11 +94,11 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$recording_presentation = [
 				'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
 				'OPTIONS'      => json_encode([
-					['Value' => 'adaptive', 'Caption' => $this->Translate('adaptive'), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => -1, 'ContentColorDisplay' => -1],
-					['Value' => 'always', 'Caption' => $this->Translate('always'), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => -1, 'ContentColorDisplay' => -1],
-					['Value' => 'never', 'Caption' => $this->Translate('never'), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => -1, 'ContentColorDisplay' => -1],
-					['Value' => 'schedule', 'Caption' => $this->Translate('schedule'), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => -1, 'ContentColorDisplay' => -1],
-					['Value' => 'detections', 'Caption' => $this->Translate('detections'), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1, 'ColorDisplay' => -1, 'ContentColorDisplay' => -1]
+					['Value' => 'adaptive', 'Caption' => $this->Translate('adaptive'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
+					['Value' => 'always', 'Caption' => $this->Translate('always'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
+					['Value' => 'never', 'Caption' => $this->Translate('never'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
+					['Value' => 'schedule', 'Caption' => $this->Translate('schedule'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
+					['Value' => 'detections', 'Caption' => $this->Translate('detections'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
 				]),
 			];
 			$this->MaintainVariable('RecordingMode', $this->Translate('Recording mode'), VARIABLETYPE_STRING, $recording_presentation, $vpos++, $is_camera && $use_privAPI);
