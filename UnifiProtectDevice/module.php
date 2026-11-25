@@ -11,6 +11,8 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		// Fallback-Abfrageintervall in Sekunden: faengt verpasste WebSocket-Updates ab (Downtime etc.)
 		private const FALLBACK_SYNC_SEC = 3600;
 
+		private static $privApi_delay = 10 * 1000;
+
 		public function Create() : void
 		{
 			//Never delete this line!
@@ -43,10 +45,12 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->RegisterPropertyBoolean( 'PM25', false );
 			$this->RegisterPropertyBoolean( 'PM4', false );
 			$this->RegisterPropertyBoolean( 'PM10', false );
+			$this->RegisterPropertyBoolean( 'use_privAPI', false );
 			$this->RegisterAttributeBoolean( 'supportFullHDSnapshot', false );
+			$this->RegisterAttributeString( 'prevValues4Privacy', '' );
 			$this->RegisterTimer( 'Collect Data', 0, "UNIFIPDV_getData(\$_IPS['TARGET']);" );
 			$this->RegisterTimer( 'Update Snapshot', 0, "UNIFIPDV_updateSnapshot(\$_IPS['TARGET']);" );
-
+			$this->RegisterTimer('UpdatePrivApi', 0, 'IPS_RequestAction(' . $this->InstanceID . ', "UpdatePrivApi", "");');
 		}
 
 		public function Destroy(): void
@@ -84,9 +88,26 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->MaintainVariable( 'speakerMode', $this->Translate( 'Speaker Mode' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
 																				'OPTIONS'=> '[{"Value":"listen","Caption":"'.$this->Translate( 'Listen' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1},{"Value":"talk","Caption":"'.$this->Translate( 'Talk' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1}]'
 																				,'ICON'=> 'comment'], $vpos++, $isSpeaker);
+
 			// Snapshot nur fuer Kameras und nur, wenn er nicht per Option deaktiviert wurde
 			$snapshotEnabled = $this->ReadPropertyString('DeviceType') == 'Camera' && !$this->ReadPropertyBoolean('SnapshotDisabled');
 			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $snapshotEnabled);
+
+			$use_privAPI = $this->ReadPropertyBoolean('use_privAPI');
+			$is_camera = $this->ReadPropertyString('DeviceType') == 'Camera';
+
+			$this->MaintainVariable('Privacy', $this->Translate('Privacy'), VARIABLETYPE_BOOLEAN, ['PRESENTATION' => VARIABLE_PRESENTATION_SWITCH], $vpos++, $is_camera && $use_privAPI);
+			$recording_presentation = [
+				'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+				'OPTIONS'      => json_encode([
+					['Value' => 'adaptive', 'Caption' => $this->Translate('adaptive'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
+					['Value' => 'always', 'Caption' => $this->Translate('always'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
+					['Value' => 'never', 'Caption' => $this->Translate('never'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
+					['Value' => 'schedule', 'Caption' => $this->Translate('schedule'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
+					['Value' => 'detections', 'Caption' => $this->Translate('detections'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
+				]),
+			];
+			$this->MaintainVariable('RecordingMode', $this->Translate('Recording mode'), VARIABLETYPE_STRING, $recording_presentation, $vpos++, $is_camera && $use_privAPI);
 
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$this->MaintainAction('micVolume', true);
@@ -94,7 +115,12 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 					$this->SetValue('snapshot', 1);
 					$this->MaintainAction('snapshot', true);
 				}
+				if ($use_privAPI) {
+					$this->MaintainAction('Privacy', true);
+					$this->MaintainAction('RecordingMode', true);
+				}
 			}
+
 			if ($isSpeaker) {
 				$this->MaintainAction('volume', true);
 				$this->MaintainAction('micVolume', true);
@@ -195,7 +221,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		}
 
 
-		public function Send(string $api, string $param1): void
+		public function Send(string $api, string $param1)
 		{
 			if ($this->HasActiveParent()) {
 				$data=$this->SendDataToParent(json_encode(['DataID' => '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}',
@@ -312,7 +338,20 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 						if (is_array($deviceData)) {
 							$this->processDeviceData($deviceData);
 						}
-					break;
+						break;
+					case 'privApi_getCamera':
+						$deviceData = unserialize($data);
+						$this->SendDebug(__FUNCTION__, "privApi_getCamera: deviceData=" . print_r($deviceData, true), 0);
+						$this->processPrivApiDeviceData($deviceData);
+						break;
+					case 'privApi_setRecordingMode':
+						$ret = unserialize($data);
+						$this->SendDebug(__FUNCTION__, "privApi_setRecordingMode: ret=" . print_r($ret, true), 0);
+						return $ret;
+					case 'privApi_setPrivacy':
+						$ret = unserialize($data);
+						$this->SendDebug(__FUNCTION__, "privApi_setPrivacy: ret=" . print_r($ret, true), 0);
+						return $ret;
 					default:
 						$this->SendDebug("UnifiPDevice", "Keine Antwortverarbeitung noetig fuer API: " . $api, 0);
 						break;
@@ -355,6 +394,13 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				return '';
 			}
 			$this->processDeviceData($message['item']);
+
+			// verzögerter Abruf der privAPI-Daten
+			$use_privAPI = $this->ReadPropertyBoolean('use_privAPI');
+			if ($use_privAPI) {
+				$this->SetTimerInterval('UpdatePrivApi', self::$privApi_delay);
+			}
+
 			return '';
 		}
 
@@ -470,6 +516,20 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			}
 			// Kachel (HTML-SDK) mit den Anzeige-Feldern aktualisieren
 			$this->TileUpdate($this->TileFromDeviceData($deviceData));
+		}
+
+		private function processPrivApiDeviceData(array $deviceData): void
+		{
+			$deviceType = $this->ReadPropertyString('DeviceType');
+			if ($deviceType == 'Camera') {
+				$this->SendDebug(__FUNCTION__, 'deviceData=' . print_r($deviceData, true), 0);
+				if (isset($deviceData['recordingSettings']['mode'])) {
+					$this->SetValue('RecordingMode', $deviceData['recordingSettings']['mode']);
+				}
+				if (isset($deviceData['privacyEnabled'])) {
+					$this->SetValue('Privacy', $deviceData['privacyEnabled']);
+				}
+			}
 		}
 
 		private function TileKind(): string
@@ -686,6 +746,13 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 
 		public function getData():string {
 			$this->Send("getDeviceData",$this->ReadPropertyString('DeviceType'));
+
+			$use_privAPI = $this->ReadPropertyBoolean('use_privAPI');
+			$is_camera = $this->ReadPropertyString('DeviceType') == 'Camera';
+			if ($use_privAPI && $is_camera) {
+				$this->Send("privApi_getCamera",$this->ReadPropertyString('DeviceType'));
+			}
+
 			return "";
 		}
 
@@ -740,6 +807,11 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 				unset($arrayOptions);
 				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'SnapshotDisabled', 'caption' => $this->Translate('Disable snapshot (camera does not support snapshots)') );
+				$arrayElements[] = [
+					'type'    => 'CheckBox',
+					'name'    => 'use_privAPI',
+					'caption' => $this->Translate('use inofficial API'),
+				];
 			}
 			if ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Temperature','width' => '180px', 'caption' => $this->Translate('Temperature') );
@@ -838,9 +910,58 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
                     $this->Send('patchSettingCamera', json_encode($payload));
                     $this->SetValue($Ident, (string)$Value);
                     break;
-				default:
-					throw new Exception("Invalid Ident");
+				case 'RecordingMode':
+					$this->SendDebug(__FUNCTION__, 'ident=' . $Ident . ', value=' . $Value, 0);
+					$payload = [
+						'recordingMode' => $Value,
+					];
+					$ret = $this->Send('privApi_setRecordingMode', json_encode($payload));
+					$this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret,true), 0);
+					if ($ret['status']) {
+						$this->SetValue($Ident, (string) $Value);
+						$this->SetTimerInterval('UpdatePrivApi', self::$privApi_delay);
+					}
+					break;
+				case 'Privacy':
+					$this->SendDebug(__FUNCTION__, 'ident=' . $Ident . ', value=' . $Value, 0);
+					$b = (bool) $Value;
+					if ($b) {
+						$payload = [
+							'enabled'       => true,
+							'micVolume'     => 0,
+							'recordingMode' => 'never',
+						];
+					} else {
+						$prev = @json_decode($this->ReadAttributeString('prevValues4Privacy'), true);
+						$payload = [
+							'enabled'       => false,
+							'micVolume'     => $prev['micVolume'] ?? 70,
+							'recordingMode' => $prev['recordingMode'] ?? 'detections',
+						];
+					}
+					$ret = $this->Send('privApi_setPrivacy', json_encode($payload));
+					$this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret,true), 0);
+					if ($ret['status']) {
+						$this->WriteAttributeString('prevValues4Privacy', $b ? json_encode($ret['prev']) : '');
+						$this->SetValue($Ident, $b);
+						$this->SetValue('micVolume', $payload['micVolume']);
+						$this->SetValue('RecordingMode', $payload['recordingMode']);
+						$this->SetTimerInterval('UpdatePrivApi', self::$privApi_delay);
+					}
+					break;
+				case 'UpdatePrivApi':
+					$this->UpdatePrivApi();
+					break;
 			}
-			
+		}
+
+		private function UpdatePrivApi()
+		{
+			$use_privAPI = $this->ReadPropertyBoolean('use_privAPI');
+			$is_camera = $this->ReadPropertyString('DeviceType') == 'Camera';
+			if ($use_privAPI && $is_camera) {
+				$this->Send("privApi_getCamera",$this->ReadPropertyString('DeviceType'));
+			}
+			$this->SetTimerInterval('UpdatePrivApi', 0);
 		}
 	}

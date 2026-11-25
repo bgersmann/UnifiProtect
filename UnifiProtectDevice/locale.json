@@ -72,7 +72,15 @@
             "d": "T",
             "h": "Std",
             "min": "Min",
-            "since %s": "seit %s"
+            "since %s": "seit %s",
+			"use inofficial API": "inoffizielle API nutzen",
+			"Privacy": "Privatsphäre",
+			"Recording mode": "Aufzeichnungs-Modus",
+			"adaptive": "Adaptiv",
+			"always": "Immer",
+			"never": "Nie",
+			"schedule": "Zeitplan",
+			"detections": "nur Ereignisse"
         }
     }
 }

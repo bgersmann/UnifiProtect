@@ -11,8 +11,13 @@ declare(strict_types=1);
 			$this->RegisterPropertyString( 'APIKey', '' );
 			$this->RegisterPropertyBoolean('applicationVersion', 0);
 			$this->RegisterPropertyInteger( 'VersionTimer', 0 );
+			$this->RegisterPropertyString( 'localUser', '' );
+			$this->RegisterPropertyString( 'localPassword', '' );
+
 			// true = keine Migration noetig; bei 1.x-Bestandsinstanzen fehlt das Attribut -> Migrate() legt einmalig den WS Client an
 			$this->RegisterAttributeBoolean( 'WsMigrationDone', true );
+			$this->RegisterAttributeString( 'localToken', '' );
+
 			$this->RegisterTimer( 'Update Version', 0, "UNIFIPGW_updateVersion(\$_IPS['TARGET']);" );
 			$this->RegisterTimer( 'WS Watchdog', 0, "UNIFIPGW_watchdogWS(\$_IPS['TARGET']);" );
 		}
@@ -266,6 +271,8 @@ declare(strict_types=1);
 				$this->SetStatus( 102 );
 			}
 
+			$this->SendDebug(__FUNCTION__, 'data=' . print_r($data, true), 0);
+
 			if (isset($data->Api)) {
 				switch ($data->Api) {
 					case 'setAlarmManager':
@@ -330,6 +337,17 @@ declare(strict_types=1);
 					case "getNvrs":
 						$array = $this->getNvrs();
 						return serialize($array);
+					case "privApi_getCamera":
+						$array = $this->privApi_getCamera($data->ID);
+						return serialize($array);
+					case 'privApi_setRecordingMode':
+						$payload = json_decode($data->Param1, true);
+						$ret = $this->privApi_setRecordingMode($data->ID, $payload['recordingMode']);
+						return serialize($ret);
+					case 'privApi_setPrivacy':
+						$payload = json_decode($data->Param1, true);
+						$ret = $this->privApi_setPrivacy($data->ID, $payload['enabled'], $payload['micVolume'], $payload['recordingMode']);
+						return serialize($ret);
 					default:
 						$this->SendDebug("UnifiPGW", "Unknown API: " . $data->Api, 0);
 						break;
@@ -928,16 +946,65 @@ declare(strict_types=1);
 			#$arraySort = array( 'column' => 'DeviceName', 'direction' => 'ascending' );
 
 			$arrayElements = array();
+
+			$arrayElements[] = [
+				'type'    => 'PopupAlert',
+				'name'    => 'MessagePopup',
+				'visible' => false,
+				'popup'   => [
+					'items'   => [
+						[
+							'type'    => 'Label',
+							'name'    => 'MessagePopup_text',
+							'caption' => '',
+						],
+					],
+				],
+			];
+
 			$arrayElements[] = array( 'type' => 'Label','bold' => true, 'label' => $this->Translate('UniFi Protect Gateway'));
 			$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Please create API Key under "UniFi Network > Settings > Control Plane > Integrations"'));
 			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'ServerAddress', 'caption' => $this->Translate('Unifi Device IP'), 'validate' => "^(([a-zA-Z0-9\\.\\-\\_]+(\\.[a-zA-Z]{2,3})+)|(\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b))$" );
-			$arrayElements[] = array( 'type' => 'ValidationTextBox', 'name' => 'APIKey', 'caption' => $this->Translate('APIKey') );
+
+			$arrayElements[] = [
+				'type'      => 'ExpansionPanel',
+				'caption'   => 'Public API (required)',
+				'expanded'  => true,
+				'items'     => [
+					[
+						'type'    => 'ValidationTextBox',
+						'name'    => 'APIKey',
+						'caption' => $this->Translate('API key'),
+					],
+				],
+			];
+
+			$arrayElements[] = [
+				'type'      => 'ExpansionPanel',
+				'caption'   => 'Unofficial API (optional)',
+				'expanded'  => false,
+				'items'     => [
+					[
+						'type'    => 'ValidationTextBox',
+						'name'    => 'localUser',
+						'caption' => $this->Translate('Local UniFi user')
+					],
+					[
+						'type'    => 'PasswordTextBox',
+						'name'    => 'localPassword',
+						'caption' => $this->Translate('Password of local user')
+					],
+				],
+			];
+
 			$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'applicationVersion', 'caption' => $this->Translate('Show Application Version') );
 			$arrayElements[] = array( 'type' => 'NumberSpinner', 'name' => 'VersionTimer', 'caption' => $this->Translate('Version update interval (s) -> 0=Off') );
+
 			if ( !empty( $APIKey && $this->GetStatus() === 102)) {
 				if ($this->ReadPropertyBoolean("applicationVersion")) {
 					$this->SetValue('applicationVersion', $this->getProtectVersion());
 				}
+
 				$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Protect Application Version: ').$this->getProtectVersion() );           
 			} else {
 				$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Protect Application Version: not found') );
@@ -945,10 +1012,15 @@ declare(strict_types=1);
 		
 			#$arrayElements[] = array( 'type' => 'Select', 'name' => 'Site', 'caption' => 'Site', 'options' => $arrayOptions );
 
-			$arrayActions = array();
+			$arrayActions = [];
+
+            $arrayActions[] = [
+                'type'    => 'Button',
+                'caption' => 'Test access',
+                'onClick' => 'IPS_RequestAction(' . $this->InstanceID . ', "TestAccess", "");',
+            ];
 
 			return JSON_encode( array( 'status' => $arrayStatus, 'elements' => $arrayElements, 'actions' => $arrayActions ) );
-
     	}
 
 		public function getDevicesConfig():array {
@@ -1132,4 +1204,541 @@ declare(strict_types=1);
 			return 0;
 		}
 
-	}
+	/***** inoffizielle API (https://github.com/uilibs/uiprotect) */
+
+    public function RequestAction(string $ident, mixed $value): void
+    {
+        $this->SendDebug(__FUNCTION__, 'ident=' . $ident . ', value=' . $value, 0);
+
+        $r = false;
+        switch ($ident) {
+            case 'TestAccess':
+                $this->TestAccess();
+                break;
+            default:
+                $this->SendDebug(__FUNCTION__, 'invalid ident ' . $ident, 0);
+                break;
+        }
+
+        if ($r) {
+            $this->SetValue($ident, $value);
+        }
+    }
+
+    private function TestAccess()
+    {
+        $txt = $this->Translate('Public API') . PHP_EOL;
+
+        $APIKey = $this->ReadPropertyString('APIKey');
+        if ($APIKey != '') {
+            $version = $this->getApiData('/meta/info');
+            if ($this->GetStatus() != IS_ACTIVE || is_array($version) == false) {
+                $txt .= $this->Translate('unable to access public API with API key') . PHP_EOL;
+            } else {
+                $txt .= $this->Translate('Access to public API successful') . PHP_EOL;
+            }
+        } else {
+            $txt .= $this->Translate('not configured');
+        }
+
+        $txt .= PHP_EOL;
+        $txt .= $this->Translate('Unofficial API') . PHP_EOL;
+        if ($this->privApi_enabled()) {
+            $data = $this->privApi_getCameras();
+            if ($this->GetStatus() != IS_ACTIVE || $data == false) {
+                $txt .= $this->Translate('unable to access local account') . PHP_EOL;
+            } else {
+                $cams = @json_decode($data, true);
+                $n_cams = count($cams);
+                $txt .= $n_cams . ' ' . $this->Translate('registered cameras found') . PHP_EOL;
+            }
+        } else {
+            $txt .= $this->Translate('not configured');
+        }
+
+        $this->UpdateFormField('MessagePopup_text', 'caption', $txt);
+        $this->UpdateFormField('MessagePopup', 'visible', true);
+    }
+
+    private function build_header($headerfields)
+    {
+        $header = [];
+        foreach ($headerfields as $key => $value) {
+            $header[] = $key . ': ' . $value;
+        }
+        return $header;
+    }
+
+    private function privApi_enabled()
+    {
+        $localUser = $this->ReadPropertyString('localUser');
+        $localPassword = $this->ReadPropertyString('localPassword');
+
+        return $localUser != '' && $localPassword != '';
+    }
+
+    private function privApi_login()
+    {
+        $host = $this->ReadPropertyString('ServerAddress');
+        $localUser = $this->ReadPropertyString('localUser');
+        $localPassword = $this->ReadPropertyString('localPassword');
+
+        $this->WriteAttributeString('localToken', '');
+
+        if ($this->privApi_enabled() == false) {
+            return false;
+        }
+
+        $url = 'https://' . $host . '/api/auth/login';
+
+        $headerfields = [
+            'Accept'       => 'application/json',
+            'Content-Type' => 'application/json',
+        ];
+        $header = $this->build_header($headerfields);
+
+        $this->SendDebug(__FUNCTION__, 'http-POST, url=' . $url, 0);
+        $this->SendDebug(__FUNCTION__, '... header=' . print_r($header, true), 0);
+
+        $postfields = [
+            'username'   => $localUser,
+            'password'   => $localPassword,
+            'rememberMe' => true,
+        ];
+        $postdata = json_encode($postfields, JSON_UNESCAPED_UNICODE);
+
+        $this->SendDebug(__FUNCTION__, '... postfields=' . print_r($postfields, true), 0);
+        $this->SendDebug(__FUNCTION__, '... postdata=' . $postdata, 0);
+
+        $responseHeaders = [];
+
+        $curl_opts = [
+            CURLOPT_HTTPHEADER     => $header,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $postdata,
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER         => true,
+            CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$responseHeaders)
+            {
+                $p = explode(':', $line, 2);
+                if (count($p) === 2) {
+                    $responseHeaders[strtolower(trim($p[0]))][] = trim($p[1]);
+                }
+                return strlen($line);
+            },
+        ];
+
+        $time_start = microtime(true);
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, $curl_opts);
+        $response = curl_exec($ch);
+        $cerrno = curl_errno($ch);
+        $cerror = $cerrno ? curl_error($ch) : '';
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_info = curl_getinfo($ch);
+        if (IPS_GetKernelVersion() < 8.5) {
+            curl_close($ch);
+        }
+
+        $duration = round(microtime(true) - $time_start, 2);
+        $this->SendDebug(__FUNCTION__, ' => errno=' . $cerrno . ', httpcode=' . $httpcode . ', duration=' . $duration . 's', 0);
+        $this->SendDebug(__FUNCTION__, ' => response=' . $response, 0);
+
+        if ($cerrno) {
+            $this->SendDebug(__FUNCTION__, 'got curl-errno ' . $cerrno . ' (' . $cerror . ')', 0);
+            $this->SetStatus(201); // Set status to error
+            return false;
+        }
+
+        $header_size = $curl_info['header_size'];
+        $head = substr($response, 0, $header_size);
+        $body = substr($response, $header_size);
+        $this->SendDebug(__FUNCTION__, ' => head=' . $head, 0);
+        $this->SendDebug(__FUNCTION__, ' => body=' . $body, 0);
+
+        $csrf = '';
+        $cookie = '';
+        $expiration = 0;
+
+        // CSRF-Token und Token-Cookie aus der Antwort uebernehmen
+        if (empty($responseHeaders['x-csrf-token']) == false) {
+            $csrf = end($responseHeaders['x-csrf-token']);
+        }
+        if (empty($responseHeaders['set-cookie']) == false) {
+            foreach ($responseHeaders['set-cookie'] as $sc) {
+                $pair = explode(';', $sc, 2)[0];           // "TOKEN=eyJ..."
+                $name = trim(explode('=', $pair, 2)[0]);
+                if ($name === 'TOKEN' || $name === 'UOS_TOKEN') {
+                    $cookie = trim($pair);
+                }
+            }
+        }
+        if (empty($responseHeaders['x-token-expire-time']) == false) {
+            $expiration = (int) end($responseHeaders['x-token-expire-time']);
+            $expiration = intdiv($expiration, 1000);
+
+            // Sicherheitsmarge damit der Token rechtzeitig erneuれrt wird
+            $expiration -= 60;
+        }
+
+        $this->SendDebug(__FUNCTION__, 'cookie=' . $cookie . ', csrf=' . $csrf . ', expiration=' . ($expiration ? date('d.m.Y H:i:s', $expiration) : '-'), 0);
+
+        if ($cookie == '' || $csrf == '') {
+            $this->SendDebug(__FUNCTION__, 'cookie and/or csrf not found', 0);
+            $this->SetStatus(201);
+            return false;
+        }
+
+        $jtoken = [
+            'csrf'       => $csrf,
+            'cookie'     => $cookie,
+            'expiration' => $expiration,
+        ];
+
+        $this->WriteAttributeString('localToken', json_encode($jtoken));
+
+        return $jtoken;
+    }
+
+    private function privApi_getToken()
+    {
+        $jtoken = @json_decode($this->ReadAttributeString('localToken'), true);
+
+        if (empty($jtoken['csrf']) || empty($jtoken['cookie'])) {
+            $this->SendDebug(__FUNCTION__, 'no saved token', 0);
+            $jtoken = false;
+        } else {
+            $expiration = $jtoken['expiration'] ?? 0;
+            if ($expiration < time()) {
+                $this->SendDebug(__FUNCTION__, 'token expired', 0);
+                $jtoken = false;
+            }
+        }
+
+        if ($jtoken == false && $this->privApi_login() == false) {
+            return false;
+        }
+
+        $jtoken = @json_decode($this->ReadAttributeString('localToken'), true);
+        return $jtoken;
+    }
+
+    private function privApi_http(string $endpoint, string $method, array $postfields)
+    {
+        $this->SendDebug(__FUNCTION__, 'endpoint=' . $endpoint . ', method=' . $method . ', postfields=' . print_r($postfields, true), 0);
+        $host = $this->ReadPropertyString('ServerAddress');
+
+        if ($this->privApi_enabled() == false) {
+            return false;
+        }
+
+        $maxRetries = 3;
+        $retry = 0;
+
+        if (!IPS_SemaphoreEnter('UnifiProtectAPI', 500)) {
+            $this->SendDebug(__FUNCTION__, 'Semaphore Timeout - Request abgebrochen', 0);
+            return [];
+        }
+
+        $url = 'https://' . $host . '/proxy/protect/api' . $endpoint;
+        $method = strtoupper($method);
+
+        do {
+            try {
+                $jtoken = $this->privApi_getToken();
+                if ($jtoken == false) {
+                    return false;
+                }
+
+                $headerfields = [
+                    'Accept'       => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'Cookie'       => $jtoken['cookie'],
+                    'X-CSRF-Token' => $jtoken['csrf'],
+                ];
+                $header = $this->build_header($headerfields);
+
+                $this->SendDebug(__FUNCTION__, 'http-' . $method . ', url=' . $url . ', try ' . $retry . '/' . $maxRetries, 0);
+                $this->SendDebug(__FUNCTION__, '... header=' . print_r($header, true), 0);
+
+                if (empty($postfields) == false) {
+                    $postdata = json_encode($postfields, JSON_UNESCAPED_UNICODE);
+
+                    $this->SendDebug(__FUNCTION__, '... postfields=' . print_r($postfields, true), 0);
+                    $this->SendDebug(__FUNCTION__, '... postdata=' . $postdata, 0);
+                }
+
+                $curl_opts = [
+                    CURLOPT_CUSTOMREQUEST  => $method,
+                    CURLOPT_HTTPHEADER     => $header,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_TIMEOUT        => 30,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HEADER         => true,
+                ];
+
+                if (empty($postfields) == false) {
+                    $curl_opts[CURLOPT_POSTFIELDS] = $postdata;
+                }
+
+                $this->SendDebug(__FUNCTION__, 'curl_opts=' . print_r($curl_opts, true), 0);
+
+                $time_start = microtime(true);
+
+                $ch = curl_init($url);
+                curl_setopt_array($ch, $curl_opts);
+                $response = curl_exec($ch);
+                $cerrno = curl_errno($ch);
+                $cerror = $cerrno ? curl_error($ch) : '';
+                $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curl_info = curl_getinfo($ch);
+                if (IPS_GetKernelVersion() < 8.5) {
+                    curl_close($ch);
+                }
+
+                $duration = round(microtime(true) - $time_start, 2);
+                $this->SendDebug(__FUNCTION__, ' => errno=' . $cerrno . ', httpcode=' . $httpcode . ', duration=' . $duration . 's', 0);
+                $this->SendDebug(__FUNCTION__, ' => response=' . $response, 0);
+
+                if ($cerrno) {
+                    $this->SendDebug(__FUNCTION__, 'got curl-errno ' . $cerrno . ' (' . $cerror . ')', 0);
+                    $this->SetStatus(201); // Set status to error
+                    return false;
+                }
+
+                $header_size = $curl_info['header_size'];
+                $head = substr($response, 0, $header_size);
+                $body = substr($response, $header_size);
+                $this->SendDebug(__FUNCTION__, ' => head=' . $head, 0);
+                $this->SendDebug(__FUNCTION__, ' => body=' . $body, 0);
+
+                if ($httpcode == 401) {
+                    $this->SendDebug(__FUNCTION__, 'http request rejected, retry with new token', 0);
+                    $this->WriteAttributeString('localToken', '');
+                } elseif ($httpcode == 429) {
+                    $this->SendDebug(__FUNCTION__, 'rate limit reached, wait 5s', 0);
+                    usleep(5 * 1000);
+                } elseif ($httpcode == 200) {
+                    return $body;
+                } else {
+                    $this->SendDebug(__FUNCTION__, 'http request failed', 0);
+                    $this->SetStatus($httpcode);
+                    return false;
+                }
+            } finally {
+                IPS_SemaphoreLeave('UnifiProtectAPI');
+            }
+        } while ($retry < $maxRetries);
+        $this->SendDebug(__FUNCTION__, 'more than ' . $maxRetries . ' tries, abort', 0);
+        return false;
+    }
+
+    private function privApi_getCameras()
+    {
+        if ($this->privApi_enabled() == false) {
+            return false;
+        }
+
+        $body = $this->privApi_http('/cameras', 'GET', []);
+        if ($body == false) {
+            return false;
+        }
+        if (empty($body)) {
+            $this->SendDebug(__FUNCTION__, 'no cameras found', 0);
+            return false;
+        }
+
+        return $body;
+    }
+
+    private static $privApi_privacy_zone_name = 'symcon_privacy';
+
+    private function privApi_getCamera(string $deviceId)
+    {
+        $body = $this->privApi_http('/cameras/' . $deviceId, 'GET', []);
+        if ($body == false) {
+            return false;
+        }
+        if (empty($body)) {
+            $this->SendDebug(__FUNCTION__, 'no cameras found', 0);
+            return false;
+        }
+
+        $cam = json_decode($body, true);
+
+        $privacyEnabled = false;
+        if (empty($cam['featureFlags']['hasPrivacyMask']) == false) {
+            $zones = isset($cam['privacyZones']) ? array_values($cam['privacyZones']) : [];
+            foreach (array_values($zones) as $i => $z) {
+                if (($z['name'] ?? null) === self::$privApi_privacy_zone_name) {
+                    $privacyEnabled = true;
+                    break;
+                }
+            }
+        }
+        $cam['privacyEnabled'] = $privacyEnabled;
+
+        return $cam;
+    }
+
+    private function privApi_setRecordingMode(string $deviceId, string $recordingMode)
+    {
+        $this->SendDebug(__FUNCTION__, 'deviceId=' . $deviceId . ', recordingMode=' . $recordingMode, 0);
+
+        $cam = $this->privApi_getCamera($deviceId);
+        if ($cam == false) {
+            $ret = [
+                'msg'    => 'not found',
+                'status' => false,
+            ];
+            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            return $ret;
+        }
+
+        $prev = [
+            'recordingMode' => $cam['recordingSettings']['mode'],
+        ];
+
+        if (($cam['recordingSettings']['mode'] ?? null) === $recordingMode) {
+            $ret = [
+                'msg'    => 'unchanged',
+                'status' => true,
+            ];
+            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            return $ret;
+        }
+
+        $postfields = [
+            'recordingSettings' => [
+                'mode' => $recordingMode,
+            ],
+        ];
+        $buf = $this->privApi_http('/cameras/' . $deviceId, 'PATCH', $postfields);
+        if ($buf == false) {
+            $ret = [
+                'prev'   => $prev,
+                'msg'    => 'patch failed',
+                'status' => false,
+            ];
+            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            return $ret;
+        }
+
+        $ret = [
+            'prev'   => $prev,
+            'msg'    => 'succeed',
+            'status' => true,
+        ];
+        $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+        return $ret;
+    }
+
+    private function privApi_setPrivacy(string $deviceId, bool $enabled, int $micVolume = null, string $recordingMode = null)
+    {
+        $this->SendDebug(__FUNCTION__, 'deviceId=' . $deviceId . ', enabled=' . ($enabled ? 'true' : 'false') . ', micVolume=' . $micVolume . ', recordingMode=' . $recordingMode, 0);
+
+        $cam = $this->privApi_getCamera($deviceId);
+        if ($cam == false) {
+            $ret = [
+                'msg'    => 'not found',
+                'status' => false,
+            ];
+            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            return $ret;
+        }
+
+        if (empty($cam['featureFlags']['hasPrivacyMask'])) {
+            $ret = [
+                'msg'    => 'privacy zones are not supported',
+                'status' => false,
+            ];
+            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            return $ret;
+        }
+
+        $zones = isset($cam['privacyZones']) ? array_values($cam['privacyZones']) : [];
+
+        $idx = null;
+        foreach (array_values($zones) as $i => $z) {
+            if (($z['name'] ?? null) === self::$privApi_privacy_zone_name) {
+                $idx = $i;
+                break;
+            }
+        }
+
+        $prev = [
+            'enabled'         => ($idx !== null),
+            'micVolume'       => (int) $cam['micVolume'],
+            'recordingMode'   => $cam['recordingSettings']['mode'],
+        ];
+
+        $postfields = [];
+
+        if ($enabled) {
+            if ($idx === null) {
+                $id = 0;
+                if (count($zones) > 0) {
+                    $last = end($zones);
+                    $id = (int) $last['id'] + 1;
+                }
+                $zones[] = [
+                    'id'     => $id,
+                    'name'   => self::$privApi_privacy_zone_name,
+                    'color'  => '#85BCEC',
+                    'points' => [[0, 0], [1, 0], [1, 1], [0, 1]],
+                ];
+                $postfields['privacyZones'] = $zones;
+            }
+        } else {
+            if ($idx !== null) {
+                unset($zones[$idx]);
+                $postfields['privacyZones'] = array_values($zones);
+            }
+        }
+
+        if ($micVolume !== null) {
+            $micVolume = max(0, min(100, (int) $micVolume));
+            if (isset($cam['micVolume']) && (int) $cam['micVolume'] === $micVolume) {
+                $postfields['micVolume'] = $micVolume;
+            }
+        }
+        if ($recordingMode !== null) {
+            if (isset($cam['recordingSettings']['mode']) && $cam['recordingSettings']['mode'] === $recordingMode) {
+                $postfields['recordingSettings'] = ['mode' => $recordingMode];
+            }
+        }
+
+        if (count($postfields) === 0) {
+            $ret = [
+                'msg'    => 'unchanged',
+                'status' => true,
+            ];
+            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            return $ret;
+        }
+
+        $buf = $this->privApi_http('/cameras/' . $deviceId, 'PATCH', $postfields);
+        if ($buf == false) {
+            $ret = [
+                'prev'   => $prev,
+                'msg'    => 'patch failed',
+                'status' => false,
+            ];
+            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            return $ret;
+        }
+
+        $ret = [
+            'prev'   => $prev,
+            'msg'    => 'succeed',
+            'status' => true,
+        ];
+        $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+        return $ret;
+    }
+}
