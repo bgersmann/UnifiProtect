@@ -335,6 +335,9 @@ declare(strict_types=1);
 					case "getNvrs":
 						$array = $this->getNvrs();
 						return serialize($array);
+					case "privApi_isEnabled":
+						// Fuer die Geraete-Konfiguration: ist die inoffizielle API im Gateway hinterlegt?
+						return serialize($this->privApi_enabled());
 					case "privApi_getCamera":
 						$array = $this->privApi_getCamera($data->ID);
 						return serialize($array);

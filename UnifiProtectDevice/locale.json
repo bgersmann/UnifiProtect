@@ -74,6 +74,7 @@
             "min": "Min",
             "since %s": "seit %s",
 			"Use unofficial API (privacy, recording mode; local user in gateway required)": "Inoffizielle API nutzen (Privatsphäre, Aufzeichnungs-Modus; lokaler Benutzer im Gateway erforderlich)",
+            "Unofficial API is not configured in the gateway (local user + password missing).": "Die inoffizielle API ist im Gateway nicht konfiguriert (lokaler Benutzer + Passwort fehlen).",
 			"Privacy": "Privatsphäre",
 			"Recording mode": "Aufzeichnungs-Modus",
 			"adaptive": "Adaptiv",

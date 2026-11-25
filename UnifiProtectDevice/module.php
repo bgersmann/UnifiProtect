@@ -530,6 +530,25 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->TileUpdate($this->TileFromDeviceData($deviceData));
 		}
 
+		// Fragt beim Gateway nach, ob die inoffizielle API dort konfiguriert ist
+		private function privApiAvailable(): bool
+		{
+			if (!$this->HasActiveParent()) {
+				return false;
+			}
+			$data = @$this->SendDataToParent(json_encode([
+				'DataID'     => '{BBE44630-5AEE-27A0-7D2E-E1D2D776B83B}',
+				'Api'        => 'privApi_isEnabled',
+				'InstanceID' => $this->InstanceID,
+				'Param1'     => '',
+				'ID'         => $this->ReadPropertyString('ID')
+			]));
+			if ($data === false || $data === null) {
+				return false;
+			}
+			return (bool)@unserialize($data);
+		}
+
 		// Verarbeitet die Kameradaten der inoffiziellen API (Privatsphaere, Aufzeichnungs-Modus)
 		private function processPrivApiDeviceData(array $deviceData): void
 		{
@@ -830,7 +849,13 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 				unset($arrayOptions);
 				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'SnapshotDisabled', 'caption' => $this->Translate('Disable snapshot (camera does not support snapshots)') );
-				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'use_privAPI', 'caption' => $this->Translate('Use unofficial API (privacy, recording mode; local user in gateway required)') );
+				// Checkbox nur anbieten, wenn im Gateway die inoffizielle API (lokaler Benutzer +
+				// Passwort) hinterlegt ist; eine bereits gesetzte Checkbox bleibt abschaltbar
+				$privApiAvailable = $this->privApiAvailable();
+				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'use_privAPI', 'caption' => $this->Translate('Use unofficial API (privacy, recording mode; local user in gateway required)'), 'enabled' => $privApiAvailable || $this->ReadPropertyBoolean('use_privAPI') );
+				if (!$privApiAvailable) {
+					$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Unofficial API is not configured in the gateway (local user + password missing).') );
+				}
 			}
 			if ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Temperature','width' => '180px', 'caption' => $this->Translate('Temperature') );
