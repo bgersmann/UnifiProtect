@@ -27,6 +27,9 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->RegisterPropertyBoolean( 'Active', true );
 			$this->RegisterPropertyBoolean( 'SnapshotTimerActive', false );
 			$this->RegisterPropertyInteger( 'SnapshotTimer', 0 );
+			// Fremdkameras (z.B. ONVIF) liefern teils keinen Snapshot; die API meldet das
+			// nur als unspezifischen Fehler, daher per Option abschaltbar
+			$this->RegisterPropertyBoolean( 'SnapshotDisabled', false );
 			$this->RegisterPropertyBoolean( 'IDAnzeigen', false );
 			$this->RegisterPropertyBoolean( 'Temperature', false );
 			$this->RegisterPropertyBoolean( 'Humidity', false );
@@ -85,8 +88,11 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->MaintainVariable( 'speakerMode', $this->Translate( 'Speaker Mode' ), 3, [ 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
 																				'OPTIONS'=> '[{"Value":"listen","Caption":"'.$this->Translate( 'Listen' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1},{"Value":"talk","Caption":"'.$this->Translate( 'Talk' ).'","IconActive":false,"IconValue":"","ColorActive":false,"ColorValue":-1}]'
 																				,'ICON'=> 'comment'], $vpos++, $isSpeaker);
-			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $this->ReadPropertyString('DeviceType') == 'Camera');
-			
+
+			// Snapshot nur fuer Kameras und nur, wenn er nicht per Option deaktiviert wurde
+			$snapshotEnabled = $this->ReadPropertyString('DeviceType') == 'Camera' && !$this->ReadPropertyBoolean('SnapshotDisabled');
+			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $snapshotEnabled);
+
 			$use_privAPI = $this->ReadPropertyBoolean('use_privAPI');
 			$is_camera = $this->ReadPropertyString('DeviceType') == 'Camera';
 
@@ -105,8 +111,10 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$this->MaintainAction('micVolume', true);
-				$this->SetValue('snapshot', 1);
-				$this->MaintainAction('snapshot', true);
+				if ($snapshotEnabled) {
+					$this->SetValue('snapshot', 1);
+					$this->MaintainAction('snapshot', true);
+				}
 				if ($use_privAPI) {
 					$this->MaintainAction('Privacy', true);
 					$this->MaintainAction('RecordingMode', true);
@@ -120,7 +128,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			}
 			$MedienID = @$this->GetIDForIdent('Snapshot');
 			if (!$MedienID) {
-				if ($this->ReadPropertyString('DeviceType') == 'Camera') {
+				if ($snapshotEnabled) {
 					$MediaID = IPS_CreateMedia(1);
 					IPS_SetParent($MediaID, $this->InstanceID);
 					IPS_SetName($MediaID, $this->Translate('Snapshot'));
@@ -135,7 +143,8 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				if (file_exists($alteDatei)) {
 					@unlink($alteDatei);
 				}
-				if ($this->ReadPropertyString('DeviceType') !== 'Camera') {
+				if (!$snapshotEnabled) {
+					// Kein Kameratyp oder Snapshot deaktiviert: Medienobjekt samt Datei entfernen
 					IPS_DeleteMedia($MedienID,true);
 				}
 			}
@@ -186,9 +195,9 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			// Fallback-Vollabgleich fuer verpasste WS-Updates (Downtime etc.)
 			$this->SetTimerInterval( 'Collect Data', $active ? self::FALLBACK_SYNC_SEC * 1000 : 0 );
 
-			// Zweiter Timer: Snapshot regelmaessig aktualisieren (nur Kamera + aktiv)
+			// Zweiter Timer: Snapshot regelmaessig aktualisieren (nur Kamera + aktiv + Snapshot nicht deaktiviert)
 			$SnapshotTimerMS = $this->ReadPropertyInteger( 'SnapshotTimer' ) * 1000;
-			if ( $active && $this->ReadPropertyString('DeviceType') == 'Camera' && $this->ReadPropertyBoolean('SnapshotTimerActive') ) {
+			if ( $active && $snapshotEnabled && $this->ReadPropertyBoolean('SnapshotTimerActive') ) {
 				$this->SetTimerInterval( 'Update Snapshot', $SnapshotTimerMS );
 			} else {
 				$this->SetTimerInterval( 'Update Snapshot', 0 );
@@ -490,6 +499,12 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			if (isset($deviceData['modelKey'])) {
 				$this->SetValue('Model', $deviceData['modelKey']);
 			}
+			// Hardware-Typ (z.B. "UVC G3"): liefert die API erst in neueren Protect-Versionen -
+			// Variable daher nur anlegen, wenn das Feld vorhanden ist
+			if (isset($deviceData['type']) && $deviceData['type'] !== '') {
+				$this->MaintainVariable('Type', $this->Translate('Type'), 3, ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON' => 'circle-info'], 103, true);
+				$this->SetValue('Type', (string)$deviceData['type']);
+			}
 			if (isset($deviceData['name']) || isset($deviceData['modelKey'])) {
 				$this->SetSummary($this->GetValue('Name') . ' - ' . $this->GetValue('Model'));
 			}
@@ -532,7 +547,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			// vorbelegen, damit die Kachel nicht ohne Status (= grauer Punkt) oder gar mit
 			// veralteten Daten startet, falls der Abgleich unten fehlschlaegt (Gateway noch
 			// nicht verbunden, Rate-Limit bei vielen Geraeten).
-			foreach (['Name' => 'name', 'Model' => 'model', 'State' => 'state'] as $ident => $key) {
+			foreach (['Name' => 'name', 'Model' => 'model', 'Type' => 'typeName', 'State' => 'state'] as $ident => $key) {
 				$varID = @$this->GetIDForIdent($ident);
 				if ($varID !== false && $varID > 0 && !isset($tile[$key])) {
 					$value = (string)GetValue($varID);
@@ -553,7 +568,8 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		// IDs der Medienobjekte (Stream bevorzugt in hoechster Qualitaet) fuer die Kachel-Buttons
 		private function TileCameraMedia(): array
 		{
-			$snapshotID = @$this->GetIDForIdent('Snapshot');
+			$snapshotDisabled = $this->ReadPropertyBoolean('SnapshotDisabled');
+			$snapshotID = $snapshotDisabled ? false : @$this->GetIDForIdent('Snapshot');
 			$streamID = 0;
 			foreach (['Stream_High', 'Stream_Medium', 'Stream_Low'] as $ident) {
 				$id = @$this->GetIDForIdent($ident);
@@ -563,8 +579,9 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				}
 			}
 			return [
-				'snapshotId' => ($snapshotID !== false && $snapshotID > 0) ? $snapshotID : 0,
-				'streamId'   => $streamID
+				'snapshotId'  => ($snapshotID !== false && $snapshotID > 0) ? $snapshotID : 0,
+				'streamId'    => $streamID,
+				'canSnapshot' => !$snapshotDisabled
 			];
 		}
 
@@ -581,6 +598,10 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			}
 			if (isset($d['modelKey'])) {
 				$tile['model'] = (string)$d['modelKey'];
+			}
+			// Hardware-Typ (z.B. "UVC G3"), nur in neueren Protect-Versionen vorhanden
+			if (isset($d['type']) && $d['type'] !== '') {
+				$tile['typeName'] = (string)$d['type'];
 			}
 			if (isset($d['state'])) {
 				$tile['state'] = (string)$d['state'];
@@ -694,7 +715,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				// Fehler-JSON abfangen
 				$json = json_decode($RawData, true);
 				if (is_array($json) && isset($json['error'])) {
-					$this->SendDebug("UnifiPDevice", "Snapshot error: " . $json['error'], 0);
+					$this->SendDebug("UnifiPDevice", "Snapshot error: " . $json['error'] . " - Hinweis: Fremdkameras (z.B. ONVIF) liefern oft keinen Snapshot; in dem Fall die Option 'Snapshot deaktivieren' in der Instanz-Konfiguration setzen.", 0);
 					$this->LogMessage("Error getting snapshot: " . $json['error'], KL_ERROR);
 					//$this->SetStatus(201);
 					return false;
@@ -736,7 +757,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		}
 
 		public function updateSnapshot():void {
-			if ($this->ReadPropertyString('DeviceType') != 'Camera') {
+			if ($this->ReadPropertyString('DeviceType') != 'Camera' || $this->ReadPropertyBoolean('SnapshotDisabled')) {
 				return;
 			}
 			$this->SendDebug("UnifiPDevice", "Timer: Update Snapshot", 0);
@@ -785,7 +806,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$arrayOptions[] = array( 'type' => 'NumberSpinner', 'name' => 'SnapshotTimer', 'width' => '180px', 'caption' => $this->Translate('Snapshot Timer (s)') );
 				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 				unset($arrayOptions);
-
+				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'SnapshotDisabled', 'caption' => $this->Translate('Disable snapshot (camera does not support snapshots)') );
 				$arrayElements[] = [
 					'type'    => 'CheckBox',
 					'name'    => 'use_privAPI',

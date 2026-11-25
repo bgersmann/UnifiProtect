@@ -13,6 +13,8 @@ Alle Geräteinstanzen liefern jetzt eine eigene HTML-Kachel (HTML-SDK, `GetVisua
 - **UnifiProtectAlarmProfiles:** Kachel mit Alarm-Status (Unscharf/Scharf/Auslösung …), Schalter zum Scharf-/Unscharfschalten (mit Bestätigung durch zweites Tippen), Profil-Auswahl per Chips und "scharf seit".
 - **UnifiWebhook:** Kachel mit einem Button je konfiguriertem Webhook zum direkten Auslösen.
 - Alle vier Instanztypen: optionales Feld "Anzeigename der Kachel" — überschreibt nur den Titel in der HTML-Kachel, ohne die Instanz oder das Gerät umzubenennen.
+- **UnifiProtectDevice:** Neue Option "Snapshot deaktivieren" für in Protect eingebundene Fremdkameras (z.B. ONVIF), die keinen Snapshot liefern (die API meldet das nur als unspezifischen Fehler): entfernt Snapshot-Variable, Timer und Medienobjekt samt Datei; die Kachel blendet die Snapshot-Buttons aus.
+- **UnifiProtectDevice:** Neue Variable "Typ" mit dem Hardware-Typ des Geräts (z.B. "UVC G3"), den neuere Protect-Versionen im Feld `type` liefern; die Kachel zeigt ihn im Untertitel statt des generischen modelKey. Bei älteren Protect-Versionen ohne das Feld wird die Variable nicht angelegt und alles bleibt wie bisher.
 
 **Behoben:**
 
