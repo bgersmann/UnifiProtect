@@ -119,6 +119,11 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 					$this->MaintainAction('Privacy', true);
 					$this->MaintainAction('RecordingMode', true);
 				}
+				// Kachel: Verfuegbarkeit der privAPI-Funktionen nachziehen (null blendet sie aus)
+				$this->TileUpdate([
+					'privacy'       => $use_privAPI ? (bool)@$this->GetValue('Privacy') : null,
+					'recordingMode' => $use_privAPI ? (string)@$this->GetValue('RecordingMode') : null
+				]);
 			}
 
 			if ($isSpeaker) {
@@ -194,6 +199,9 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			// Laufende Updates kommen per WebSocket; der interne Timer dient nur als
 			// Fallback-Vollabgleich fuer verpasste WS-Updates (Downtime etc.)
 			$this->SetTimerInterval( 'Collect Data', $active ? self::FALLBACK_SYNC_SEC * 1000 : 0 );
+			// Merker fuer den verzoegerten privAPI-Abruf zuruecksetzen (Timer wurden neu aufgesetzt)
+			$this->SetBuffer('PrivApiPending', '');
+			$this->SetTimerInterval('UpdatePrivApi', 0);
 
 			// Zweiter Timer: Snapshot regelmaessig aktualisieren (nur Kamera + aktiv + Snapshot nicht deaktiviert)
 			$SnapshotTimerMS = $this->ReadPropertyInteger( 'SnapshotTimer' ) * 1000;
@@ -209,7 +217,10 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			} else {
 				// instance active
 				$this->SetStatus( 102 );
-				$this->Send('getDeviceData',$this->ReadPropertyString('DeviceType'));
+				// getData() statt nur getDeviceData: fordert bei aktivierter inoffizieller API
+				// auch die privAPI-Daten an (Privatsphaere, Aufzeichnungs-Modus), damit
+				// Variablen und Kachel direkt nach dem Uebernehmen gefuellt sind
+				$this->getData();
 			}
 
 
@@ -341,16 +352,18 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 						break;
 					case 'privApi_getCamera':
 						$deviceData = unserialize($data);
-						$this->SendDebug(__FUNCTION__, "privApi_getCamera: deviceData=" . print_r($deviceData, true), 0);
-						$this->processPrivApiDeviceData($deviceData);
+						if (is_array($deviceData)) {
+							$this->SendDebug("UnifiPDevice", "privApi_getCamera: Data: " . json_encode($deviceData), 0);
+							$this->processPrivApiDeviceData($deviceData);
+						}
 						break;
 					case 'privApi_setRecordingMode':
 						$ret = unserialize($data);
-						$this->SendDebug(__FUNCTION__, "privApi_setRecordingMode: ret=" . print_r($ret, true), 0);
+						$this->SendDebug("UnifiPDevice", "privApi_setRecordingMode: ret=" . json_encode($ret), 0);
 						return $ret;
 					case 'privApi_setPrivacy':
 						$ret = unserialize($data);
-						$this->SendDebug(__FUNCTION__, "privApi_setPrivacy: ret=" . print_r($ret, true), 0);
+						$this->SendDebug("UnifiPDevice", "privApi_setPrivacy: ret=" . json_encode($ret), 0);
 						return $ret;
 					default:
 						$this->SendDebug("UnifiPDevice", "Keine Antwortverarbeitung noetig fuer API: " . $api, 0);
@@ -395,10 +408,9 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			}
 			$this->processDeviceData($message['item']);
 
-			// verzögerter Abruf der privAPI-Daten
-			$use_privAPI = $this->ReadPropertyBoolean('use_privAPI');
-			if ($use_privAPI) {
-				$this->SetTimerInterval('UpdatePrivApi', self::$privApi_delay);
+			// verzoegerter, gesammelter Abruf der privAPI-Daten
+			if ($this->ReadPropertyBoolean('use_privAPI')) {
+				$this->schedulePrivApiUpdate();
 			}
 
 			return '';
@@ -518,17 +530,23 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->TileUpdate($this->TileFromDeviceData($deviceData));
 		}
 
+		// Verarbeitet die Kameradaten der inoffiziellen API (Privatsphaere, Aufzeichnungs-Modus)
 		private function processPrivApiDeviceData(array $deviceData): void
 		{
-			$deviceType = $this->ReadPropertyString('DeviceType');
-			if ($deviceType == 'Camera') {
-				$this->SendDebug(__FUNCTION__, 'deviceData=' . print_r($deviceData, true), 0);
-				if (isset($deviceData['recordingSettings']['mode'])) {
-					$this->SetValue('RecordingMode', $deviceData['recordingSettings']['mode']);
-				}
-				if (isset($deviceData['privacyEnabled'])) {
-					$this->SetValue('Privacy', $deviceData['privacyEnabled']);
-				}
+			if ($this->ReadPropertyString('DeviceType') != 'Camera' || !$this->ReadPropertyBoolean('use_privAPI')) {
+				return;
+			}
+			$tile = [];
+			if (isset($deviceData['recordingSettings']['mode'])) {
+				$this->SetValue('RecordingMode', (string)$deviceData['recordingSettings']['mode']);
+				$tile['recordingMode'] = (string)$deviceData['recordingSettings']['mode'];
+			}
+			if (isset($deviceData['privacyEnabled'])) {
+				$this->SetValue('Privacy', (bool)$deviceData['privacyEnabled']);
+				$tile['privacy'] = (bool)$deviceData['privacyEnabled'];
+			}
+			if (!empty($tile)) {
+				$this->TileUpdate($tile);
 			}
 		}
 
@@ -558,6 +576,11 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			}
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$tile = array_merge($tile, $this->TileCameraMedia());
+				// privAPI-Werte aus den persistierten Variablen vorbelegen
+				if ($this->ReadPropertyBoolean('use_privAPI')) {
+					$tile['privacy'] = (bool)@$this->GetValue('Privacy');
+					$tile['recordingMode'] = (string)@$this->GetValue('RecordingMode');
+				}
 			}
 			$this->TileUpdate($tile);
 			if ($this->ReadPropertyBoolean('Active') && $this->HasActiveParent()) {
@@ -807,11 +830,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 				unset($arrayOptions);
 				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'SnapshotDisabled', 'caption' => $this->Translate('Disable snapshot (camera does not support snapshots)') );
-				$arrayElements[] = [
-					'type'    => 'CheckBox',
-					'name'    => 'use_privAPI',
-					'caption' => $this->Translate('use inofficial API'),
-				];
+				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'use_privAPI', 'caption' => $this->Translate('Use unofficial API (privacy, recording mode; local user in gateway required)') );
 			}
 			if ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Temperature','width' => '180px', 'caption' => $this->Translate('Temperature') );
@@ -911,19 +930,21 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
                     $this->SetValue($Ident, (string)$Value);
                     break;
 				case 'RecordingMode':
-					$this->SendDebug(__FUNCTION__, 'ident=' . $Ident . ', value=' . $Value, 0);
+					$this->SendDebug("UnifiPDevice", "RecordingMode: New state is " . $Value, 0);
 					$payload = [
-						'recordingMode' => $Value,
+						'recordingMode' => (string) $Value,
 					];
 					$ret = $this->Send('privApi_setRecordingMode', json_encode($payload));
-					$this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret,true), 0);
-					if ($ret['status']) {
+					$this->SendDebug("UnifiPDevice", "RecordingMode: ret=" . json_encode($ret), 0);
+					// Send() liefert null, wenn kein aktiver Parent vorhanden ist
+					if (is_array($ret) && ($ret['status'] ?? false)) {
 						$this->SetValue($Ident, (string) $Value);
-						$this->SetTimerInterval('UpdatePrivApi', self::$privApi_delay);
+						$this->TileUpdate(['recordingMode' => (string) $Value]);
+						$this->schedulePrivApiUpdate();
 					}
 					break;
 				case 'Privacy':
-					$this->SendDebug(__FUNCTION__, 'ident=' . $Ident . ', value=' . $Value, 0);
+					$this->SendDebug("UnifiPDevice", "Privacy: New state is " . json_encode($Value), 0);
 					$b = (bool) $Value;
 					if ($b) {
 						$payload = [
@@ -940,23 +961,44 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 						];
 					}
 					$ret = $this->Send('privApi_setPrivacy', json_encode($payload));
-					$this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret,true), 0);
-					if ($ret['status']) {
-						$this->WriteAttributeString('prevValues4Privacy', $b ? json_encode($ret['prev']) : '');
+					$this->SendDebug("UnifiPDevice", "Privacy: ret=" . json_encode($ret), 0);
+					// Send() liefert null, wenn kein aktiver Parent vorhanden ist
+					if (is_array($ret) && ($ret['status'] ?? false)) {
+						$this->WriteAttributeString('prevValues4Privacy', $b ? json_encode($ret['prev'] ?? []) : '');
 						$this->SetValue($Ident, $b);
 						$this->SetValue('micVolume', $payload['micVolume']);
 						$this->SetValue('RecordingMode', $payload['recordingMode']);
-						$this->SetTimerInterval('UpdatePrivApi', self::$privApi_delay);
+						$this->TileUpdate(['privacy' => $b, 'recordingMode' => $payload['recordingMode'], 'micVolume' => $payload['micVolume']]);
+						$this->schedulePrivApiUpdate();
 					}
 					break;
 				case 'UpdatePrivApi':
 					$this->UpdatePrivApi();
 					break;
+				default:
+					throw new Exception("Invalid Ident");
 			}
+		}
+
+		/**
+		 * Armiert den verzoegerten privAPI-Abruf (gesammelt nach WS-Aenderungen), aber nur,
+		 * wenn noch keiner ansteht: ein erneutes SetTimerInterval wuerde den Countdown
+		 * zuruecksetzen, und bei durchgehendem Event-Strom (z.B. Slider-Ziehen in der
+		 * UniFi-App, haeufige Status-Updates) kaeme der Abruf sonst nie zur Ausfuehrung.
+		 * So laeuft er garantiert spaetestens privApi_delay nach dem ersten Event.
+		 */
+		private function schedulePrivApiUpdate(): void
+		{
+			if ($this->GetBuffer('PrivApiPending') === '1') {
+				return;
+			}
+			$this->SetBuffer('PrivApiPending', '1');
+			$this->SetTimerInterval('UpdatePrivApi', self::$privApi_delay);
 		}
 
 		private function UpdatePrivApi()
 		{
+			$this->SetBuffer('PrivApiPending', '');
 			$use_privAPI = $this->ReadPropertyBoolean('use_privAPI');
 			$is_camera = $this->ReadPropertyString('DeviceType') == 'Camera';
 			if ($use_privAPI && $is_camera) {

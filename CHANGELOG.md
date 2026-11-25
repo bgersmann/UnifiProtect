@@ -1,5 +1,20 @@
 # Changelog
 
+## Version 2.3 (2026-11-27)
+
+### Inoffizielle API: Privatsphäre & Aufzeichnungs-Modus (Beitrag von demel42, danke!)
+
+Das Gateway kann zusätzlich zur offiziellen Integration API die inoffizielle Protect-API nutzen (Anmeldung mit lokalem UniFi-Benutzer, Muster nach [uiprotect](https://github.com/uilibs/uiprotect)). Kameras erhalten damit zwei neue Funktionen:
+
+- **Privatsphäre-Schalter** (`Privacy`): legt eine bildfüllende Privacy-Zone an, schaltet das Mikrofon stumm und die Aufzeichnung ab; beim Ausschalten werden die vorherigen Werte wiederhergestellt.
+- **Aufzeichnungs-Modus** (`RecordingMode`): Adaptiv / Immer / Nie / Zeitplan / nur Ereignisse.
+
+**Konfiguration:** Zugangsdaten (lokaler Benutzer + Passwort) im Gateway, je Kamera aktivierbar über "Inoffizielle API nutzen". Der neue Button **"Zugriff prüfen"** im Gateway testet API-Key und den Login des lokalen Benutzers (mit erzwungenem frischem Login). Beide Funktionen sind auch in der HTML-Kachel der Kamera bedienbar (Schalter + Modus-Chips mit Beschriftung).
+
+**Abruf-Strategie:** Die privAPI wird sparsam abgefragt — beim Übernehmen der Einstellungen, beim Vollabgleich (fullSync/stündlicher Fallback) und gesammelt 10 s nach WebSocket-Änderungen (Debounce mit garantierter Ausführung auch bei durchgehendem Event-Strom).
+
+**Nacharbeiten am Beitrag:** Passwort/Token erscheinen nicht mehr im Debug, Retry-/Semaphore-Logik der HTTP-Schicht korrigiert (Endlos-Retry, Mehrfach-Freigabe), invertierte Vergleiche beim Wiederherstellen von Mikrofon/Aufzeichnung behoben.
+
 ## Version 2.2 (2026-11-05)
 
 ### HTML-Kacheln für die Kachel-Visualisierung

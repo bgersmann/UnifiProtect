@@ -102,6 +102,13 @@
 
     .btn { border: 0; border-radius: 8px; padding: .5em .8em; font: inherit; font-size: .85em; background: var(--track); color: var(--content-color); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: .5em; min-width: 0; }
     .btnrow { display: flex; gap: 6px; flex: none; min-width: 0; }
+    /* Kamera-Aktionsleiste: reine Icon-Buttons etwas groesser und besser tippbar */
+    .btnrow .btn { font-size: 1.1em; padding: .5em 1em; }
+    .seclbl { font-size: .74em; color: var(--muted); line-height: 1.35; margin-bottom: 3px; }
+    .privrow { display: flex; align-items: center; justify-content: space-between; gap: .7em; flex: none; font-size: .85em; line-height: 1.3; }
+    .toggle.sm { width: 34px; height: 20px; border-radius: 10px; }
+    .toggle.sm::after { width: 14px; height: 14px; }
+    .toggle.sm[aria-checked=true]::after { left: 17px; }
     .btn i { color: var(--accent-color); }
     .btn.busy { opacity: .6; }
     .btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -204,6 +211,16 @@
                 body += kpis(items);
             }
             body += rows([[T('LCD Message'), has(d.lcdMessage) ? E(d.lcdMessage) : '', 3]]);
+            // Funktionen der inoffiziellen API: nur wenn das Modul die Felder liefert (use_privAPI aktiv)
+            if (d.privacy === true || d.privacy === false) {
+                body += `<div class="privrow" data-p="2"><span>${E(T('Privacy'))}</span>
+                    <button class="toggle sm" role="switch" aria-checked="${d.privacy}" aria-label="${E(T('Privacy'))}" data-privacy></button></div>`;
+            }
+            if (has(d.recordingMode)) {
+                const recModes = ['adaptive', 'always', 'never', 'schedule', 'detections'];
+                body += `<div data-p="3"><div class="seclbl">${E(T('Recording mode'))}</div>
+                    <div class="chips">${recModes.map((m) => `<button class="chip ${m === d.recordingMode ? 'on' : ''}" data-recmode="${E(m)}">${E(T(m))}</button>`).join('')}</div></div>`;
+            }
             // Spruenge zu Stream/Schnappschuss nur, wenn die Visualisierung openObject kann (ab Symcon 8.2)
             const canOpen = typeof openObject === 'function';
             let actions = '';
@@ -431,6 +448,19 @@
                 requestAction(hookButton.dataset.hook, 1);
                 setTimeout(() => hookButton.classList.remove('busy'), 3000);
             }
+            return;
+        }
+        const privacyToggle = event.target.closest('[data-privacy]');
+        if (privacyToggle) {
+            const enabled = privacyToggle.getAttribute('aria-checked') === 'true';
+            privacyToggle.setAttribute('aria-checked', String(!enabled));
+            requestAction('Privacy', !enabled);
+            return;
+        }
+        const recChip = event.target.closest('[data-recmode]');
+        if (recChip) {
+            box.querySelectorAll('[data-recmode]').forEach((c) => c.classList.toggle('on', c === recChip));
+            requestAction('RecordingMode', recChip.dataset.recmode);
             return;
         }
         const profileChip = event.target.closest('[data-profile]');

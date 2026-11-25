@@ -73,7 +73,7 @@
             "h": "Std",
             "min": "Min",
             "since %s": "seit %s",
-			"use inofficial API": "inoffizielle API nutzen",
+			"Use unofficial API (privacy, recording mode; local user in gateway required)": "Inoffizielle API nutzen (Privatsphäre, Aufzeichnungs-Modus; lokaler Benutzer im Gateway erforderlich)",
 			"Privacy": "Privatsphäre",
 			"Recording mode": "Aufzeichnungs-Modus",
 			"adaptive": "Adaptiv",

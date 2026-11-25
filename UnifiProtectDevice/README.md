@@ -46,6 +46,7 @@ ID-Anzeigen | ID als Variable anlegen
 Stream Niedrig/Mittel/Hoch | Stream in entsprechender Auflösung anlegen (Schaltet auch Stream in Unifi Protect ein/aus!!)
 Snapshot-Timer aktiv / Snapshot-Timer (s) | Snapshot der Kamera zyklisch aktualisieren
 Snapshot deaktivieren | Für Fremdkameras (z.B. ONVIF), die keinen Snapshot liefern: entfernt Snapshot-Variable, Medienobjekt und Kachel-Buttons
+Inoffizielle API nutzen | Aktiviert Privatsphäre-Schalter und Aufzeichnungs-Modus der Kamera über die inoffizielle Protect-API (lokaler Benutzer + Passwort im Gateway erforderlich)
 Anzeigename der Kachel (optional) | Überschreibt nur den Titel der HTML-Kachel; Instanz und Gerät werden nicht umbenannt
 Temperatur/Luftfeuchtigkeit/… | Je nach Gerätetyp (UP-Sense, UP-AirQuality): Messwert-Variablen per Checkbox aktivieren
 
@@ -65,6 +66,8 @@ Die Statusvariablen/Kategorien werden automatisch angelegt. Das Löschen einzeln
 | Is Microphone enabled  | Boolean      | Status Mikrofon |
 | Microphone Volume | Integer | Mikrofon Lautstärke |
 | Air Quality Index / Vape Index / TVOC / VOC / CO2 / PM1.0 / PM2.5 / PM4.0 / PM10 | Integer/Float | Luftqualitätswerte des UP-AirQuality (sofern die Protect Integration API diese bereitstellt) |
+| Privacy      | Boolean  | Privatsphäre-Modus der Kamera (inoffizielle API): legt eine bildfüllende Privacy-Zone an, schaltet das Mikrofon stumm und die Aufzeichnung ab; beim Ausschalten werden die vorherigen Werte wiederhergestellt |
+| RecordingMode | String  | Aufzeichnungs-Modus der Kamera (inoffizielle API): Adaptiv/Immer/Nie/Zeitplan/nur Ereignisse |
 
 #### Profile
 
@@ -76,7 +79,7 @@ keine vorhanden
 - Steuerung von Geräten und Anzeige von Ereignissen
 - Visualisierung von Status und Sensorwerten
 - Eigene HTML-Kachel für die Kachel-Visualisierung (ab IP-Symcon 8.2), je nach Gerätetyp:
-  - Kamera: Verbindungsstatus, Mikrofon, LCD-Nachricht, Snapshot erstellen sowie Buttons zum Öffnen von Stream und Snapshot (Öffnen-Buttons ab Symcon 8.2-Visualisierung)
+  - Kamera: Verbindungsstatus, Mikrofon, LCD-Nachricht, Snapshot erstellen sowie Buttons zum Öffnen von Stream und Snapshot (Öffnen-Buttons ab Symcon 8.2-Visualisierung); mit aktivierter inoffizieller API zusätzlich Privatsphäre-Schalter und Aufzeichnungs-Modus-Auswahl
   - Speaker: Status, Lautstärken, Modus
   - UP-Sense: Temperatur, Luftfeuchte, Beleuchtung, Batterie
   - UP-AirQuality: Luftqualitätsindex, CO2, Feinstaub und weitere Messwerte

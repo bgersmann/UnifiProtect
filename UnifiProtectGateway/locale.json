@@ -34,6 +34,7 @@
 			"Test access": "Zugriff prüfen",
 			"Public API": "Öffentliche API",
 			"Access to public API successful": "Zugriff auf öffentliche API erfolgreich",
+			"Login successful": "Login erfolgreich",
 			"unable to access with API key": "Zugriff mit API-Schlüssel nicht möglich",
 			"Unofficial API": "Inoffizielle API",
 			"unable to access local account": "Zugriff auf lokales Konto nicht möglich",

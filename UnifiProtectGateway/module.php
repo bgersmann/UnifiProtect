@@ -271,8 +271,6 @@ declare(strict_types=1);
 				$this->SetStatus( 102 );
 			}
 
-			$this->SendDebug(__FUNCTION__, 'data=' . print_r($data, true), 0);
-
 			if (isset($data->Api)) {
 				switch ($data->Api) {
 					case 'setAlarmManager':
@@ -1208,24 +1206,20 @@ declare(strict_types=1);
 
     public function RequestAction(string $ident, mixed $value): void
     {
-        $this->SendDebug(__FUNCTION__, 'ident=' . $ident . ', value=' . $value, 0);
-
-        $r = false;
+        $this->SendDebug("UnifiPGW", "RequestAction: " . $ident, 0);
         switch ($ident) {
             case 'TestAccess':
                 $this->TestAccess();
                 break;
             default:
-                $this->SendDebug(__FUNCTION__, 'invalid ident ' . $ident, 0);
+                $this->SendDebug("UnifiPGW", "RequestAction: unbekannter Ident " . $ident, 0);
                 break;
-        }
-
-        if ($r) {
-            $this->SetValue($ident, $value);
         }
     }
 
-    private function TestAccess()
+    // Formular-Button: prueft den Zugriff auf die oeffentliche API (API-Key) und den Login
+    // der inoffiziellen API (lokaler Benutzer) und zeigt das Ergebnis als Popup an
+    private function TestAccess(): void
     {
         $txt = $this->Translate('Public API') . PHP_EOL;
 
@@ -1233,7 +1227,7 @@ declare(strict_types=1);
         if ($APIKey != '') {
             $version = $this->getApiData('/meta/info');
             if ($this->GetStatus() != IS_ACTIVE || is_array($version) == false) {
-                $txt .= $this->Translate('unable to access public API with API key') . PHP_EOL;
+                $txt .= $this->Translate('unable to access with API key') . PHP_EOL;
             } else {
                 $txt .= $this->Translate('Access to public API successful') . PHP_EOL;
             }
@@ -1244,13 +1238,15 @@ declare(strict_types=1);
         $txt .= PHP_EOL;
         $txt .= $this->Translate('Unofficial API') . PHP_EOL;
         if ($this->privApi_enabled()) {
+            // Gespeicherten Token verwerfen, damit wirklich der Login mit den
+            // hinterlegten Zugangsdaten getestet wird und nicht ein alter Token
+            $this->WriteAttributeString('localToken', '');
             $data = $this->privApi_getCameras();
-            if ($this->GetStatus() != IS_ACTIVE || $data == false) {
+            $cams = is_string($data) ? @json_decode($data, true) : false;
+            if ($data == false || !is_array($cams)) {
                 $txt .= $this->Translate('unable to access local account') . PHP_EOL;
             } else {
-                $cams = @json_decode($data, true);
-                $n_cams = count($cams);
-                $txt .= $n_cams . ' ' . $this->Translate('registered cameras found') . PHP_EOL;
+                $txt .= $this->Translate('Login successful') . ', ' . count($cams) . ' ' . $this->Translate('registered cameras found') . PHP_EOL;
             }
         } else {
             $txt .= $this->Translate('not configured');
@@ -1297,8 +1293,8 @@ declare(strict_types=1);
         ];
         $header = $this->build_header($headerfields);
 
-        $this->SendDebug(__FUNCTION__, 'http-POST, url=' . $url, 0);
-        $this->SendDebug(__FUNCTION__, '... header=' . print_r($header, true), 0);
+        // Das Passwort darf niemals im Debug landen
+        $this->SendDebug("UnifiPGW", "privApi_login: http-POST, url=" . $url . ", user=" . $localUser, 0);
 
         $postfields = [
             'username'   => $localUser,
@@ -1306,9 +1302,6 @@ declare(strict_types=1);
             'rememberMe' => true,
         ];
         $postdata = json_encode($postfields, JSON_UNESCAPED_UNICODE);
-
-        $this->SendDebug(__FUNCTION__, '... postfields=' . print_r($postfields, true), 0);
-        $this->SendDebug(__FUNCTION__, '... postdata=' . $postdata, 0);
 
         $responseHeaders = [];
 
@@ -1345,20 +1338,14 @@ declare(strict_types=1);
         }
 
         $duration = round(microtime(true) - $time_start, 2);
-        $this->SendDebug(__FUNCTION__, ' => errno=' . $cerrno . ', httpcode=' . $httpcode . ', duration=' . $duration . 's', 0);
-        $this->SendDebug(__FUNCTION__, ' => response=' . $response, 0);
+        // Antwort nicht im Klartext loggen: Header und Body enthalten Token/Cookie
+        $this->SendDebug("UnifiPGW", "privApi_login: errno=" . $cerrno . ", httpcode=" . $httpcode . ", duration=" . $duration . "s", 0);
 
         if ($cerrno) {
-            $this->SendDebug(__FUNCTION__, 'got curl-errno ' . $cerrno . ' (' . $cerror . ')', 0);
+            $this->SendDebug("UnifiPGW", "privApi_login: Curl error " . $cerrno . " (" . $cerror . ")", 0);
             $this->SetStatus(201); // Set status to error
             return false;
         }
-
-        $header_size = $curl_info['header_size'];
-        $head = substr($response, 0, $header_size);
-        $body = substr($response, $header_size);
-        $this->SendDebug(__FUNCTION__, ' => head=' . $head, 0);
-        $this->SendDebug(__FUNCTION__, ' => body=' . $body, 0);
 
         $csrf = '';
         $cookie = '';
@@ -1381,14 +1368,15 @@ declare(strict_types=1);
             $expiration = (int) end($responseHeaders['x-token-expire-time']);
             $expiration = intdiv($expiration, 1000);
 
-            // Sicherheitsmarge damit der Token rechtzeitig erneuれrt wird
+            // Sicherheitsmarge, damit der Token rechtzeitig erneuert wird
             $expiration -= 60;
         }
 
-        $this->SendDebug(__FUNCTION__, 'cookie=' . $cookie . ', csrf=' . $csrf . ', expiration=' . ($expiration ? date('d.m.Y H:i:s', $expiration) : '-'), 0);
+        // Token/Cookie sind Zugangsdaten und werden nur als Vorhanden/Fehlt geloggt
+        $this->SendDebug("UnifiPGW", "privApi_login: cookie=" . ($cookie !== '' ? 'vorhanden' : 'FEHLT') . ", csrf=" . ($csrf !== '' ? 'vorhanden' : 'FEHLT') . ", expiration=" . ($expiration ? date('d.m.Y H:i:s', $expiration) : '-'), 0);
 
         if ($cookie == '' || $csrf == '') {
-            $this->SendDebug(__FUNCTION__, 'cookie and/or csrf not found', 0);
+            $this->SendDebug("UnifiPGW", "privApi_login: Cookie und/oder CSRF-Token nicht in der Antwort gefunden", 0);
             $this->SetStatus(201);
             return false;
         }
@@ -1409,12 +1397,12 @@ declare(strict_types=1);
         $jtoken = @json_decode($this->ReadAttributeString('localToken'), true);
 
         if (empty($jtoken['csrf']) || empty($jtoken['cookie'])) {
-            $this->SendDebug(__FUNCTION__, 'no saved token', 0);
+            $this->SendDebug("UnifiPGW", "privApi_getToken: kein gespeicherter Token", 0);
             $jtoken = false;
         } else {
             $expiration = $jtoken['expiration'] ?? 0;
             if ($expiration < time()) {
-                $this->SendDebug(__FUNCTION__, 'token expired', 0);
+                $this->SendDebug("UnifiPGW", "privApi_getToken: Token abgelaufen", 0);
                 $jtoken = false;
             }
         }
@@ -1429,7 +1417,6 @@ declare(strict_types=1);
 
     private function privApi_http(string $endpoint, string $method, array $postfields)
     {
-        $this->SendDebug(__FUNCTION__, 'endpoint=' . $endpoint . ', method=' . $method . ', postfields=' . print_r($postfields, true), 0);
         $host = $this->ReadPropertyString('ServerAddress');
 
         if ($this->privApi_enabled() == false) {
@@ -1440,20 +1427,23 @@ declare(strict_types=1);
         $retry = 0;
 
         if (!IPS_SemaphoreEnter('UnifiProtectAPI', 500)) {
-            $this->SendDebug(__FUNCTION__, 'Semaphore Timeout - Request abgebrochen', 0);
-            return [];
+            $this->SendDebug("UnifiPGW", "privApi_http: Semaphore Timeout - Request abgebrochen", 0);
+            return false;
         }
 
         $url = 'https://' . $host . '/proxy/protect/api' . $endpoint;
         $method = strtoupper($method);
 
-        do {
-            try {
+        // Semaphore genau einmal betreten und einmal verlassen - das finally umschliesst
+        // die komplette Retry-Schleife (vorher wurde es pro Durchlauf verlassen)
+        try {
+            do {
                 $jtoken = $this->privApi_getToken();
                 if ($jtoken == false) {
                     return false;
                 }
 
+                // Cookie und CSRF-Token sind Zugangsdaten und gehoeren nicht ins Debug
                 $headerfields = [
                     'Accept'       => 'application/json',
                     'Content-Type' => 'application/json',
@@ -1462,14 +1452,12 @@ declare(strict_types=1);
                 ];
                 $header = $this->build_header($headerfields);
 
-                $this->SendDebug(__FUNCTION__, 'http-' . $method . ', url=' . $url . ', try ' . $retry . '/' . $maxRetries, 0);
-                $this->SendDebug(__FUNCTION__, '... header=' . print_r($header, true), 0);
+                $this->SendDebug("UnifiPGW", "privApi_http: " . $method . " " . $url . ", Versuch " . ($retry + 1) . "/" . $maxRetries, 0);
 
+                $postdata = '';
                 if (empty($postfields) == false) {
                     $postdata = json_encode($postfields, JSON_UNESCAPED_UNICODE);
-
-                    $this->SendDebug(__FUNCTION__, '... postfields=' . print_r($postfields, true), 0);
-                    $this->SendDebug(__FUNCTION__, '... postdata=' . $postdata, 0);
+                    $this->SendDebug("UnifiPGW", "privApi_http: postdata=" . $postdata, 0);
                 }
 
                 $curl_opts = [
@@ -1482,11 +1470,9 @@ declare(strict_types=1);
                     CURLOPT_HEADER         => true,
                 ];
 
-                if (empty($postfields) == false) {
+                if ($postdata !== '') {
                     $curl_opts[CURLOPT_POSTFIELDS] = $postdata;
                 }
-
-                $this->SendDebug(__FUNCTION__, 'curl_opts=' . print_r($curl_opts, true), 0);
 
                 $time_start = microtime(true);
 
@@ -1502,39 +1488,37 @@ declare(strict_types=1);
                 }
 
                 $duration = round(microtime(true) - $time_start, 2);
-                $this->SendDebug(__FUNCTION__, ' => errno=' . $cerrno . ', httpcode=' . $httpcode . ', duration=' . $duration . 's', 0);
-                $this->SendDebug(__FUNCTION__, ' => response=' . $response, 0);
+                $this->SendDebug("UnifiPGW", "privApi_http: errno=" . $cerrno . ", httpcode=" . $httpcode . ", duration=" . $duration . "s", 0);
 
                 if ($cerrno) {
-                    $this->SendDebug(__FUNCTION__, 'got curl-errno ' . $cerrno . ' (' . $cerror . ')', 0);
+                    $this->SendDebug("UnifiPGW", "privApi_http: Curl error " . $cerrno . " (" . $cerror . ")", 0);
                     $this->SetStatus(201); // Set status to error
                     return false;
                 }
 
                 $header_size = $curl_info['header_size'];
-                $head = substr($response, 0, $header_size);
                 $body = substr($response, $header_size);
-                $this->SendDebug(__FUNCTION__, ' => head=' . $head, 0);
-                $this->SendDebug(__FUNCTION__, ' => body=' . $body, 0);
+                $this->SendDebug("UnifiPGW", "privApi_http: body=" . $body, 0);
 
                 if ($httpcode == 401) {
-                    $this->SendDebug(__FUNCTION__, 'http request rejected, retry with new token', 0);
+                    $this->SendDebug("UnifiPGW", "privApi_http: Request abgelehnt, neuer Versuch mit frischem Token", 0);
                     $this->WriteAttributeString('localToken', '');
                 } elseif ($httpcode == 429) {
-                    $this->SendDebug(__FUNCTION__, 'rate limit reached, wait 5s', 0);
-                    usleep(5 * 1000);
+                    $this->SendDebug("UnifiPGW", "privApi_http: Rate Limit erreicht, warte 1s", 0);
+                    usleep(1000000);
                 } elseif ($httpcode == 200) {
                     return $body;
                 } else {
-                    $this->SendDebug(__FUNCTION__, 'http request failed', 0);
+                    $this->SendDebug("UnifiPGW", "privApi_http: Request fehlgeschlagen", 0);
                     $this->SetStatus($httpcode);
                     return false;
                 }
-            } finally {
-                IPS_SemaphoreLeave('UnifiProtectAPI');
-            }
-        } while ($retry < $maxRetries);
-        $this->SendDebug(__FUNCTION__, 'more than ' . $maxRetries . ' tries, abort', 0);
+                $retry++;
+            } while ($retry < $maxRetries);
+        } finally {
+            IPS_SemaphoreLeave('UnifiProtectAPI');
+        }
+        $this->SendDebug("UnifiPGW", "privApi_http: mehr als " . $maxRetries . " Versuche, Abbruch", 0);
         return false;
     }
 
@@ -1549,7 +1533,7 @@ declare(strict_types=1);
             return false;
         }
         if (empty($body)) {
-            $this->SendDebug(__FUNCTION__, 'no cameras found', 0);
+            $this->SendDebug("UnifiPGW", "privApi_getCameras: keine Kameras gefunden", 0);
             return false;
         }
 
@@ -1565,11 +1549,14 @@ declare(strict_types=1);
             return false;
         }
         if (empty($body)) {
-            $this->SendDebug(__FUNCTION__, 'no cameras found', 0);
+            $this->SendDebug("UnifiPGW", "privApi_getCamera: Kamera nicht gefunden", 0);
             return false;
         }
 
         $cam = json_decode($body, true);
+        if (!is_array($cam)) {
+            return false;
+        }
 
         $privacyEnabled = false;
         if (empty($cam['featureFlags']['hasPrivacyMask']) == false) {
@@ -1588,7 +1575,7 @@ declare(strict_types=1);
 
     private function privApi_setRecordingMode(string $deviceId, string $recordingMode)
     {
-        $this->SendDebug(__FUNCTION__, 'deviceId=' . $deviceId . ', recordingMode=' . $recordingMode, 0);
+        $this->SendDebug("UnifiPGW", "privApi_setRecordingMode: deviceId=" . $deviceId . ", recordingMode=" . $recordingMode, 0);
 
         $cam = $this->privApi_getCamera($deviceId);
         if ($cam == false) {
@@ -1596,12 +1583,12 @@ declare(strict_types=1);
                 'msg'    => 'not found',
                 'status' => false,
             ];
-            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            $this->SendDebug("UnifiPGW", "privApi_setRecordingMode: ret=" . json_encode($ret), 0);
             return $ret;
         }
 
         $prev = [
-            'recordingMode' => $cam['recordingSettings']['mode'],
+            'recordingMode' => $cam['recordingSettings']['mode'] ?? '',
         ];
 
         if (($cam['recordingSettings']['mode'] ?? null) === $recordingMode) {
@@ -1609,7 +1596,7 @@ declare(strict_types=1);
                 'msg'    => 'unchanged',
                 'status' => true,
             ];
-            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            $this->SendDebug("UnifiPGW", "privApi_setRecordingMode: ret=" . json_encode($ret), 0);
             return $ret;
         }
 
@@ -1625,7 +1612,7 @@ declare(strict_types=1);
                 'msg'    => 'patch failed',
                 'status' => false,
             ];
-            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            $this->SendDebug("UnifiPGW", "privApi_setRecordingMode: ret=" . json_encode($ret), 0);
             return $ret;
         }
 
@@ -1634,13 +1621,13 @@ declare(strict_types=1);
             'msg'    => 'succeed',
             'status' => true,
         ];
-        $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+        $this->SendDebug("UnifiPGW", "privApi_setRecordingMode: ret=" . json_encode($ret), 0);
         return $ret;
     }
 
-    private function privApi_setPrivacy(string $deviceId, bool $enabled, int $micVolume = null, string $recordingMode = null)
+    private function privApi_setPrivacy(string $deviceId, bool $enabled, ?int $micVolume = null, ?string $recordingMode = null)
     {
-        $this->SendDebug(__FUNCTION__, 'deviceId=' . $deviceId . ', enabled=' . ($enabled ? 'true' : 'false') . ', micVolume=' . $micVolume . ', recordingMode=' . $recordingMode, 0);
+        $this->SendDebug("UnifiPGW", "privApi_setPrivacy: deviceId=" . $deviceId . ", enabled=" . ($enabled ? 'true' : 'false') . ", micVolume=" . $micVolume . ", recordingMode=" . $recordingMode, 0);
 
         $cam = $this->privApi_getCamera($deviceId);
         if ($cam == false) {
@@ -1648,7 +1635,7 @@ declare(strict_types=1);
                 'msg'    => 'not found',
                 'status' => false,
             ];
-            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            $this->SendDebug("UnifiPGW", "privApi_setPrivacy: ret=" . json_encode($ret), 0);
             return $ret;
         }
 
@@ -1657,7 +1644,7 @@ declare(strict_types=1);
                 'msg'    => 'privacy zones are not supported',
                 'status' => false,
             ];
-            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            $this->SendDebug("UnifiPGW", "privApi_setPrivacy: ret=" . json_encode($ret), 0);
             return $ret;
         }
 
@@ -1673,8 +1660,8 @@ declare(strict_types=1);
 
         $prev = [
             'enabled'         => ($idx !== null),
-            'micVolume'       => (int) $cam['micVolume'],
-            'recordingMode'   => $cam['recordingSettings']['mode'],
+            'micVolume'       => (int) ($cam['micVolume'] ?? 0),
+            'recordingMode'   => $cam['recordingSettings']['mode'] ?? '',
         ];
 
         $postfields = [];
@@ -1701,14 +1688,16 @@ declare(strict_types=1);
             }
         }
 
+        // Nur Werte patchen, die sich tatsaechlich AENDERN (vorher war der Vergleich invertiert
+        // und die Werte wurden nur mitgeschickt, wenn sie bereits identisch waren)
         if ($micVolume !== null) {
             $micVolume = max(0, min(100, (int) $micVolume));
-            if (isset($cam['micVolume']) && (int) $cam['micVolume'] === $micVolume) {
+            if (!isset($cam['micVolume']) || (int) $cam['micVolume'] !== $micVolume) {
                 $postfields['micVolume'] = $micVolume;
             }
         }
         if ($recordingMode !== null) {
-            if (isset($cam['recordingSettings']['mode']) && $cam['recordingSettings']['mode'] === $recordingMode) {
+            if (!isset($cam['recordingSettings']['mode']) || $cam['recordingSettings']['mode'] !== $recordingMode) {
                 $postfields['recordingSettings'] = ['mode' => $recordingMode];
             }
         }
@@ -1718,7 +1707,7 @@ declare(strict_types=1);
                 'msg'    => 'unchanged',
                 'status' => true,
             ];
-            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            $this->SendDebug("UnifiPGW", "privApi_setPrivacy: ret=" . json_encode($ret), 0);
             return $ret;
         }
 
@@ -1729,7 +1718,7 @@ declare(strict_types=1);
                 'msg'    => 'patch failed',
                 'status' => false,
             ];
-            $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+            $this->SendDebug("UnifiPGW", "privApi_setPrivacy: ret=" . json_encode($ret), 0);
             return $ret;
         }
 
@@ -1738,7 +1727,7 @@ declare(strict_types=1);
             'msg'    => 'succeed',
             'status' => true,
         ];
-        $this->SendDebug(__FUNCTION__, 'ret=' . print_r($ret, true), 0);
+        $this->SendDebug("UnifiPGW", "privApi_setPrivacy: ret=" . json_encode($ret), 0);
         return $ret;
     }
 }
