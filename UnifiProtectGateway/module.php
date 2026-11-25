@@ -312,7 +312,7 @@ declare(strict_types=1);
 						return serialize($ret);
 					case 'privApi_setPrivacy':
 						$payload = json_decode($data->Param1, true);
-						$ret = $this->privApi_setPrivacy($data->ID, $payload['enabled'], $payload['micLevel'], $payload['recordingMode']);
+						$ret = $this->privApi_setPrivacy($data->ID, $payload['enabled'], $payload['micVolume'], $payload['recordingMode']);
 						return serialize($ret);
 					default:
 						$this->SendDebug("UnifiPGW", "Unknown API: " . $data->Api, 0);
