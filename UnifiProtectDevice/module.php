@@ -944,6 +944,8 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 					if ($ret['status']) {
 						$this->WriteAttributeString('prevValues4Privacy', $b ? json_encode($ret['prev']) : '');
 						$this->SetValue($Ident, $b);
+						$this->SetValue('micVolume', $payload['micVolume']);
+						$this->SetValue('RecordingMode', $payload['recordingMode']);
 						$this->SetTimerInterval('UpdatePrivApi', self::$privApi_delay);
 					}
 					break;
