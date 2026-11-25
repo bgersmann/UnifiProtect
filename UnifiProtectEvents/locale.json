@@ -54,6 +54,7 @@
             "Create variable":"Variable erstellen",
             "No compatible devices found or API connection failed.":"Keine kompatiblen Geräte gefunden oder API-Verbindung fehlgeschlagen.",
             "API Error":"API Fehler",
+            "Wrong WebSocket Client connected (expected /subscribe/events) - Gateway and Events each need their own WS Client": "Falscher WebSocket Client verbunden (erwartet /subscribe/events) — Gateway und Events brauchen je einen eigenen WS Client",
             "Tile display name (optional)": "Anzeigename der Kachel (optional)",
             "Auto-end events without end message after (s) -> 0=Off": "Events ohne Endemeldung automatisch beenden nach (s) -> 0=Aus",
             "Active events": "Aktive Ereignisse",

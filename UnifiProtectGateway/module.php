@@ -62,8 +62,13 @@ declare(strict_types=1);
 				$this->SetStatus( 104 );
 				$this->SetTimerInterval( 'Update Version', 0 );
 			} else {
-				// instance active
-				$this->SetStatus( 102 );
+				// instance active: vorher pruefen, ob der verbundene WS Client wirklich
+				// die Geraete-Subscription dieser Instanz nutzt (siehe checkWsParent)
+				if (IPS_GetKernelRunlevel() == KR_READY && !$this->checkWsParent()) {
+					$this->SetStatus( 203 );
+				} else {
+					$this->SetStatus( 102 );
+				}
 				$this->SetSummary($this->ReadPropertyString("ServerAddress"));
 				// Timer: Protect-Version regelmaessig aktualisieren (nur wenn Anzeige aktiv)
 				$VersionTimerMS = $this->ReadPropertyInteger( 'VersionTimer' ) * 1000;
@@ -122,6 +127,26 @@ declare(strict_types=1);
 			]);
 		}
 
+		/**
+		 * Prueft, ob der verbundene WS Client zur Geraete-Subscription dieser Instanz gehoert.
+		 * Beim Anlegen verbindet Symcon neue Instanzen automatisch mit einem bereits vorhandenen
+		 * WS Client - Gateway und Events koennen so faelschlich am selben Client landen und
+		 * eine der beiden Instanzen funktioniert dann nicht.
+		 */
+		private function checkWsParent(): bool
+		{
+			$parentID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
+			if ($parentID <= 0) {
+				return true;
+			}
+			$config = json_decode((string)@IPS_GetConfiguration($parentID), true);
+			$url = (string)($config['URL'] ?? '');
+			if ($url === '') {
+				return true; // WS Client noch unkonfiguriert
+			}
+			return strpos($url, '/subscribe/devices') !== false;
+		}
+
 		// Ueberwacht die WebSocket-Verbindung: stoesst Reconnects an und nach
 		// wiederhergestellter Verbindung einen Vollabgleich der Geraete
 		public function watchdogWS(): void
@@ -129,6 +154,15 @@ declare(strict_types=1);
 			$parentID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
 			if ($parentID <= 0) {
 				return;
+			}
+			// Falscher WS Client verbunden (z.B. der des Events-Moduls)? Dann nicht
+			// reconnecten, sondern den Fehler am Status sichtbar machen
+			if (!$this->checkWsParent()) {
+				$this->SetStatus(203);
+				return;
+			}
+			if (IPS_GetInstance($this->InstanceID)['InstanceStatus'] == 203) {
+				$this->SetStatus(102);
 			}
 			$status = IPS_GetInstance($parentID)['InstanceStatus'];
 			$wasConnected = $this->GetBuffer('WsWasConnected');
@@ -881,6 +915,7 @@ declare(strict_types=1);
 			$arrayStatus = array();
 			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instance is active') );
 			$arrayStatus[] = array( 'code' => 201, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Data query error') );
+			$arrayStatus[] = array( 'code' => 203, 'icon' => 'inactive', 'caption' => $this->Translate('Wrong WebSocket Client connected (expected /subscribe/devices) - Gateway and Events each need their own WS Client') );
 			$arrayStatus[] = array( 'code' => 400, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Bad Request' ));
 			$arrayStatus[] = array( 'code' => 401, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Unauthorized' ));
 			$arrayStatus[] = array( 'code' => 403, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is faulty: Forbidden') );

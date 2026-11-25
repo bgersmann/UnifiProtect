@@ -13,6 +13,7 @@
             "Instance is active": "Instanz ist aktiv",
             "Instance is inactive": "Instanz ist inaktiv",
             "Instance is faulty: Data query error": "Instanz ist fehlerhaft: Fehler Datenabfrage",
+            "Wrong WebSocket Client connected (expected /subscribe/devices) - Gateway and Events each need their own WS Client": "Falscher WebSocket Client verbunden (erwartet /subscribe/devices) — Gateway und Events brauchen je einen eigenen WS Client",
             "Instance is faulty: Bad Request": "Instanz ist fehlerhaft: Ungültige Anfrage",
             "Instance is faulty: Unauthorized": "Instanz ist fehlerhaft: Nicht autorisiert",
             "Instance is faulty: Forbidden": "Instanz ist fehlerhaft: Verboten",

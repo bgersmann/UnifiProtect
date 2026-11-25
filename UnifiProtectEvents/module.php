@@ -89,8 +89,13 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$this->SetStatus( 104 );
 				$this->SetTimerInterval( 'Cleanup Events', 0 );
 			} else {
-				// instance active
-				$this->SetStatus( 102 );
+				// instance active: vorher pruefen, ob der verbundene WS Client wirklich
+				// die Event-Subscription dieser Instanz nutzt (siehe checkWsParent)
+				if (IPS_GetKernelRunlevel() == KR_READY && !$this->checkWsParent()) {
+					$this->SetStatus( 203 );
+				} else {
+					$this->SetStatus( 102 );
+				}
 				$this->SetSummary($this->ReadPropertyString("ServerAddress"));
 				// Kachel aktualisieren (z.B. geaenderter Anzeigename)
 				$this->TileUpdate($this->TileFromEvents());
@@ -343,6 +348,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$arrayStatus[] = array( 'code' => 102, 'icon' => 'active', 'caption' => $this->Translate('Instance is active') );
 			$arrayStatus[] = array( 'code' => 104, 'icon' => 'inactive', 'caption' => $this->Translate('Instance is inactive') );
 			$arrayStatus[] = array( 'code' => 201, 'icon' => 'inactive', 'caption' => $this->Translate('API Error') );
+			$arrayStatus[] = array( 'code' => 203, 'icon' => 'inactive', 'caption' => $this->Translate('Wrong WebSocket Client connected (expected /subscribe/events) - Gateway and Events each need their own WS Client') );
 
 
 			$arrayElements = array();
@@ -861,12 +867,42 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		}
 
 		/**
+		 * Prueft, ob der verbundene WS Client zur Event-Subscription dieser Instanz gehoert.
+		 * Beim Anlegen verbindet Symcon neue Instanzen automatisch mit einem bereits vorhandenen
+		 * WS Client - Gateway und Events koennen so faelschlich am selben Client landen und
+		 * eine der beiden Instanzen funktioniert dann nicht.
+		 */
+		private function checkWsParent(): bool
+		{
+			$parentID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
+			if ($parentID <= 0) {
+				return true;
+			}
+			$config = json_decode((string)@IPS_GetConfiguration($parentID), true);
+			$url = (string)($config['URL'] ?? '');
+			if ($url === '') {
+				return true; // WS Client noch unkonfiguriert
+			}
+			return strpos($url, '/subscribe/events') !== false;
+		}
+
+		/**
 		 * Entfernt Events, deren Endemeldung ausgeblieben ist (z.B. Controller-Update oder
 		 * WebSocket-Abriss waehrend eines laufenden Events), nach Ablauf von 'EventTimeout'
 		 * und setzt Variablen und Kachel auf den bereinigten Stand. Laeuft per Timer jede Minute.
 		 */
 		public function cleanupEvents(): void
 		{
+			// Minuten-Timer mitnutzen: Parent-Zuordnung regelmaessig nachpruefen,
+			// damit der Status auch nach spaeteren Umkonfigurationen stimmt
+			$status = IPS_GetInstance($this->InstanceID)['InstanceStatus'];
+			if (!$this->checkWsParent()) {
+				if ($status == 102) {
+					$this->SetStatus(203);
+				}
+			} elseif ($status == 203) {
+				$this->SetStatus(102);
+			}
 			$timeout = $this->ReadPropertyInteger('EventTimeout');
 			if ($timeout <= 0) {
 				return;
