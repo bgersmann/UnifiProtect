@@ -15,6 +15,11 @@ Das Gateway kann zusätzlich zur offiziellen Integration API die inoffizielle Pr
 
 **Nacharbeiten am Beitrag:** Passwort/Token erscheinen nicht mehr im Debug, Retry-/Semaphore-Logik der HTTP-Schicht korrigiert (Endlos-Retry, Mehrfach-Freigabe), invertierte Vergleiche beim Wiederherstellen von Mikrofon/Aufzeichnung behoben.
 
+### Weitere Änderungen
+
+- **UP-AirQuality über die inoffizielle API:** Die Integration API liefert die Luftqualitätswerte des Vape/Air-Quality-Sensors weiterhin nicht — mit aktivierter Option "Inoffizielle API nutzen" liest das Modul sie jetzt über die inoffizielle API aus (gleiche Abruf-Strategie wie bei den Kameras). Neu dabei: der Messwert **NOX** (Stickoxide), den die inoffizielle API zusätzlich bereitstellt.
+- Die Option "Inoffizielle API nutzen" (Kamera und UP-AirQuality) ist nur aktivierbar, wenn im Gateway lokaler Benutzer und Passwort hinterlegt sind; andernfalls ist sie gesperrt und ein Hinweis wird angezeigt.
+
 ## Version 2.2 (2026-11-05)
 
 ### HTML-Kacheln für die Kachel-Visualisierung

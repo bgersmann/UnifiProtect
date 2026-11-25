@@ -299,7 +299,8 @@
                 ['VOC', has(d.voc) ? num(d.voc) : '', 5],
                 ['PM1.0', has(d.pm1) ? `${num(d.pm1, 1)} µg/m³` : '', 5],
                 ['PM4.0', has(d.pm4) ? `${num(d.pm4, 1)} µg/m³` : '', 6],
-                ['PM10', has(d.pm10) ? `${num(d.pm10, 1)} µg/m³` : '', 6]
+                ['PM10', has(d.pm10) ? `${num(d.pm10, 1)} µg/m³` : '', 6],
+                ['NOX', has(d.nox) ? num(d.nox) : '', 6]
             ]);
         } else {
             // Chime, Light, ...

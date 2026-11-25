@@ -341,6 +341,9 @@ declare(strict_types=1);
 					case "privApi_getCamera":
 						$array = $this->privApi_getCamera($data->ID);
 						return serialize($array);
+					case "privApi_getSensor":
+						$array = $this->privApi_getSensor($data->ID);
+						return serialize($array);
 					case 'privApi_setRecordingMode':
 						$payload = json_decode($data->Param1, true);
 						$ret = $this->privApi_setRecordingMode($data->ID, $payload['recordingMode']);
@@ -1574,6 +1577,22 @@ declare(strict_types=1);
         $cam['privacyEnabled'] = $privacyEnabled;
 
         return $cam;
+    }
+
+    // Sensor ueber die inoffizielle API lesen: liefert u.a. das airQuality-Objekt des
+    // UP-AirQuality (aqi, vape, tvoc, voc, co2, pm*, nox), das die Integration API nicht bereitstellt
+    private function privApi_getSensor(string $deviceId)
+    {
+        $body = $this->privApi_http('/sensors/' . $deviceId, 'GET', []);
+        if ($body == false) {
+            return false;
+        }
+        if (empty($body)) {
+            $this->SendDebug("UnifiPGW", "privApi_getSensor: Sensor nicht gefunden", 0);
+            return false;
+        }
+        $sensor = json_decode($body, true);
+        return is_array($sensor) ? $sensor : false;
     }
 
     private function privApi_setRecordingMode(string $deviceId, string $recordingMode)

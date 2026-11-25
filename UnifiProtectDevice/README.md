@@ -46,7 +46,7 @@ ID-Anzeigen | ID als Variable anlegen
 Stream Niedrig/Mittel/Hoch | Stream in entsprechender Auflösung anlegen (Schaltet auch Stream in Unifi Protect ein/aus!!)
 Snapshot-Timer aktiv / Snapshot-Timer (s) | Snapshot der Kamera zyklisch aktualisieren
 Snapshot deaktivieren | Für Fremdkameras (z.B. ONVIF), die keinen Snapshot liefern: entfernt Snapshot-Variable, Medienobjekt und Kachel-Buttons
-Inoffizielle API nutzen | Aktiviert Privatsphäre-Schalter und Aufzeichnungs-Modus der Kamera über die inoffizielle Protect-API (lokaler Benutzer + Passwort im Gateway erforderlich)
+Inoffizielle API nutzen | Kamera: Privatsphäre-Schalter und Aufzeichnungs-Modus; UP-AirQuality: Auslesen der Luftqualitätswerte. Erfordert lokalen Benutzer + Passwort im Gateway; ohne diese ist die Checkbox gesperrt
 Anzeigename der Kachel (optional) | Überschreibt nur den Titel der HTML-Kachel; Instanz und Gerät werden nicht umbenannt
 Temperatur/Luftfeuchtigkeit/… | Je nach Gerätetyp (UP-Sense, UP-AirQuality): Messwert-Variablen per Checkbox aktivieren
 
@@ -65,7 +65,7 @@ Die Statusvariablen/Kategorien werden automatisch angelegt. Das Löschen einzeln
 | State        | String   | Verbindungsstatus           |
 | Is Microphone enabled  | Boolean      | Status Mikrofon |
 | Microphone Volume | Integer | Mikrofon Lautstärke |
-| Air Quality Index / Vape Index / TVOC / VOC / CO2 / PM1.0 / PM2.5 / PM4.0 / PM10 | Integer/Float | Luftqualitätswerte des UP-AirQuality (sofern die Protect Integration API diese bereitstellt) |
+| Air Quality Index / Vape Index / TVOC / VOC / CO2 / PM1.0 / PM2.5 / PM4.0 / PM10 / NOX | Integer/Float | Luftqualitätswerte des UP-AirQuality. Die Integration API liefert sie derzeit nicht — zum Auslesen die Option "Inoffizielle API nutzen" aktivieren |
 | Privacy      | Boolean  | Privatsphäre-Modus der Kamera (inoffizielle API): legt eine bildfüllende Privacy-Zone an, schaltet das Mikrofon stumm und die Aufzeichnung ab; beim Ausschalten werden die vorherigen Werte wiederhergestellt |
 | RecordingMode | String  | Aufzeichnungs-Modus der Kamera (inoffizielle API): Adaptiv/Immer/Nie/Zeitplan/nur Ereignisse |
 
