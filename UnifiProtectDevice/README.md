@@ -45,6 +45,7 @@ Geräte-ID | Gerätename aus Unifi
 ID-Anzeigen | ID als Variable anlegen
 Stream Niedrig/Mittel/Hoch | Stream in entsprechender Auflösung anlegen (Schaltet auch Stream in Unifi Protect ein/aus!!)
 Snapshot-Timer aktiv / Snapshot-Timer (s) | Snapshot der Kamera zyklisch aktualisieren
+Snapshot deaktivieren | Für Fremdkameras (z.B. ONVIF), die keinen Snapshot liefern: entfernt Snapshot-Variable, Medienobjekt und Kachel-Buttons
 Anzeigename der Kachel (optional) | Überschreibt nur den Titel der HTML-Kachel; Instanz und Gerät werden nicht umbenannt
 Temperatur/Luftfeuchtigkeit/… | Je nach Gerätetyp (UP-Sense, UP-AirQuality): Messwert-Variablen per Checkbox aktivieren
 
@@ -58,7 +59,8 @@ Die Statusvariablen/Kategorien werden automatisch angelegt. Das Löschen einzeln
 | ------------ | -------- | --------------------------  |
 | Name         | String   | Gerätename                  |
 | ID           | String   | Geräte-ID                   |
-| Model        | String   | Gerätemodell                |
+| Model        | String   | Gerätemodell (modelKey, z.B. "camera") |
+| Type         | String   | Hardware-Typ (z.B. "UVC G3"); wird nur angelegt, wenn die Protect-Version das Feld liefert |
 | State        | String   | Verbindungsstatus           |
 | Is Microphone enabled  | Boolean      | Status Mikrofon |
 | Microphone Volume | Integer | Mikrofon Lautstärke |

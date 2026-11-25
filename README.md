@@ -5,22 +5,22 @@ Geräte-Updates werden seit Version 2.0 in Echtzeit per WebSocket empfangen — 
 
 Folgende Module beinhaltet das UnifiProtect Repository:
 
-- __UnifiProtectGateway__ ([Dokumentation](UnifiProtectGateway))  
+- __UnifiProtectGateway__ ([Dokumentation](UnifiProtectGateway/README.md))  
 Die Schnittstelle zwischen Symcon und der lokalen Unifi Protect API. Arbeitet als Splitter und nutzt den nativen WebSocket Client von IP-Symcon für Echtzeit-Updates.
 
-- __UnifiProtectDevice__ ([Dokumentation](UnifiProtectDevice))  
+- __UnifiProtectDevice__ ([Dokumentation](UnifiProtectDevice/README.md))  
 Dieses Modul repräsentiert die Unifi Protect Geräte in IP-Symcon.
 
-- __UnifiProtectEvents__ ([Dokumentation](UnifiProtectEvents))  
+- __UnifiProtectEvents__ ([Dokumentation](UnifiProtectEvents/README.md))  
 Empfängt und verarbeitet Ereignisse (z.B. Bewegung, smarte Erkennung, Sensor-Events) von UniFi Protect.
 
-- __UnifiProtectConfigurator__ ([Dokumentation](UnifiProtectConfigurator))  
+- __UnifiProtectConfigurator__ ([Dokumentation](UnifiProtectConfigurator/README.md))  
 Modul zur komfortablen Auswahl und Instanz-Erstellung der verfügbaren UniFi Protect Geräte.
 
-- __UnifiProtectAlarmProfiles__ ([Dokumentation](UnifiProtectAlarmProfiles))  
+- __UnifiProtectAlarmProfiles__ ([Dokumentation](UnifiProtectAlarmProfiles/README.md))  
 Liest die Alarmprofile (Arm Profiles) aus, zeigt den Arm-Status an und schaltet den Alarm scharf/unscharf.
 
-- __UnifiWebhook__ ([Dokumentation](UnifiWebhook))  
+- __UnifiWebhook__ ([Dokumentation](UnifiWebhook/README.md))  
 Löst in UniFi Protect hinterlegte Webhooks (Alarm-Manager) direkt aus IP-Symcon aus.
 
 Alle Geräteinstanzen bringen eine eigene HTML-Kachel für die Kachel-Visualisierung mit (ab IP-Symcon 8.2, Design an die Visualisierung angelehnt). Der Kachel-Titel kann je Instanz über das Feld "Anzeigename der Kachel" überschrieben werden, ohne die Instanz umzubenennen.
