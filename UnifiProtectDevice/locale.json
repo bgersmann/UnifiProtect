@@ -3,8 +3,8 @@
         "de": {
             "UniFi Protect Device": "UniFi Protect Gerät",
             "Active (updates via WebSocket)": "Aktiv (Updates per WebSocket)",
-            "Device Type": "Gerätetyp",            
-            "Device ID": "Geräte-ID",            
+            "Device Type": "Gerätetyp",
+            "Device ID": "Geräte-ID",
             "Show ID": "ID anzeigen",
             "Stream Low": "Stream Niedrig",
             "Stream Medium": "Stream Mittel",
@@ -25,8 +25,6 @@
             "PM2.5": "PM2.5",
             "PM4.0": "PM4.0",
             "PM10": "PM10",
-            "Note: The Protect Integration API does not provide the air quality values yet - enable the unofficial API to read them.": "Hinweis: Die Protect Integration API liefert die Luftqualitätswerte noch nicht — zum Auslesen die inoffizielle API aktivieren.",
-            "Use unofficial API (air quality values; local user in gateway required)": "Inoffizielle API nutzen (Luftqualitätswerte; lokaler Benutzer im Gateway erforderlich)",
             "Bewegung": "Bewegung",
             "Motion (Motion shows up in Protect Events)": "Bewegung (Bewegung erscheint in Protect Events)",
             "Motion": "Bewegung",
@@ -74,15 +72,18 @@
             "h": "Std",
             "min": "Min",
             "since %s": "seit %s",
-			"Use unofficial API (privacy, recording mode; local user in gateway required)": "Inoffizielle API nutzen (Privatsphäre, Aufzeichnungs-Modus; lokaler Benutzer im Gateway erforderlich)",
-            "Unofficial API is not configured in the gateway (local user + password missing).": "Die inoffizielle API ist im Gateway nicht konfiguriert (lokaler Benutzer + Passwort fehlen).",
-			"Privacy": "Privatsphäre",
-			"Recording mode": "Aufzeichnungs-Modus",
-			"adaptive": "Adaptiv",
-			"always": "Immer",
-			"never": "Nie",
-			"schedule": "Zeitplan",
-			"detections": "nur Ereignisse"
+            "Privacy": "Privatsphäre",
+            "Recording mode": "Aufzeichnungs-Modus",
+            "adaptive": "Adaptiv",
+            "always": "Immer",
+            "never": "Nie",
+            "schedule": "Zeitplan",
+            "detections": "nur Ereignisse",
+            "Unofficial API": "Inoffizielle API",
+            "Privacy switch": "Privatsphäre-Schalter",
+            "These functions use the unofficial Protect API and require it to be enabled in the gateway (local user + password).": "Diese Funktionen nutzen die inoffizielle Protect-API und setzen voraus, dass diese im Gateway aktiviert ist (lokaler Benutzer + Passwort).",
+            "These values are only provided by the unofficial Protect API and require it to be enabled in the gateway (local user + password).": "Diese Werte liefert ausschließlich die inoffizielle Protect-API; sie muss im Gateway aktiviert sein (lokaler Benutzer + Passwort).",
+            "Unofficial API is not enabled or not configured in the gateway.": "Die inoffizielle API ist im Gateway nicht aktiviert oder nicht konfiguriert."
         }
     }
 }

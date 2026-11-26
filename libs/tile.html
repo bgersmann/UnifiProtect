@@ -211,7 +211,7 @@
                 body += kpis(items);
             }
             body += rows([[T('LCD Message'), has(d.lcdMessage) ? E(d.lcdMessage) : '', 3]]);
-            // Funktionen der inoffiziellen API: nur wenn das Modul die Felder liefert (use_privAPI aktiv)
+            // Funktionen der inoffiziellen API: nur wenn das Modul die Felder liefert (einzeln aktivierte Optionen)
             if (d.privacy === true || d.privacy === false) {
                 body += `<div class="privrow" data-p="2"><span>${E(T('Privacy'))}</span>
                     <button class="toggle sm" role="switch" aria-checked="${d.privacy}" aria-label="${E(T('Privacy'))}" data-privacy></button></div>`;

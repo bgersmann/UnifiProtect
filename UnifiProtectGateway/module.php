@@ -11,6 +11,7 @@ declare(strict_types=1);
 			$this->RegisterPropertyString( 'APIKey', '' );
 			$this->RegisterPropertyBoolean('applicationVersion', 0);
 			$this->RegisterPropertyInteger( 'VersionTimer', 0 );
+			$this->RegisterPropertyBoolean( 'privApiActive', false );
 			$this->RegisterPropertyString( 'localUser', '' );
 			$this->RegisterPropertyString( 'localPassword', '' );
 
@@ -28,13 +29,23 @@ declare(strict_types=1);
 			parent::Migrate($JSONData);
 
 			$data = json_decode($JSONData, true);
+			$changed = false;
+
+			// Bestandsinstanzen mit hinterlegten Zugangsdaten hatten die inoffizielle API
+			// implizit aktiv - den neuen Schalter daher einmalig auf aktiv setzen
+			$cfg = $data['configuration'] ?? [];
+			if (!isset($cfg['privApiActive']) && ($cfg['localUser'] ?? '') !== '' && ($cfg['localPassword'] ?? '') !== '') {
+				$data['configuration']['privApiActive'] = true;
+				$changed = true;
+			}
+
 			$done = (bool)($data['attributes']['WsMigrationDone'] ?? false);
 			// Nur konfigurierte Bestandsinstanzen aus einer Version ohne I/O migrieren -
 			// bei Neuerstellungen laeuft der regulaere Erstellprozess (Benutzer-Hoheit)
 			$isLegacyInstance = !empty($data['configuration']['APIKey'] ?? '');
 			if ($done || !$isLegacyInstance) {
-				// keine Aenderungen notwendig
-				return '';
+				// keine weiteren Aenderungen notwendig
+				return $changed ? json_encode($data) : '';
 			}
 			// Bestandsinstanz: WS Client einmalig anlegen und Migration als erledigt markieren
 			$this->configureWsClient();
@@ -986,8 +997,13 @@ declare(strict_types=1);
 			$arrayElements[] = [
 				'type'      => 'ExpansionPanel',
 				'caption'   => 'Unofficial API (optional)',
-				'expanded'  => false,
+				'expanded'  => $this->ReadPropertyBoolean('privApiActive'),
 				'items'     => [
+					[
+						'type'    => 'CheckBox',
+						'name'    => 'privApiActive',
+						'caption' => $this->Translate('Enable unofficial API')
+					],
 					[
 						'type'    => 'ValidationTextBox',
 						'name'    => 'localUser',
@@ -1273,6 +1289,9 @@ declare(strict_types=1);
 
     private function privApi_enabled()
     {
+        if (!$this->ReadPropertyBoolean('privApiActive')) {
+            return false;
+        }
         $localUser = $this->ReadPropertyString('localUser');
         $localPassword = $this->ReadPropertyString('localPassword');
 

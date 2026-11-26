@@ -46,7 +46,9 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->RegisterPropertyBoolean( 'PM4', false );
 			$this->RegisterPropertyBoolean( 'PM10', false );
 			$this->RegisterPropertyBoolean( 'NOX', false );
-			$this->RegisterPropertyBoolean( 'use_privAPI', false );
+			// Einzeln aktivierbare Funktionen der inoffiziellen API (Kamera)
+			$this->RegisterPropertyBoolean( 'privPrivacy', false );
+			$this->RegisterPropertyBoolean( 'privRecordingMode', false );
 			$this->RegisterAttributeBoolean( 'supportFullHDSnapshot', false );
 			$this->RegisterAttributeString( 'prevValues4Privacy', '' );
 			$this->RegisterTimer( 'Collect Data', 0, "UNIFIPDV_getData(\$_IPS['TARGET']);" );
@@ -58,6 +60,22 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		{
 			//Never delete this line!
 			parent::Destroy();
+		}
+
+		public function Migrate(string $JSONData): string
+		{
+			// Diese Zeile nicht entfernen
+			parent::Migrate($JSONData);
+
+			$data = json_decode($JSONData, true);
+			// Frueher gab es die Sammel-Option use_privAPI; sie wird einmalig auf die
+			// neuen Einzel-Optionen der Kamera uebertragen
+			if (!empty($data['configuration']['use_privAPI'] ?? false)) {
+				$data['configuration']['privPrivacy'] = true;
+				$data['configuration']['privRecordingMode'] = true;
+				return json_encode($data);
+			}
+			return '';
 		}
 
 		public function ApplyChanges(): void
@@ -94,10 +112,11 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$snapshotEnabled = $this->ReadPropertyString('DeviceType') == 'Camera' && !$this->ReadPropertyBoolean('SnapshotDisabled');
 			$this->MaintainVariable( 'snapshot', $this->Translate( 'Snapshot' ), 1, [ 'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,'LAYOUT'=> 2, 'OPTIONS'=>'[{"Caption":"Snapshot","Color":65280,"IconActive":false,"IconValue":"","Value":1}]', 'ICON'=> 'camera-polaroid'], $vpos++, $snapshotEnabled);
 
-			$use_privAPI = $this->ReadPropertyBoolean('use_privAPI');
+			$privPrivacy = $this->ReadPropertyBoolean('privPrivacy');
+			$privRecording = $this->ReadPropertyBoolean('privRecordingMode');
 			$is_camera = $this->ReadPropertyString('DeviceType') == 'Camera';
 
-			$this->MaintainVariable('Privacy', $this->Translate('Privacy'), VARIABLETYPE_BOOLEAN, ['PRESENTATION' => VARIABLE_PRESENTATION_SWITCH], $vpos++, $is_camera && $use_privAPI);
+			$this->MaintainVariable('Privacy', $this->Translate('Privacy'), VARIABLETYPE_BOOLEAN, ['PRESENTATION' => VARIABLE_PRESENTATION_SWITCH], $vpos++, $is_camera && $privPrivacy);
 			$recording_presentation = [
 				'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
 				'OPTIONS'      => json_encode([
@@ -108,7 +127,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 					['Value' => 'detections', 'Caption' => $this->Translate('detections'), 'IconValue' => '', 'IconActive' => false, 'Color' => -1 ],
 				]),
 			];
-			$this->MaintainVariable('RecordingMode', $this->Translate('Recording mode'), VARIABLETYPE_STRING, $recording_presentation, $vpos++, $is_camera && $use_privAPI);
+			$this->MaintainVariable('RecordingMode', $this->Translate('Recording mode'), VARIABLETYPE_STRING, $recording_presentation, $vpos++, $is_camera && $privRecording);
 
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$this->MaintainAction('micVolume', true);
@@ -116,14 +135,16 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 					$this->SetValue('snapshot', 1);
 					$this->MaintainAction('snapshot', true);
 				}
-				if ($use_privAPI) {
+				if ($privPrivacy) {
 					$this->MaintainAction('Privacy', true);
+				}
+				if ($privRecording) {
 					$this->MaintainAction('RecordingMode', true);
 				}
 				// Kachel: Verfuegbarkeit der privAPI-Funktionen nachziehen (null blendet sie aus)
 				$this->TileUpdate([
-					'privacy'       => $use_privAPI ? (bool)@$this->GetValue('Privacy') : null,
-					'recordingMode' => $use_privAPI ? (string)@$this->GetValue('RecordingMode') : null
+					'privacy'       => $privPrivacy ? (bool)@$this->GetValue('Privacy') : null,
+					'recordingMode' => $privRecording ? (string)@$this->GetValue('RecordingMode') : null
 				]);
 			}
 
@@ -412,7 +433,7 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			$this->processDeviceData($message['item']);
 
 			// verzoegerter, gesammelter Abruf der privAPI-Daten
-			if ($this->ReadPropertyBoolean('use_privAPI')) {
+			if ($this->privFeaturesEnabled()) {
 				$this->schedulePrivApiUpdate();
 			}
 
@@ -557,17 +578,18 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 		// und UP-AirQuality (Luftqualitaetswerte, die die Integration API nicht liefert)
 		private function processPrivApiDeviceData(array $deviceData): void
 		{
-			if (!$this->ReadPropertyBoolean('use_privAPI')) {
+			if (!$this->privFeaturesEnabled()) {
 				return;
 			}
 			$deviceType = $this->ReadPropertyString('DeviceType');
 			if ($deviceType == 'Camera') {
 				$tile = [];
-				if (isset($deviceData['recordingSettings']['mode'])) {
+				// Nur die jeweils einzeln aktivierten Funktionen verarbeiten
+				if ($this->ReadPropertyBoolean('privRecordingMode') && isset($deviceData['recordingSettings']['mode'])) {
 					$this->SetValue('RecordingMode', (string)$deviceData['recordingSettings']['mode']);
 					$tile['recordingMode'] = (string)$deviceData['recordingSettings']['mode'];
 				}
-				if (isset($deviceData['privacyEnabled'])) {
+				if ($this->ReadPropertyBoolean('privPrivacy') && isset($deviceData['privacyEnabled'])) {
 					$this->SetValue('Privacy', (bool)$deviceData['privacyEnabled']);
 					$tile['privacy'] = (bool)$deviceData['privacyEnabled'];
 				}
@@ -611,8 +633,10 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			if ($this->ReadPropertyString('DeviceType') == 'Camera') {
 				$tile = array_merge($tile, $this->TileCameraMedia());
 				// privAPI-Werte aus den persistierten Variablen vorbelegen
-				if ($this->ReadPropertyBoolean('use_privAPI')) {
+				if ($this->ReadPropertyBoolean('privPrivacy')) {
 					$tile['privacy'] = (bool)@$this->GetValue('Privacy');
+				}
+				if ($this->ReadPropertyBoolean('privRecordingMode')) {
 					$tile['recordingMode'] = (string)@$this->GetValue('RecordingMode');
 				}
 			}
@@ -808,10 +832,28 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 			return "";
 		}
 
+		// Sind fuer dieses Geraet Funktionen der inoffiziellen API aktiviert?
+		private function privFeaturesEnabled(): bool
+		{
+			$deviceType = $this->ReadPropertyString('DeviceType');
+			if ($deviceType == 'Camera') {
+				return $this->ReadPropertyBoolean('privPrivacy') || $this->ReadPropertyBoolean('privRecordingMode');
+			}
+			if ($deviceType == 'UP-AirQuality') {
+				// Die Luftqualitaetswerte kommen ausschliesslich ueber die inoffizielle API
+				foreach (['AQI', 'Vape', 'TVOC', 'VOC', 'CO2', 'PM1', 'PM25', 'PM4', 'PM10', 'NOX'] as $property) {
+					if ($this->ReadPropertyBoolean($property)) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		// Fordert die Daten der inoffiziellen API an - je Geraetetyp der passende Endpunkt
 		private function fetchPrivApiData(): void
 		{
-			if (!$this->ReadPropertyBoolean('use_privAPI')) {
+			if (!$this->privFeaturesEnabled()) {
 				return;
 			}
 			$deviceType = $this->ReadPropertyString('DeviceType');
@@ -873,13 +915,18 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 				unset($arrayOptions);
 				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'SnapshotDisabled', 'caption' => $this->Translate('Disable snapshot (camera does not support snapshots)') );
-				// Checkbox nur anbieten, wenn im Gateway die inoffizielle API (lokaler Benutzer +
-				// Passwort) hinterlegt ist; eine bereits gesetzte Checkbox bleibt abschaltbar
+				// Funktionen der inoffiziellen API: eigener Block, einzeln aktivierbar.
+				// Nur bedienbar, wenn die API im Gateway aktiviert und konfiguriert ist;
+				// bereits gesetzte Optionen bleiben abschaltbar.
 				$privApiAvailable = $this->privApiAvailable();
-				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'use_privAPI', 'caption' => $this->Translate('Use unofficial API (privacy, recording mode; local user in gateway required)'), 'enabled' => $privApiAvailable || $this->ReadPropertyBoolean('use_privAPI') );
+				$privItems = array();
+				$privItems[] = array( 'type' => 'Label', 'label' => $this->Translate('These functions use the unofficial Protect API and require it to be enabled in the gateway (local user + password).') );
 				if (!$privApiAvailable) {
-					$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Unofficial API is not configured in the gateway (local user + password missing).') );
+					$privItems[] = array( 'type' => 'Label', 'label' => $this->Translate('Unofficial API is not enabled or not configured in the gateway.') );
 				}
+				$privItems[] = array( 'type' => 'CheckBox', 'name' => 'privPrivacy', 'caption' => $this->Translate('Privacy switch'), 'enabled' => $privApiAvailable || $this->ReadPropertyBoolean('privPrivacy') );
+				$privItems[] = array( 'type' => 'CheckBox', 'name' => 'privRecordingMode', 'caption' => $this->Translate('Recording mode'), 'enabled' => $privApiAvailable || $this->ReadPropertyBoolean('privRecordingMode') );
+				$arrayElements[] = array( 'type' => 'ExpansionPanel', 'caption' => $this->Translate('Unofficial API'), 'expanded' => $this->ReadPropertyBoolean('privPrivacy') || $this->ReadPropertyBoolean('privRecordingMode'), 'items' => $privItems );
 			}
 			if ($this->ReadPropertyString('DeviceType') == 'UP-Sense') {
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Temperature','width' => '180px', 'caption' => $this->Translate('Temperature') );
@@ -894,33 +941,35 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Humidity','width' => '180px', 'caption' => $this->Translate('Humidity') );
 				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
 				unset($arrayOptions);
-				// Diese Werte kommen ausschliesslich ueber die inoffizielle API - die Checkboxen
-				// sind daher nur bedienbar, wenn "Inoffizielle API nutzen" aktiv ist
-				// (live nachgefuehrt ueber onChange der use_privAPI-Checkbox)
-				$privValuesEnabled = $this->ReadPropertyBoolean('use_privAPI');
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'AQI','width' => '180px', 'caption' => $this->Translate('Air Quality Index'), 'enabled' => $privValuesEnabled );
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'Vape','width' => '180px', 'caption' => $this->Translate('Vape Index'), 'enabled' => $privValuesEnabled );
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'CO2','width' => '180px', 'caption' => 'CO2', 'enabled' => $privValuesEnabled );
-				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
-				unset($arrayOptions);
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'TVOC','width' => '180px', 'caption' => 'TVOC', 'enabled' => $privValuesEnabled );
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'VOC','width' => '180px', 'caption' => 'VOC', 'enabled' => $privValuesEnabled );
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'NOX','width' => '180px', 'caption' => 'NOX', 'enabled' => $privValuesEnabled );
-				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
-				unset($arrayOptions);
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'PM1','width' => '180px', 'caption' => 'PM1.0', 'enabled' => $privValuesEnabled );
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'PM25','width' => '180px', 'caption' => 'PM2.5', 'enabled' => $privValuesEnabled );
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'PM4','width' => '180px', 'caption' => 'PM4.0', 'enabled' => $privValuesEnabled );
-				$arrayOptions[] = array( 'type' => 'CheckBox', 'name' => 'PM10','width' => '180px', 'caption' => 'PM10', 'enabled' => $privValuesEnabled );
-				$arrayElements[] = array( 'type' => 'RowLayout',  'items' => $arrayOptions );
-				$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Note: The Protect Integration API does not provide the air quality values yet - enable the unofficial API to read them.') );
-				// Checkbox nur anbieten, wenn im Gateway die inoffizielle API hinterlegt ist;
-				// eine bereits gesetzte Checkbox bleibt abschaltbar
+				// Die Luftqualitaetswerte kommen ausschliesslich ueber die inoffizielle API:
+				// eigener Block, Werte einzeln aktivierbar, nur bedienbar wenn die API im
+				// Gateway aktiviert ist; bereits gesetzte Optionen bleiben abschaltbar.
 				$privApiAvailable = $this->privApiAvailable();
-				$arrayElements[] = array( 'type' => 'CheckBox', 'name' => 'use_privAPI', 'caption' => $this->Translate('Use unofficial API (air quality values; local user in gateway required)'), 'enabled' => $privApiAvailable || $this->ReadPropertyBoolean('use_privAPI'), 'onChange' => 'IPS_RequestAction($id, "FormAirQualityToggle", $use_privAPI);' );
+				$valueEnabled = function (string $property) use ($privApiAvailable): bool {
+					return $privApiAvailable || $this->ReadPropertyBoolean($property);
+				};
+				$privItems = array();
+				$privItems[] = array( 'type' => 'Label', 'label' => $this->Translate('These values are only provided by the unofficial Protect API and require it to be enabled in the gateway (local user + password).') );
 				if (!$privApiAvailable) {
-					$arrayElements[] = array( 'type' => 'Label', 'label' => $this->Translate('Unofficial API is not configured in the gateway (local user + password missing).') );
+					$privItems[] = array( 'type' => 'Label', 'label' => $this->Translate('Unofficial API is not enabled or not configured in the gateway.') );
 				}
+				$privItems[] = array( 'type' => 'RowLayout', 'items' => array(
+					array( 'type' => 'CheckBox', 'name' => 'AQI','width' => '180px', 'caption' => $this->Translate('Air Quality Index'), 'enabled' => $valueEnabled('AQI') ),
+					array( 'type' => 'CheckBox', 'name' => 'Vape','width' => '180px', 'caption' => $this->Translate('Vape Index'), 'enabled' => $valueEnabled('Vape') ),
+					array( 'type' => 'CheckBox', 'name' => 'CO2','width' => '180px', 'caption' => 'CO2', 'enabled' => $valueEnabled('CO2') )
+				) );
+				$privItems[] = array( 'type' => 'RowLayout', 'items' => array(
+					array( 'type' => 'CheckBox', 'name' => 'TVOC','width' => '180px', 'caption' => 'TVOC', 'enabled' => $valueEnabled('TVOC') ),
+					array( 'type' => 'CheckBox', 'name' => 'VOC','width' => '180px', 'caption' => 'VOC', 'enabled' => $valueEnabled('VOC') ),
+					array( 'type' => 'CheckBox', 'name' => 'NOX','width' => '180px', 'caption' => 'NOX', 'enabled' => $valueEnabled('NOX') )
+				) );
+				$privItems[] = array( 'type' => 'RowLayout', 'items' => array(
+					array( 'type' => 'CheckBox', 'name' => 'PM1','width' => '180px', 'caption' => 'PM1.0', 'enabled' => $valueEnabled('PM1') ),
+					array( 'type' => 'CheckBox', 'name' => 'PM25','width' => '180px', 'caption' => 'PM2.5', 'enabled' => $valueEnabled('PM25') ),
+					array( 'type' => 'CheckBox', 'name' => 'PM4','width' => '180px', 'caption' => 'PM4.0', 'enabled' => $valueEnabled('PM4') ),
+					array( 'type' => 'CheckBox', 'name' => 'PM10','width' => '180px', 'caption' => 'PM10', 'enabled' => $valueEnabled('PM10') )
+				) );
+				$arrayElements[] = array( 'type' => 'ExpansionPanel', 'caption' => $this->Translate('Unofficial API'), 'expanded' => $this->privFeaturesEnabled(), 'items' => $privItems );
 			}
 
 			$arrayActions = array();
@@ -1028,19 +1077,18 @@ require_once __DIR__ . '/../libs/UnifiProtectTile.php';
 						$this->WriteAttributeString('prevValues4Privacy', $b ? json_encode($ret['prev'] ?? []) : '');
 						$this->SetValue($Ident, $b);
 						$this->SetValue('micVolume', $payload['micVolume']);
-						$this->SetValue('RecordingMode', $payload['recordingMode']);
-						$this->TileUpdate(['privacy' => $b, 'recordingMode' => $payload['recordingMode'], 'micVolume' => $payload['micVolume']]);
+						$tile = ['privacy' => $b, 'micVolume' => $payload['micVolume']];
+						// RecordingMode-Variable existiert nur, wenn die Option einzeln aktiviert ist
+						if (@$this->GetIDForIdent('RecordingMode') !== false) {
+							$this->SetValue('RecordingMode', $payload['recordingMode']);
+							$tile['recordingMode'] = $payload['recordingMode'];
+						}
+						$this->TileUpdate($tile);
 						$this->schedulePrivApiUpdate();
 					}
 					break;
 				case 'UpdatePrivApi':
 					$this->UpdatePrivApi();
-					break;
-				case 'FormAirQualityToggle':
-					// Nur Formular-Logik: Wert-Checkboxen der inoffiziellen API live sperren/freigeben
-					foreach (['AQI', 'Vape', 'CO2', 'TVOC', 'VOC', 'NOX', 'PM1', 'PM25', 'PM4', 'PM10'] as $field) {
-						$this->UpdateFormField($field, 'enabled', (bool)$Value);
-					}
 					break;
 				default:
 					throw new Exception("Invalid Ident");

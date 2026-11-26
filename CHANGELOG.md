@@ -9,7 +9,7 @@ Das Gateway kann zusätzlich zur offiziellen Integration API die inoffizielle Pr
 - **Privatsphäre-Schalter** (`Privacy`): legt eine bildfüllende Privacy-Zone an, schaltet das Mikrofon stumm und die Aufzeichnung ab; beim Ausschalten werden die vorherigen Werte wiederhergestellt.
 - **Aufzeichnungs-Modus** (`RecordingMode`): Adaptiv / Immer / Nie / Zeitplan / nur Ereignisse.
 
-**Konfiguration:** Zugangsdaten (lokaler Benutzer + Passwort) im Gateway, je Kamera aktivierbar über "Inoffizielle API nutzen". Der neue Button **"Zugriff prüfen"** im Gateway testet API-Key und den Login des lokalen Benutzers (mit erzwungenem frischem Login). Beide Funktionen sind auch in der HTML-Kachel der Kamera bedienbar (Schalter + Modus-Chips mit Beschriftung).
+**Konfiguration:** Im Gateway wird die inoffizielle API per Checkbox aktiviert und mit Zugangsdaten (lokaler Benutzer + Passwort) versehen; der neue Button **"Zugriff prüfen"** testet API-Key und den Login des lokalen Benutzers (mit erzwungenem frischem Login). In den Geräten liegen die zugehörigen Funktionen in einem eigenen Block "Inoffizielle API" und sind **einzeln** aktivierbar (Kamera: Privatsphäre-Schalter, Aufzeichnungs-Modus). Beide Funktionen sind auch in der HTML-Kachel der Kamera bedienbar (Schalter + Modus-Chips mit Beschriftung).
 
 **Abruf-Strategie:** Die privAPI wird sparsam abgefragt — beim Übernehmen der Einstellungen, beim Vollabgleich (fullSync/stündlicher Fallback) und gesammelt 10 s nach WebSocket-Änderungen (Debounce mit garantierter Ausführung auch bei durchgehendem Event-Strom).
 
@@ -17,8 +17,8 @@ Das Gateway kann zusätzlich zur offiziellen Integration API die inoffizielle Pr
 
 ### Weitere Änderungen
 
-- **UP-AirQuality über die inoffizielle API:** Die Integration API liefert die Luftqualitätswerte des Vape/Air-Quality-Sensors weiterhin nicht — mit aktivierter Option "Inoffizielle API nutzen" liest das Modul sie jetzt über die inoffizielle API aus (gleiche Abruf-Strategie wie bei den Kameras). Neu dabei: der Messwert **NOX** (Stickoxide), den die inoffizielle API zusätzlich bereitstellt.
-- Die Option "Inoffizielle API nutzen" (Kamera und UP-AirQuality) ist nur aktivierbar, wenn im Gateway lokaler Benutzer und Passwort hinterlegt sind; andernfalls ist sie gesperrt und ein Hinweis wird angezeigt.
+- **UP-AirQuality über die inoffizielle API:** Die Integration API liefert die Luftqualitätswerte des Vape/Air-Quality-Sensors weiterhin nicht — das Modul liest sie jetzt über die inoffizielle API aus (gleiche Abruf-Strategie wie bei den Kameras). Die Werte liegen im Block "Inoffizielle API" und sind einzeln aktivierbar. Neu dabei: der Messwert **NOX** (Stickoxide), den die inoffizielle API zusätzlich bereitstellt.
+- Die Optionen im Block "Inoffizielle API" sind nur bedienbar, wenn die API im Gateway aktiviert und mit Zugangsdaten versehen ist; andernfalls sind sie gesperrt und ein Hinweis wird angezeigt. Bestehende Konfigurationen werden migriert: Gateways mit hinterlegten Zugangsdaten bekommen den neuen Schalter automatisch aktiv, die frühere Geräte-Option "Inoffizielle API nutzen" wird auf die Einzel-Optionen übertragen.
 
 ## Version 2.2 (2026-11-05)
 

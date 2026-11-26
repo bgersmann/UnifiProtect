@@ -5,8 +5,8 @@
             "Application Version": "Anwendungsversion",
             "Please create API Key under \"UniFi Network > Settings > Control Plane > Integrations\"": "Bitte API Key unter \"UniFi Network > Einstellungen > Control Plane > Integrationen\" erzeugen",
             "Unifi Device IP": "Unifi Geräte-IP",
-			"Public API (required)": "Öffentliche API (verpflichtend)",
-			"Unofficial API (optional)": "Inoffizielle API (optional)",
+            "Public API (required)": "Öffentliche API (verpflichtend)",
+            "Unofficial API (optional)": "Inoffizielle API (optional)",
             "API key": "API-Schlüssel",
             "Local UniFi user": "Lokaler UniFi-Benutzer",
             "Password of local user": "Passwort des lokalen Benutzers",
@@ -31,15 +31,16 @@
             "ID": "ID",
             "default": "Standard",
             "missing": "Fehlt",
-			"Test access": "Zugriff prüfen",
-			"Public API": "Öffentliche API",
-			"Access to public API successful": "Zugriff auf öffentliche API erfolgreich",
-			"Login successful": "Login erfolgreich",
-			"unable to access with API key": "Zugriff mit API-Schlüssel nicht möglich",
-			"Unofficial API": "Inoffizielle API",
-			"unable to access local account": "Zugriff auf lokales Konto nicht möglich",
-			"registered cameras found": "registrierte Kameras gefunden",
-			"not configured": "Nicht konfiguriert"
+            "Test access": "Zugriff prüfen",
+            "Public API": "Öffentliche API",
+            "Access to public API successful": "Zugriff auf öffentliche API erfolgreich",
+            "Login successful": "Login erfolgreich",
+            "unable to access with API key": "Zugriff mit API-Schlüssel nicht möglich",
+            "Unofficial API": "Inoffizielle API",
+            "unable to access local account": "Zugriff auf lokales Konto nicht möglich",
+            "registered cameras found": "registrierte Kameras gefunden",
+            "not configured": "Nicht konfiguriert",
+            "Enable unofficial API": "Inoffizielle API aktivieren"
         }
     }
 }

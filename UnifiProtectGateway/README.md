@@ -39,7 +39,8 @@ Name     | Beschreibung
 -------- | ------------------
 Unifi Geräte-IP    | IP Adresse der Unifi Protect installation
 API-Schlüssel (Öffentliche API, verpflichtend) | API Key "UniFi Protect > Settings > Control Plane > Integrations" erzeugen.
-Lokaler UniFi-Benutzer / Passwort (Inoffizielle API, optional) | Zugangsdaten eines lokalen UniFi-Benutzers; schaltet je Kamera Privatsphäre-Schalter und Aufzeichnungs-Modus frei (inoffizielle API, Muster nach uiprotect)
+Inoffizielle API aktivieren | Schaltet die inoffizielle Protect-API frei (Muster nach uiprotect); die Funktionen werden je Gerät einzeln aktiviert (Kamera: Privatsphäre/Aufzeichnungs-Modus, UP-AirQuality: Luftqualitätswerte)
+Lokaler UniFi-Benutzer / Passwort | Zugangsdaten eines lokalen UniFi-Benutzers für die inoffizielle API
 Anwendungsversion anzeigen |  Erzeugt eine Variable mit der aktuellen Unifi Protect Version.
 
 Der Button **"Zugriff prüfen"** im Aktionsbereich testet den Zugriff auf die öffentliche API (API-Key) und führt einen frischen Login mit dem lokalen Benutzer aus (inoffizielle API); das Ergebnis erscheint als Popup.
